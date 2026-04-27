@@ -1,0 +1,59 @@
+# Build static site + deploy to GitHub Pages (project site: /telegramito/).
+# Repository: https://github.com/bthos/telegramito
+#
+# One-time setup:
+# 1. Settings → Pages → Source: GitHub Actions
+# 2. Settings → Secrets and variables → Actions → add:
+#    - VITE_TELEGRAM_API_ID
+#    - VITE_TELEGRAM_API_HASH
+#    (same values as local `.env`; they are baked into the client bundle at build time.)
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_TELEGRAM_API_ID: ${{ secrets.VITE_TELEGRAM_API_ID }}
+          VITE_TELEGRAM_API_HASH: ${{ secrets.VITE_TELEGRAM_API_HASH }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
