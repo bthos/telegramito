@@ -33,6 +33,7 @@ import {
   getForumThreadMessages,
   isForumWithSubchats,
   sendInForumThread,
+  sumTopicUnreadCounts,
 } from "../telegram/forum"
 import { collectCustomEmojiDocumentIdsFromMessages } from "../telegram/customEmojiFromMessages"
 import { prefetchCustomEmojiDocuments } from "../telegram/customEmojiCache"
@@ -107,11 +108,30 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     isForum,
     lastMessageTick
   )
+  const [forumUnreadOnly, setForumUnreadOnly] = useState(false)
 
   const convKey = useMemo(
     () => `${key}|${isForum ? String(topicId ?? "null") : "direct"}`,
     [key, isForum, topicId]
   )
+
+  const topicsWithUnread = useMemo(
+    () => topics.filter((x) => (x.unreadCount ?? 0) > 0),
+    [topics]
+  )
+  const topicsForSelect = useMemo(() => {
+    if (!forumUnreadOnly) {
+      return topics
+    }
+    if (topicsWithUnread.length > 0) {
+      return topicsWithUnread
+    }
+    return topics
+  }, [forumUnreadOnly, topics, topicsWithUnread])
+  const sumTopicUnreads = useMemo(() => sumTopicUnreadCounts(topics), [topics])
+  const showUnreadFilterFallback = forumUnreadOnly && topicsWithUnread.length === 0
+  const chatListUnread = dialog.unreadCount ?? 0
+  const formatUnreadForHint = (n: number) => (n > 99 ? "99+" : String(n))
 
   const listRef = useRef(list)
   listRef.current = list
@@ -120,6 +140,23 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   useEffect(() => {
     lastMessageTickRef.current = lastMessageTick
   }, [lastMessageTick])
+
+  useEffect(() => {
+    setForumUnreadOnly(false)
+  }, [key])
+
+  useEffect(() => {
+    if (!isForum || topicId == null) {
+      return
+    }
+    if (topicsForSelect.length === 0) {
+      return
+    }
+    if (topicsForSelect.some((x) => x.id === topicId)) {
+      return
+    }
+    setTopicId(topicsForSelect[0].id)
+  }, [isForum, topicId, topicsForSelect, setTopicId])
 
   const fetchHeadPage = useCallback(async (): Promise<Api.Message[]> => {
     if (!client || !dialog.entity) {
@@ -650,23 +687,47 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           ) : null}
           {!topicsLoading && topicsErr == null && topics.length > 0 && topicId != null ? (
             <>
-              <span className="forum-topic-lbl">{t("chat.forumTopic")}</span>
-              <select
-                className="input"
-                name="topic"
-                aria-label={t("chat.forumTopic")}
-                value={String(topicId)}
-                onChange={(e) => {
-                  setTopicId(Number(e.target.value))
-                }}
-              >
-                {topics.map((x) => (
-                  <option key={x.id} value={String(x.id)}>
-                    {forumTopicLabel(x)}
-                    {formatTopicUnreadSuffix(x)}
-                  </option>
-                ))}
-              </select>
+              <div className="forum-topic-bar__row">
+                <span className="forum-topic-lbl">{t("chat.forumTopic")}</span>
+                <select
+                  className="input"
+                  name="topic"
+                  aria-label={t("chat.forumTopic")}
+                  value={String(topicId)}
+                  onChange={(e) => {
+                    setTopicId(Number(e.target.value))
+                  }}
+                >
+                  {topicsForSelect.map((x) => (
+                    <option key={x.id} value={String(x.id)}>
+                      {forumTopicLabel(x)}
+                      {formatTopicUnreadSuffix(x)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <label className="forum-unread-only">
+                <input
+                  type="checkbox"
+                  className="forum-unread-only__input"
+                  checked={forumUnreadOnly}
+                  onChange={(e) => {
+                    setForumUnreadOnly(e.target.checked)
+                  }}
+                />
+                <span>{t("chat.forumTopicUnreadOnly")}</span>
+              </label>
+              {showUnreadFilterFallback ? (
+                <p className="small muted" role="status">
+                  {t("chat.forumTopicUnreadEmpty")}
+                </p>
+              ) : null}
+              <p className="small muted forum-unread-hint" role="note">
+                {t("chat.forumUnreadExplain", {
+                  chat: formatUnreadForHint(chatListUnread),
+                  sum: formatUnreadForHint(sumTopicUnreads),
+                })}
+              </p>
             </>
           ) : null}
           {!topicsLoading && topicsErr == null && topics.length === 0 ? (

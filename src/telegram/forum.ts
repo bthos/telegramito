@@ -19,7 +19,11 @@ export function isForumWithSubchats(
 }
 
 /**
- * @returns Active forum topics (drops deleted stubs).
+ * Fetches all forum topic pages (Telegram returns up to 100 per `channels.getForumTopics`
+ * call). A single page made the sum of `ForumTopic.unreadCount` in the UI look "wrong"
+ * compared to {@link Dialog#unreadCount} when a forum has many topics or unreads in topics
+ * beyond the first page.
+ * @returns Active forum topics in server order; drops non-concrete / deleted stubs.
  */
 export async function listForumTopics(
   client: TelegramClient,
@@ -29,23 +33,49 @@ export async function listForumTopics(
   if (ch instanceof Api.InputChannelEmpty) {
     return []
   }
-  const res = await client.invoke(
-    new Api.channels.GetForumTopics({
-      channel: ch,
-      offsetDate: 0,
-      offsetId: 0,
-      offsetTopic: 0,
-      limit: 100,
-    })
-  )
-  if (res.className !== "messages.ForumTopics") {
-    return []
-  }
   const out: Api.ForumTopic[] = []
-  for (const t of res.topics) {
-    if (t.className === "ForumTopic") {
+  const seen = new Set<number>()
+  let offsetDate = 0
+  let offsetId = 0
+  let offsetTopic = 0
+  const MAX_PAGES = 200
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    const res = await client.invoke(
+      new Api.channels.GetForumTopics({
+        channel: ch,
+        offsetDate,
+        offsetId,
+        offsetTopic,
+        limit: 100,
+      })
+    )
+    if (res.className !== "messages.ForumTopics" || res.topics.length === 0) {
+      break
+    }
+    for (const t of res.topics) {
+      if (t.className !== "ForumTopic") {
+        continue
+      }
+      if (seen.has(t.id)) {
+        continue
+      }
+      seen.add(t.id)
       out.push(t)
     }
+    if (out.length >= res.count) {
+      break
+    }
+    if (res.topics.length < 100) {
+      break
+    }
+    const last = res.topics[res.topics.length - 1]
+    if (last.className !== "ForumTopic") {
+      break
+    }
+    const lastTopic = last as Api.ForumTopic
+    offsetTopic = lastTopic.id
+    offsetId = typeof lastTopic.topMessage === "number" ? lastTopic.topMessage : 0
+    offsetDate = typeof lastTopic.date === "number" ? lastTopic.date : 0
   }
   return out
 }
@@ -156,6 +186,15 @@ export function defaultForumTopicId(topics: Api.ForumTopic[]): number | null {
 
 export function forumTopicLabel(t: Api.ForumTopic): string {
   return t.title || `#${t.id}`
+}
+
+/** Sum of per-topic `unreadCount` for loaded topics (for UI comparison with {@link Dialog#unreadCount}). */
+export function sumTopicUnreadCounts(topics: readonly Api.ForumTopic[]): number {
+  let s = 0
+  for (const t of topics) {
+    s += t.unreadCount ?? 0
+  }
+  return s
 }
 
 /** Short unread suffix for use in a native <select> (badges are not available per option). */

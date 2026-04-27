@@ -171,6 +171,12 @@ export function MainShell() {
     new Date(),
     settings.appMode
   )
+  useEffect(() => {
+    if (!nightHidden || settings.appMode !== "child") {
+      return
+    }
+    setSelected((s) => (s != null ? null : s))
+  }, [nightHidden, settings.appMode])
   return (
     <div
       className={`app-root app-root--main app-root--mode-${settings.appMode}`}
@@ -340,6 +346,7 @@ export function MainShell() {
                   search={search}
                   onSearchChange={setSearch}
                   nightListHidden={nightHidden}
+                  nightWindow={nightHidden ? { start: settings.nightMode.start, end: settings.nightMode.end } : undefined}
                   dialogs={childListDialogs}
                   selected={selected}
                   onSelect={setSelected}
@@ -359,6 +366,7 @@ export function MainShell() {
                   search={search}
                   onSearchChange={setSearch}
                   nightListHidden={nightHidden}
+                  nightWindow={nightHidden ? { start: settings.nightMode.start, end: settings.nightMode.end } : undefined}
                   dialogs={childListDialogs}
                   selected={selected}
                   onSelect={setSelected}

@@ -16,6 +16,8 @@ type Props = {
   settings: ParentalSettings
   onRequestForHidden: (d: Dialog) => void
   nightListHidden: boolean
+  /** Shown when the list is hidden; local night window from parental settings. */
+  nightWindow?: { start: string; end: string }
   hasMoreDialogs?: boolean
   loadMoreDialogs?: () => void
   dialogsLoadingMore?: boolean
@@ -29,6 +31,7 @@ export function ChatList({
   settings,
   onRequestForHidden,
   nightListHidden,
+  nightWindow,
   hasMoreDialogs = false,
   loadMoreDialogs,
   dialogsLoadingMore = false,
@@ -39,6 +42,11 @@ export function ChatList({
     return (
       <div className="side-panel side-night">
         <p>{t("night.blurred")}</p>
+        {nightWindow ? (
+          <p className="small muted side-night__window" role="status">
+            {t("night.windowRange", { start: nightWindow.start, end: nightWindow.end })}
+          </p>
+        ) : null}
       </div>
     )
   }

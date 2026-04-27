@@ -9,6 +9,7 @@ type Props = {
   search: string
   onSearchChange: (value: string) => void
   nightListHidden: boolean
+  nightWindow?: { start: string; end: string }
   dialogs: Dialog[]
   selected: Dialog | null
   onSelect: (d: Dialog) => void
@@ -25,6 +26,7 @@ export function ChatsListPanel({
   search,
   onSearchChange,
   nightListHidden,
+  nightWindow,
   dialogs,
   selected,
   onSelect,
@@ -54,6 +56,7 @@ export function ChatsListPanel({
       </div>
       <ChatList
         nightListHidden={nightListHidden}
+        nightWindow={nightWindow}
         dialogs={dialogs}
         onSelect={onSelect}
         selectedKey={selected ? getPeerInfo(selected).key : null}

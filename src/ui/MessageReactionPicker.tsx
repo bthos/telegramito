@@ -300,7 +300,7 @@ export function MessageReactionPicker({
                         onClose()
                       }}
                     >
-                      {t("chat.replyToMessage")}
+                      {t("chat.reply")}
                     </button>
                   )
                 : null}
