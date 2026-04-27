@@ -1,0 +1,205 @@
+/**
+ * Telegramito design system (CSS custom properties).
+ * New work: prefer --ds-*; legacy --bg, --card, --acc, … are aliases and remain valid.
+ */
+:root {
+  /* —— Typography —— */
+  --ds-font-sans: system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --ds-font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  --ds-font-emoji: system-ui, "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+  --ds-line-tight: 1.2;
+  --ds-line-body: 1.4;
+
+  /* —— Primitives: color —— */
+  --ds-color-page: #0c1218;
+  --ds-color-raised: #111822;
+  --ds-color-surface: #151b24;
+  --ds-color-sink: #0a0f16;
+  --ds-color-sink-2: #0a1018;
+  --ds-color-sink-deep: #06090e;
+  --ds-color-line: #243144;
+  --ds-color-line-soft: #1e2a3a;
+  --ds-color-elevated: #1d2836;
+  --ds-color-elevated-hover: #121b26;
+  --ds-color-elevated-active: #16212f;
+  --ds-color-fg: #e2e5ea;
+  --ds-color-fg-2: #e8ebf0;
+  --ds-color-fg-tint: #f0f4fa;
+  --ds-color-muted: #8b95a3;
+  --ds-color-primary: #5aa0ff;
+  --ds-color-primary-mid: #1c2633;
+  --ds-color-primary-dim: #3a7ad2;
+  --ds-color-on-primary: #061018;
+  --ds-color-err: #f58b8b;
+  --ds-color-err-2: #e88;
+  --ds-bubble-in: #1d2836;
+  --ds-bubble-out: #1e4a7a;
+  --ds-bubble-glow: #2564a0;
+  --ds-bubble-out-grad-1: #2564a0;
+  /* Shell surfaces (app.css) */
+  --ds-color-canvas: #0a0f16;
+  --ds-color-canvas-list: #0a0f16;
+  --ds-color-canvas-main: #080b10;
+  --ds-color-canvas-grad-1: #070a0f;
+  --ds-color-canvas-grad-2: #080b10;
+  --ds-color-input-embed: #06090e;
+  --ds-color-blocked: #0d1016;
+  --ds-color-pill-fg: #041018;
+  --ds-color-topbar-mid: #1c2633;
+  --ds-color-mode-pill: #141b24;
+  --ds-color-border-search: #1e2a3a;
+  --ds-msg-pop-bg: linear-gradient(
+    165deg,
+    rgba(32, 38, 52, 0.99) 0%,
+    rgba(20, 24, 36, 0.99) 100%
+  );
+  /* —— Spacing (relative) —— */
+  --ds-space-1: 0.25rem;
+  --ds-space-2: 0.4rem;
+  --ds-space-3: 0.5rem;
+  --ds-space-4: 0.6rem;
+  --ds-space-5: 0.75rem;
+  --ds-space-6: 1rem;
+  --ds-space-7: 1.25rem;
+  --ds-space-8: 1.4rem;
+  --ds-space-9: 1.5rem;
+
+  /* —— Radii —— */
+  --ds-radius-sm: 6px;
+  --ds-radius-md: 8px;
+  --ds-radius-lg: 10px;
+  --ds-radius-xl: 12px;
+  --ds-radius-2xl: 16px;
+  --ds-radius-pill: 999px;
+
+  /* —— Elevation & chrome —— */
+  --ds-shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.2);
+  --ds-shadow-md: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.4);
+  --ds-shadow-card: 0 0.4rem 2.5rem rgba(0, 0, 0, 0.4);
+  --ds-shadow-compose: 0 -6px 16px rgba(0, 0, 0, 0.35);
+
+  /* —— Stacking —— */
+  --ds-z-sticky: 2;
+  --ds-z-compose: 3;
+  --ds-z-topbar: 10;
+  --ds-z-modal-back: 20;
+  --ds-z-popover: 200;
+
+  /* —— Motion —— */
+  --ds-duration: 0.12s;
+  --ds-ease: ease;
+
+  /* —— Legacy (keep existing BEM/utility classnames working) —— */
+  --bg: var(--ds-color-page);
+  --bg-raised: var(--ds-color-raised);
+  --card: var(--ds-color-surface);
+  --line: var(--ds-color-line);
+  --text: var(--ds-color-fg);
+  --muted: var(--ds-color-muted);
+  --acc: var(--ds-color-primary);
+  --acc-dim: var(--ds-color-primary-dim);
+  --err: var(--ds-color-err);
+  --bubble-in: var(--ds-bubble-in);
+  --bubble-out: var(--ds-bubble-out);
+  --bubble-fg: var(--ds-color-fg-2);
+
+  font-family: var(--ds-font-sans);
+  line-height: var(--ds-line-body);
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+}
+
+/* —— Light theme (resolved: html[data-theme="light"] from ThemeProvider) —— */
+html[data-theme="light"] {
+  --ds-color-page: #e6eaf0;
+  --ds-color-raised: #f4f6f8;
+  --ds-color-surface: #ffffff;
+  --ds-color-sink: #ebedf0;
+  --ds-color-sink-2: #f0f2f5;
+  --ds-color-sink-deep: #f7f8fa;
+  --ds-color-line: #c5ced9;
+  --ds-color-line-soft: #b8c0cc;
+  --ds-color-elevated: #e2e6ec;
+  --ds-color-elevated-hover: #d8dde5;
+  --ds-color-elevated-active: #cfd5df;
+  --ds-color-fg: #1a1f28;
+  --ds-color-fg-2: #0f1319;
+  --ds-color-fg-tint: #0a0d12;
+  --ds-color-muted: #5a6570;
+  --ds-color-primary: #1a6fd0;
+  --ds-color-primary-mid: #dde8f7;
+  --ds-color-primary-dim: #0e5ab5;
+  --ds-color-on-primary: #ffffff;
+  --ds-color-err: #c53434;
+  --ds-color-err-2: #a82828;
+  --ds-bubble-in: #e1e4ea;
+  --ds-bubble-out: #b8d4f8;
+  --ds-bubble-glow: #3d8ad9;
+  --ds-bubble-out-grad-1: #3d8ad9;
+  --ds-color-canvas: #ebedf0;
+  --ds-color-canvas-list: #e8eaef;
+  --ds-color-canvas-main: #e6e8ed;
+  --ds-color-canvas-grad-1: #e8eaef;
+  --ds-color-canvas-grad-2: #e2e4ea;
+  --ds-color-input-embed: #ffffff;
+  --ds-color-blocked: #eceff3;
+  --ds-color-pill-fg: #0a1a2e;
+  --ds-color-topbar-mid: #d8e3f2;
+  --ds-color-mode-pill: #dde2e8;
+  --ds-color-border-search: #b8c4d4;
+  --ds-shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.06);
+  --ds-shadow-md: 0 0.4rem 1.2rem rgba(15, 25, 40, 0.12);
+  --ds-shadow-card: 0 0.4rem 2.5rem rgba(15, 25, 40, 0.1);
+  --ds-shadow-compose: 0 -6px 20px rgba(15, 25, 40, 0.08);
+  --ds-msg-pop-bg: linear-gradient(
+    165deg,
+    #ffffff 0%,
+    #e8ecf2 100%
+  );
+  --text: var(--ds-color-fg);
+  --muted: var(--ds-color-muted);
+  --bg: var(--ds-color-page);
+  --bg-raised: var(--ds-color-raised);
+  --card: var(--ds-color-surface);
+  --line: var(--ds-color-line);
+  --acc: var(--ds-color-primary);
+  --acc-dim: var(--ds-color-primary-dim);
+  --err: var(--ds-color-err);
+  --bubble-in: var(--ds-bubble-in);
+  --bubble-out: var(--ds-bubble-out);
+  --bubble-fg: var(--ds-color-fg-2);
+}
+
+/* Light: settings card & other rgba-heavy panels */
+html[data-theme="light"] .settings {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: linear-gradient(160deg, #fff 0%, #eef1f5 100%);
+  box-shadow: 0 0.4rem 2rem rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04) inset;
+}
+html[data-theme="light"] .app-topbar--mode-child {
+  border-bottom-color: rgba(180, 140, 0, 0.35);
+}
+html[data-theme="light"] .app-topbar--mode-parent {
+  border-bottom-color: rgba(0, 100, 200, 0.35);
+}
+html[data-theme="light"] .auth-screen {
+  background: radial-gradient(120% 80% at 50% -20%, #b8d0f0 0, transparent 55%),
+    var(--bg);
+}
+html[data-theme="light"] select.settings__select,
+html[data-theme="light"] .settings__select {
+  background: var(--ds-color-sink-2);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+html[data-theme="light"] .settings__field {
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+html[data-theme="light"] .msg-reaction-pop {
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.12);
+}
+html[data-theme="light"] .modal-back {
+  background: rgba(0, 0, 0, 0.25);
+}

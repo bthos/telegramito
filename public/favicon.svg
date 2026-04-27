@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Telegramito">
+  <defs>
+    <radialGradient id="tgito-bg" cx="32%" cy="28%" r="75%">
+      <stop offset="0" stop-color="#4fc8ff"/>
+      <stop offset="0.45" stop-color="#1fa2e6"/>
+      <stop offset="1" stop-color="#0a4f78"/>
+    </radialGradient>
+  </defs>
+  <rect
+    width="32"
+    height="32"
+    rx="8.5"
+    fill="url(#tgito-bg)"
+    stroke="rgba(0, 24, 48, 0.2)"
+    stroke-width="0.4"
+  />
+  <g transform="translate(5,5) scale(0.9167)">
+    <path fill="#f2f9ff" d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
+  </g>
+</svg>
