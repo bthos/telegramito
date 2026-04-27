@@ -1217,15 +1217,14 @@ button.switch:active .switch__thumb {
   line-height: 1.4;
   white-space: pre-wrap;
   word-break: break-word;
-  /* System + color emoji (Telegram-style glyphs where the OS provides them) */
-  font-family:
-    system-ui,
-    "Segoe UI",
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol",
-    "Noto Color Emoji",
-    sans-serif;
+  /* Defensive: some Android WebViews stretch lines (justify-like gaps) on full-width flex text. */
+  text-align: start;
+  text-align-last: start;
+  word-spacing: normal;
+  letter-spacing: normal;
+  /* Text-first stack only. Do not list color-emoji fonts here: on some Android builds they
+     affect digit shaping in URLs. Real emoji still use the system emoji fallback. */
+  font-family: var(--ds-font-sans);
 }
 .msg-text-richtext {
   /* Let emoji render with color fonts; keep body text on the same line box */
