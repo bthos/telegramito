@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { Api } from "telegram"
-import { defaultForumTopicId, formatTopicUnreadSuffix, isForumWithSubchats } from "./forum"
+import { defaultForumTopicId, formatTopicUnreadSuffix, isForumWithSubchats, sumTopicUnreadCounts } from "./forum"
 
 function forumChannel(
   o: { forum?: boolean; viewForumAsMessages?: boolean } = {}
@@ -46,6 +46,18 @@ describe("defaultForumTopicId", () => {
       id: 2,
     } as Api.ForumTopic
     expect(defaultForumTopicId([b, a])).toBe(1)
+  })
+})
+
+describe("sumTopicUnreadCounts", () => {
+  it("sums topic unreadCount", () => {
+    expect(
+      sumTopicUnreadCounts([
+        { className: "ForumTopic", id: 1, unreadCount: 10 } as Api.ForumTopic,
+        { className: "ForumTopic", id: 2, unreadCount: 5 } as Api.ForumTopic,
+        { className: "ForumTopic", id: 3 } as Api.ForumTopic,
+      ])
+    ).toBe(15)
   })
 })
 

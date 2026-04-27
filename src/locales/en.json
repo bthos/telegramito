@@ -83,7 +83,10 @@
     "forumTopicsLoading": "Loading topics…",
     "forumTopicsError": "Could not load subchats",
     "forumNoTopics": "No subchats in this group",
-    "replyingTo": "Re: message #{{id}}",
+    "forumTopicUnreadOnly": "Only topics with unread",
+    "forumTopicUnreadEmpty": "No topic has its own count here — list shows all loaded topics. Unread may still appear in the chat total.",
+    "forumUnreadExplain": "Left: {{chat}} (whole group). Per-topic sum: {{sum}}. Often not equal — many topics, @mentions, or the server is still updating.",
+    "reToMessage": "Re: message #{{id}}",
     "openLink": "Open link",
     "fileSaveHint": "Open in a new tab or use your browser to save the file",
     "spoilerTapToShow": "Spoiler — tap to show",
@@ -106,7 +109,7 @@
     "reactionOpenHint": "Click the message to add a reaction",
     "messageClickHint": "Click for reactions, reply, or forward",
     "messageActionsAria": "Message actions",
-    "replyToMessage": "Reply",
+    "reply": "Reply",
     "forwardMessage": "Forward",
     "replyingTo": "Replying to",
     "clearReplyDraft": "Cancel reply",
@@ -173,7 +176,8 @@
     "ariaDenied": "Request denied for this private chat"
   },
   "night": {
-    "blurred": "Chat list is hidden (night hours)."
+    "blurred": "Chat list is hidden (night hours).",
+    "windowRange": "Local time: {{start}} – {{end}}."
   },
   "filters": "Filters",
   "resetDefaults": "Reset to defaults"

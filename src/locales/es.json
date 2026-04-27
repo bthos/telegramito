@@ -83,7 +83,10 @@
     "forumTopicsLoading": "Cargando temas…",
     "forumTopicsError": "No se pudieron cargar los subchats",
     "forumNoTopics": "No hay subchats en este grupo",
-    "replyingTo": "Re: mensaje n.º {{id}}",
+    "forumTopicUnreadOnly": "Solo temas con no leídos",
+    "forumTopicUnreadEmpty": "Ningún tema muestra cifra aquí; se listan todos los temas cargados. El total de la izquierda puede seguir con no leídos.",
+    "forumUnreadExplain": "Izquierda: {{chat}} (todo el grupo). Suma entre paréntesis: {{sum}}. Suelen no coincidir: muchas temas, menciones o el servidor aún actualiza.",
+    "reToMessage": "Re: mensaje n.º {{id}}",
     "openLink": "Abrir enlace",
     "fileSaveHint": "Abrir en otra pestaña o guardar el archivo desde el navegador",
     "spoilerTapToShow": "Contenido oculto — toca para mostrar",
@@ -106,7 +109,7 @@
     "reactionOpenHint": "Clic en el mensaje para reaccionar",
     "messageClickHint": "Clic: reacciones, responder o reenviar",
     "messageActionsAria": "Acciones del mensaje",
-    "replyToMessage": "Responder",
+    "reply": "Responder",
     "forwardMessage": "Reenviar",
     "replyingTo": "Respondiendo a",
     "clearReplyDraft": "Cancelar respuesta",
@@ -173,7 +176,8 @@
     "ariaDenied": "Solicitud denegada para este chat privado"
   },
   "night": {
-    "blurred": "La lista de chats está oculta (horas nocturnas)."
+    "blurred": "La lista de chats está oculta (horas nocturnas).",
+    "windowRange": "Hora local: de {{start}} a {{end}}."
   },
   "filters": "Filtros",
   "resetDefaults": "Valores predeterminados"

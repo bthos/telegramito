@@ -33,7 +33,7 @@ export function MessageReplyView({
   const id = h.replyToMsgId
   return (
     <div className="msg-reply msg-reply--stub" role="note">
-      {t("chat.replyingTo", { id: id ?? 0 })}
+      {t("chat.reToMessage", { id: id ?? 0 })}
     </div>
   )
 }
