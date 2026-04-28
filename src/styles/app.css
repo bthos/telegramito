@@ -707,11 +707,6 @@ button.switch:active .switch__thumb {
   flex-shrink: 0;
   accent-color: var(--acc, #5aa0ff);
 }
-.forum-unread-hint {
-  margin: 0;
-  line-height: 1.35;
-  font-size: 0.8rem;
-}
 .forum-topic-bar select,
 .forum-topic-bar .input {
   min-width: 0;
@@ -1181,6 +1176,24 @@ button.switch:active .switch__thumb {
     var(--ds-color-canvas-grad-1) 0%,
     var(--ds-color-canvas-grad-2) 50%
   );
+  position: relative;
+}
+.message-scroll.message-scroll--has-date-float {
+  padding-top: 2.35rem;
+}
+.message-scroll__date-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  padding-top: 0.35rem;
+}
+.msg-date-pill--floating {
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
 }
 .msg-load-hint {
   list-style: none;
@@ -1418,6 +1431,18 @@ button.switch:active .switch__thumb {
   height: auto;
   object-fit: contain;
   border-radius: 0.3rem;
+}
+.msg-img-link {
+  display: block;
+  line-height: 0;
+  width: fit-content;
+  max-width: 100%;
+  cursor: zoom-in;
+  border-radius: 0.3rem;
+  outline: none;
+}
+.msg-img-link:focus-visible {
+  box-shadow: 0 0 0 2px var(--acc, #5aa0ff);
 }
 .msg-video {
   max-width: min(100%, 20rem);

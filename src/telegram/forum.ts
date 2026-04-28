@@ -3,6 +3,7 @@ import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import type { Entity } from "telegram/define"
 import { getInputChannel, getPeerId } from "telegram/Utils"
+import { compareMessagesChronological } from "./messageList"
 
 /** Forum supergroup: topics enabled and not the “as single chat” layout. */
 export function isForumWithSubchats(
@@ -145,7 +146,7 @@ export async function getForumThreadMessages(
     }
     out.push(msg)
   }
-  return out.sort((a, b) => a.date - b.date)
+  return out.sort(compareMessagesChronological)
 }
 
 /**

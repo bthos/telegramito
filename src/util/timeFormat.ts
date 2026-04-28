@@ -7,6 +7,24 @@ export function formatMessageTime(ts: number, locale: string): string {
   })
 }
 
+/** Last date separator at or above `rowIndex` (for sticky header while scrolling). */
+export function getStickyDateTsForRow(
+  datedList: readonly { kind: string; ts?: number }[],
+  rowIndex: number,
+): number | null {
+  if (datedList.length === 0 || rowIndex < 0) {
+    return null
+  }
+  const idx = Math.min(rowIndex, datedList.length - 1)
+  for (let i = idx; i >= 0; i--) {
+    const it = datedList[i]
+    if (it.kind === "sep" && typeof it.ts === "number") {
+      return it.ts
+    }
+  }
+  return null
+}
+
 /** Local calendar day key for grouping: `YYYY-MM-DD`. */
 export function getLocalDayKey(unixSec: number): string {
   const d = new Date(unixSec * 1000)
