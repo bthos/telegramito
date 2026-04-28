@@ -1,6 +1,6 @@
 import { Api } from "telegram"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { useLayoutEffect, type ReactNode, type RefObject } from "react"
+import { useEffect, useLayoutEffect, type ReactNode, type RefObject } from "react"
 
 export type ChatDatedItem =
   | { kind: "sep"; dayKey: string; ts: number }
@@ -11,7 +11,8 @@ type Props = {
   datedList: readonly ChatDatedItem[]
   loadingOlder: boolean
   loadingLabel: string
-  renderRow: (item: ChatDatedItem) => ReactNode
+  renderRow: (item: ChatDatedItem, index: number) => ReactNode
+  onFirstVisibleRowIndexChange?: (index: number) => void
 }
 
 /**
@@ -23,6 +24,7 @@ export function ChatMessagesVirtualList({
   loadingOlder,
   loadingLabel,
   renderRow,
+  onFirstVisibleRowIndexChange,
 }: Props) {
   const rowVirtualizer = useVirtualizer({
     count: datedList.length,
@@ -34,6 +36,40 @@ export function ChatMessagesVirtualList({
   useLayoutEffect(() => {
     rowVirtualizer.measure()
   }, [datedList, rowVirtualizer])
+
+  useLayoutEffect(() => {
+    if (!onFirstVisibleRowIndexChange) {
+      return
+    }
+    const vis = rowVirtualizer.getVirtualItems()
+    if (vis.length === 0) {
+      return
+    }
+    onFirstVisibleRowIndexChange(vis[0].index)
+  }, [datedList, loadingOlder, rowVirtualizer, onFirstVisibleRowIndexChange])
+
+  useEffect(() => {
+    if (!onFirstVisibleRowIndexChange) {
+      return
+    }
+    const el = scrollRef.current
+    const run = () => {
+      const vis = rowVirtualizer.getVirtualItems()
+      if (vis.length === 0) {
+        return
+      }
+      onFirstVisibleRowIndexChange(vis[0].index)
+    }
+    run()
+    if (el) {
+      el.addEventListener("scroll", run, { passive: true })
+    }
+    return () => {
+      if (el) {
+        el.removeEventListener("scroll", run)
+      }
+    }
+  }, [scrollRef, rowVirtualizer, datedList, onFirstVisibleRowIndexChange])
 
   return (
     <>
@@ -67,7 +103,7 @@ export function ChatMessagesVirtualList({
               }}
               role={item.kind === "sep" ? "presentation" : "listitem"}
             >
-              {renderRow(item)}
+              {renderRow(item, vi.index)}
             </div>
           )
         })}

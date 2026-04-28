@@ -26,14 +26,13 @@ import {
   toMessageList,
   uniqueMessagesSort,
 } from "../telegram/messageList"
-import { formatMessageDateSeparator, formatMessageTime, getLocalDayKey } from "../util/timeFormat"
+import { formatMessageDateSeparator, formatMessageTime, getLocalDayKey, getStickyDateTsForRow } from "../util/timeFormat"
 import {
   formatTopicUnreadSuffix,
   forumTopicLabel,
   getForumThreadMessages,
   isForumWithSubchats,
   sendInForumThread,
-  sumTopicUnreadCounts,
 } from "../telegram/forum"
 import { collectCustomEmojiDocumentIdsFromMessages } from "../telegram/customEmojiFromMessages"
 import { prefetchCustomEmojiDocuments } from "../telegram/customEmojiCache"
@@ -78,6 +77,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   const lastTickSyncedRef = useRef<number | null>(null)
   const olderLoadThrottleRef = useRef(0)
   const [reactionTarget, setReactionTarget] = useState<{ id: number; x: number; y: number } | null>(null)
+  const [stickyRowIndex, setStickyRowIndex] = useState(0)
   const [replyingTo, setReplyingTo] = useState<Api.Message | null>(null)
   const [messageActionError, setMessageActionError] = useState<string | null>(null)
 
@@ -128,10 +128,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     }
     return topics
   }, [forumUnreadOnly, topics, topicsWithUnread])
-  const sumTopicUnreads = useMemo(() => sumTopicUnreadCounts(topics), [topics])
   const showUnreadFilterFallback = forumUnreadOnly && topicsWithUnread.length === 0
-  const chatListUnread = dialog.unreadCount ?? 0
-  const formatUnreadForHint = (n: number) => (n > 99 ? "99+" : String(n))
 
   const listRef = useRef(list)
   listRef.current = list
@@ -384,6 +381,48 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     return out
   }, [list])
 
+  const stickyDateTs = useMemo(
+    () => getStickyDateTsForRow(datedList, stickyRowIndex),
+    [datedList, stickyRowIndex]
+  )
+  const stickyDateLabel =
+    stickyDateTs != null ? formatMessageDateSeparator(stickyDateTs, i18n.language) : null
+
+  const syncStickyChatDateShortList = useCallback(() => {
+    const el = scrollRef.current
+    if (!el || datedList.length === 0) {
+      return
+    }
+    if (datedList.length > VIRTUAL_MSG_THRESHOLD) {
+      return
+    }
+    const nodes = el.querySelectorAll<HTMLElement>("[data-chat-row-index]")
+    if (nodes.length === 0) {
+      setStickyRowIndex(0)
+      return
+    }
+    const rootTop = el.getBoundingClientRect().top
+    for (const node of nodes) {
+      const r = node.getBoundingClientRect()
+      if (r.bottom > rootTop + 2) {
+        const idx = Number(node.dataset.chatRowIndex)
+        setStickyRowIndex(Number.isFinite(idx) ? idx : 0)
+        return
+      }
+    }
+    const last = nodes[nodes.length - 1]
+    const idx = Number(last.dataset.chatRowIndex)
+    setStickyRowIndex(Number.isFinite(idx) ? idx : 0)
+  }, [datedList])
+
+  const onVirtualStickyRow = useCallback((idx: number) => {
+    setStickyRowIndex(idx)
+  }, [])
+
+  useEffect(() => {
+    setStickyRowIndex(0)
+  }, [convKey])
+
   useEffect(() => {
     if (!client || list.length === 0) {
       return
@@ -410,12 +449,14 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       const h = el.scrollHeight
       el.scrollTop = p.prevTop + (h - p.prevHeight)
       pendingScrollFixRef.current = null
+      syncStickyChatDateShortList()
       return
     }
     if (stickToEndRef.current) {
       el.scrollTop = el.scrollHeight
     }
-  }, [list])
+    syncStickyChatDateShortList()
+  }, [list, syncStickyChatDateShortList])
 
   const onScroll = useCallback(() => {
     const el = scrollRef.current
@@ -425,6 +466,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     const { scrollTop, scrollHeight, clientHeight } = el
     const nearEnd = scrollHeight - scrollTop - clientHeight < 48
     stickToEndRef.current = nearEnd
+    syncStickyChatDateShortList()
     if (scrollTop > 200 || !hasMoreOlder || loadingOlder) {
       return
     }
@@ -434,7 +476,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     }
     olderLoadThrottleRef.current = now
     void loadOlder()
-  }, [hasMoreOlder, loadingOlder, loadOlder])
+  }, [hasMoreOlder, loadingOlder, loadOlder, syncStickyChatDateShortList])
 
   const onSend = async () => {
     if (!client || !dialog.entity || !draft.trim()) {
@@ -554,7 +596,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   )
 
   const renderDatedItem = useCallback(
-    (item: ChatListItem, layout: "list" | "virtual"): ReactNode => {
+    (item: ChatListItem, layout: "list" | "virtual", rowIndex: number): ReactNode => {
       const asVirtual = layout === "virtual"
       if (item.kind === "sep") {
         const timeEl = (
@@ -574,7 +616,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           return <div className="msg-date" role="presentation">{timeEl}</div>
         }
         return (
-          <li className="msg-date" role="presentation">
+          <li className="msg-date" role="presentation" data-chat-row-index={rowIndex}>
             {timeEl}
           </li>
         )
@@ -635,6 +677,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       return (
         <li
           className={isOut ? "msg-gutter msg-gutter--out" : "msg-gutter msg-gutter--in"}
+          data-chat-row-index={rowIndex}
         >
           {bubble}
         </li>
@@ -722,12 +765,6 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
                   {t("chat.forumTopicUnreadEmpty")}
                 </p>
               ) : null}
-              <p className="small muted forum-unread-hint" role="note">
-                {t("chat.forumUnreadExplain", {
-                  chat: formatUnreadForHint(chatListUnread),
-                  sum: formatUnreadForHint(sumTopicUnreads),
-                })}
-              </p>
             </>
           ) : null}
           {!topicsLoading && topicsErr == null && topics.length === 0 ? (
@@ -737,14 +774,33 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           ) : null}
         </div>
       )}
-      <div className="message-scroll" ref={scrollRef} onScroll={onScroll}>
+      <div
+        className={
+          datedList.length > 0
+            ? "message-scroll message-scroll--has-date-float"
+            : "message-scroll"
+        }
+        ref={scrollRef}
+        onScroll={onScroll}
+      >
+        {datedList.length > 0 && stickyDateLabel ? (
+          <div className="message-scroll__date-overlay" aria-live="polite">
+            <time
+              className="msg-date-pill msg-date-pill--floating"
+              dateTime={stickyDateTs != null ? getLocalDayKey(stickyDateTs) : undefined}
+            >
+              {stickyDateLabel}
+            </time>
+          </div>
+        ) : null}
         {datedList.length > VIRTUAL_MSG_THRESHOLD ? (
           <ChatMessagesVirtualList
             scrollRef={scrollRef}
             datedList={datedList}
             loadingOlder={loadingOlder}
             loadingLabel={t("loading")}
-            renderRow={(item) => renderDatedItem(item, "virtual")}
+            onFirstVisibleRowIndexChange={onVirtualStickyRow}
+            renderRow={(item, index) => renderDatedItem(item, "virtual", index)}
           />
         ) : (
           <ul className="msg-list">
@@ -753,11 +809,11 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
                 {t("loading")}
               </li>
             ) : null}
-            {datedList.map((item) => {
+            {datedList.map((item, index) => {
               const k = item.kind === "sep" ? `date-${item.dayKey}` : `msg-${item.message.id}`
               return (
                 <Fragment key={k}>
-                  {renderDatedItem(item, "list")}
+                  {renderDatedItem(item, "list", index)}
                 </Fragment>
               )
             })}

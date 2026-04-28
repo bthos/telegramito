@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import {
   formatDocumentSize,
   getDocumentFileName,
+  getMessageDocument,
   safeFileDownloadName,
 } from "../telegram/documentFile"
 import {
@@ -37,7 +38,7 @@ function useBlob(
   const [s, setS] = useState<MediaBlobState>({ k: "d" })
   const uref = useRef<string | null>(null)
   const media = m.media
-  const d = m.document && m.document.className === "Document" ? (m.document as Api.Document) : null
+  const d = getMessageDocument(m)
 
   useEffect(() => {
     if (uref.current) {
@@ -269,7 +270,20 @@ export function MessageMediaView({
     }
   }
   if (s.k === "i") {
-    return <div className="msg-media msg-media--photo"><img className="msg-img" src={s.u} alt="" /></div>
+    return (
+      <div className="msg-media msg-media--photo">
+        <a
+          className="msg-img-link"
+          href={s.u}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={te("chat.fileSaveHint")}
+          aria-label={te("chat.openPhoto")}
+        >
+          <img className="msg-img" src={s.u} alt="" />
+        </a>
+      </div>
+    )
   }
   if (s.k === "v") {
     return (

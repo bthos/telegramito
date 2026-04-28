@@ -15,14 +15,53 @@ export function minMessageId(msgs: Api.Message[]): number | undefined {
   return Math.min(...ids)
 }
 
-/** Deduplicate by `id` and order by `date` ascending. */
+/**
+ * Stable chronological order: same Unix second (`date`) ties break by message id
+ * ascending (matches Telegram client ordering for bursts sent in one second).
+ */
+export function compareMessagesChronological(a: Api.Message, b: Api.Message): number {
+  const d = a.date - b.date
+  if (d !== 0) {
+    return d
+  }
+  return compareMessageIds(a.id, b.id)
+}
+
+function compareMessageIds(
+  a: Api.Message["id"],
+  b: Api.Message["id"],
+): number {
+  if (a === b) {
+    return 0
+  }
+  if (a == null) {
+    return -1
+  }
+  if (b == null) {
+    return 1
+  }
+  if (typeof a === "bigint" || typeof b === "bigint") {
+    const ba = BigInt(a as bigint | number)
+    const bb = BigInt(b as bigint | number)
+    if (ba < bb) {
+      return -1
+    }
+    if (ba > bb) {
+      return 1
+    }
+    return 0
+  }
+  return Number(a) - Number(b)
+}
+
+/** Deduplicate by `id` and order by `date` ascending, then `id` ascending. */
 export function uniqueMessagesSort(msgs: Api.Message[]): Api.Message[] {
   const m = new Map<number, Api.Message>()
   for (const x of msgs) {
     if (x == null || x.id == null) continue
     m.set(x.id, x)
   }
-  return [...m.values()].sort((a, b) => a.date - b.date)
+  return [...m.values()].sort(compareMessagesChronological)
 }
 
 export function toMessageList(r: unknown): Api.Message[] {
