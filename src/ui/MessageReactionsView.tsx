@@ -3,7 +3,11 @@ import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { useCallback, useEffect, useState, type MouseEvent } from "react"
 import { useTranslation } from "react-i18next"
-import { getCustomEmojiObjectUrl } from "../telegram/customEmojiCache"
+import {
+  getAvailableReactionsForClient,
+  pickReactionDisplayDocument,
+} from "../telegram/availableReactionsCache"
+import { getCustomEmojiObjectUrl, getReactionStaticIconObjectUrl } from "../telegram/customEmojiCache"
 import { MessageReactionRepliersPop } from "./MessageReactionRepliersPop"
 import { reactionKey, reactionsEqual, myReactionsList } from "./reactionRepliersUi"
 
@@ -30,12 +34,53 @@ function CustomReactionEmoji({ documentId, client }: { documentId: BigInteger; c
   return <span className="msg-reaction-emoji--ph" aria-hidden />
 }
 
+/**
+ * Standard reactions use Unicode in TL (`ReactionEmoji.emoticon`) — render Telegram set artwork instead.
+ */
+function ReactionEmojiFromTelegramSet({
+  client,
+  entry,
+}: {
+  client: TelegramClient
+  entry: Api.AvailableReaction | undefined
+}) {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    let a = true
+    if (!entry || entry.className !== "AvailableReaction") {
+      setUrl(null)
+      return () => {
+        a = false
+      }
+    }
+    const doc = pickReactionDisplayDocument(entry)
+    void getReactionStaticIconObjectUrl(client, doc).then((u) => {
+      if (a) {
+        setUrl(u)
+      }
+    })
+    return () => {
+      a = false
+    }
+  }, [client, entry])
+  if (url) {
+    return <img className="msg-reaction-emoji--custom" src={url} alt="" width={18} height={18} decoding="async" />
+  }
+  return <span className="msg-reaction-emoji--ph" aria-hidden />
+}
+
 function reactionButtonLabel(
   re: Api.TypeReaction,
-  t: (k: string) => string
+  t: (k: string) => string,
+  availableByEmoji: Map<string, Api.AvailableReaction> | null,
 ): string {
   if (re.className === "ReactionEmoji") {
-    return (re as Api.ReactionEmoji).emoticon
+    const em = (re as Api.ReactionEmoji).emoticon
+    const ent = availableByEmoji?.get(em)
+    if (ent?.className === "AvailableReaction" && typeof ent.title === "string" && ent.title.trim()) {
+      return ent.title.trim()
+    }
+    return em
   }
   if (re.className === "ReactionCustomEmoji") {
     return t("chat.reactionRepliersCustom")
@@ -54,10 +99,41 @@ export function MessageReactionsView({
   client: TelegramClient | null
   entity: unknown | null
   messageId: number
-  onUpdate?: () => void
+  onUpdate?: (reactionsFromUpdate: Api.TypeMessageReactions | null) => void
 }) {
   const { t } = useTranslation()
   const interactive = Boolean(client && entity != null && onUpdate != null)
+  const [availableByReaction, setAvailableByReaction] = useState<Map<string, Api.AvailableReaction> | null>(null)
+
+  useEffect(() => {
+    if (!client) {
+      setAvailableByReaction(null)
+      return
+    }
+    let a = true
+    void getAvailableReactionsForClient(client)
+      .then((list) => {
+        if (!a) {
+          return
+        }
+        const m = new Map<string, Api.AvailableReaction>()
+        for (const x of list) {
+          if (x.className === "AvailableReaction" && typeof x.reaction === "string" && x.reaction.length > 0) {
+            m.set(x.reaction, x)
+          }
+        }
+        setAvailableByReaction(m)
+      })
+      .catch(() => {
+        if (a) {
+          setAvailableByReaction(new Map())
+        }
+      })
+    return () => {
+      a = false
+    }
+  }, [client])
+
   const [repliers, setRepliers] = useState<{
     ax: number
     ay: number
@@ -86,10 +162,10 @@ export function MessageReactionsView({
         ax: r.left + r.width / 2,
         ay: r.top,
         re,
-        label: reactionButtonLabel(re, t),
+        label: reactionButtonLabel(re, t, availableByReaction),
       })
     },
-    [interactive, t]
+    [interactive, t, availableByReaction],
   )
 
   if (!reactions && !interactive) {
@@ -120,11 +196,13 @@ export function MessageReactionsView({
         const mine = myReactions.some((m) => reactionsEqual(m, re))
         if (re.className === "ReactionEmoji") {
           const e = re as Api.ReactionEmoji
-          const el = (
-            <span className="msg-reaction-emoji" aria-hidden>
-              {e.emoticon}
-            </span>
-          )
+          const entry = availableByReaction?.get(e.emoticon)
+          const el =
+            client ? (
+              <ReactionEmojiFromTelegramSet client={client} entry={entry} />
+            ) : (
+              <span className="msg-reaction-emoji--ph" aria-hidden />
+            )
           if (interactive) {
             return (
               <button
@@ -195,9 +273,9 @@ export function MessageReactionsView({
         onClose={() => {
           setRepliers(null)
         }}
-        onUpdated={() => {
+        onUpdated={(fromUpdate) => {
           setRepliers(null)
-          onUpdate()
+          onUpdate?.(fromUpdate)
         }}
       />
       ) : null}

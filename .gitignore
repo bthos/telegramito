@@ -18,6 +18,7 @@ public/pwa*
 *.local
 
 # Editor directories and files
+.artefacts/*
 .claude/*
 .cursor/*
 .github/*

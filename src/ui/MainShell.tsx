@@ -21,7 +21,7 @@ import { requestChatAccessForDialog } from "../parental/requestAccess"
 import { isNightListHidden, isPrivateOmittedInChildListForDeny } from "../parental/policy"
 import type { AppMode } from "../parental/types"
 import type { ThemePreference } from "../theme/storage"
-import { ChatView } from "./ChatView"
+import { ChatView, THREAD_HEADER_ACTIONS_ID } from "./ChatView"
 import { ChatsListPanel } from "./ChatsListPanel"
 import { SettingsView } from "./SettingsView"
 import { PinDialog } from "./PinDialog"
@@ -73,7 +73,8 @@ export function MainShell() {
   const [deniedPeerIds, setDeniedPeerIds] = useState<ReadonlySet<string>>(
     () => new Set()
   )
-  const narrow = useNarrowView(720)
+  /** Same breakpoint intent as `PAGE_WIDTH_SMALL` (960) in telegram-react for “small page”. */
+  const narrow = useNarrowView(960)
 
   useEffect(() => {
     if (!client) return
@@ -330,6 +331,7 @@ export function MainShell() {
                     <BackIcon />
                   </Button>
                   <h2 className="thread-header__h">{getPeerInfo(selected).name}</h2>
+                  <div className="thread-header__actions" id={THREAD_HEADER_ACTIONS_ID} />
                 </div>
                 <div className="chats-narrow__thread">
                   <ChatView

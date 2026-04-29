@@ -1,5 +1,7 @@
 import { Api } from "telegram"
 import type { Dialog } from "telegram/tl/custom/dialog"
+import { getMessageMediaPollFromMessage } from "./messagePollMedia"
+import { resolveMessageMediaForDisplay } from "./messageMediaUnwrap"
 
 type Tr = (key: string, options?: Record<string, string | number | undefined>) => string
 
@@ -62,7 +64,17 @@ export function getMessageMediaTypeLabel(m: Api.Message, t: Tr): string {
   if (m.document && isDoc(m.document) && !m.media) {
     return getDocumentTypeLabel(m.document, t)
   }
+  if (getMessageMediaPollFromMessage(m)) {
+    return t("chat.previewPoll")
+  }
   const med = m.media
+  if (med?.className === "MessageMediaPaidMedia") {
+    const r = resolveMessageMediaForDisplay(m)
+    if (r.media !== med) {
+      return getMessageMediaTypeLabel(r, t)
+    }
+    return t("chat.previewPaidMedia")
+  }
   if (!med || med.className === "MessageMediaEmpty") {
     if (m.document && isDoc(m.document)) {
       return getDocumentTypeLabel(m.document, t)
@@ -90,9 +102,6 @@ export function getMessageMediaTypeLabel(m: Api.Message, t: Tr): string {
   if (cn === "MessageMediaGeo" || cn === "MessageMediaVenue") {
     return t("chat.previewLocation")
   }
-  if (cn === "MessageMediaPoll") {
-    return t("chat.previewPoll")
-  }
   if (cn === "MessageMediaContact") {
     return t("chat.previewContact")
   }
@@ -113,9 +122,6 @@ export function getMessageMediaTypeLabel(m: Api.Message, t: Tr): string {
   }
   if (cn === "MessageMediaGiveaway" || cn === "MessageMediaGiveawayResults") {
     return t("chat.previewGiveaway")
-  }
-  if (cn === "MessageMediaPaidMedia") {
-    return t("chat.previewPaidMedia")
   }
   if (cn === "MessageMediaUnsupported") {
     return t("chat.previewUnsupported")

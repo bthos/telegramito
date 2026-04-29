@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import {
   availableEntryToTypeReaction,
   getAvailableReactionsForClient,
+  pickReactionDisplayDocument,
 } from "../telegram/availableReactionsCache"
 import { getReactionStaticIconObjectUrl } from "../telegram/customEmojiCache"
 import { setMessageReactions } from "../telegram/reactionsAndPolls"
@@ -39,17 +40,6 @@ function myReactionsList(recent: readonly Api.TypeMessagePeerReaction[] | undefi
       (r) =>
         r.className === "ReactionEmoji" || r.className === "ReactionCustomEmoji"
     ) as Api.TypeReaction[]
-}
-
-/** Prefer `centerIcon` in the grid — it matches Telegram’s “hero” 3D-style asset. */
-function pickReactionDisplayDocument(
-  item: Api.AvailableReaction
-): Api.TypeDocument | undefined {
-  const c = item.centerIcon
-  if (c && c.className === "Document" && (c as Api.Document).id != null) {
-    return c
-  }
-  return item.staticIcon
 }
 
 function ReactionItem({
@@ -104,11 +94,7 @@ function ReactionItem({
     >
       {ico
         ? <img className="msg-reaction-pick-ico" src={ico} alt={item.title} width={32} height={32} decoding="async" />
-        : (
-            <span className="msg-reaction-pick-ico" aria-hidden>
-              {item.reaction || "·"}
-            </span>
-          )}
+        : <span className="msg-reaction-pick-ico msg-reaction-pick-ico--ph" aria-hidden />}
     </button>
   )
 }
@@ -133,7 +119,8 @@ export function MessageReactionPicker({
   client: TelegramClient
   entity: unknown
   onClose: () => void
-  onUpdated: () => void
+  /** When non-null, prefer this `MessageReactions` from `UpdateMessageReactions` over refetch. */
+  onUpdated: (reactionsFromUpdate: Api.TypeMessageReactions | null) => void
   message: Api.Message
   t: TChat
   onReply?: () => void
@@ -243,8 +230,8 @@ export function MessageReactionPicker({
       }
       setBusy(true)
       try {
-        await setMessageReactions(client, entity, msgId, next)
-        onUpdated()
+        const fromUpdate = await setMessageReactions(client, entity, msgId, next)
+        onUpdated(fromUpdate)
         onClose()
       } catch {
         /* */

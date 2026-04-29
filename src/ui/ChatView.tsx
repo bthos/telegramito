@@ -3,6 +3,7 @@ import {
   Fragment,
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -10,6 +11,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react"
+import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import { useTelegram } from "../context/TelegramContext"
@@ -18,34 +20,47 @@ import type { ParentalSettings } from "../parental/types"
 import { getReplyToPreviewText } from "../telegram/dialogPreview"
 import { getPeerInfo, isUserContactForPolicy, isPrivateUserDialog } from "../telegram/dialogUtils"
 import { useForumTopics } from "../hooks/useForumTopics"
+import { useChatMessages } from "../hooks/useChatMessages"
+import { useReadReceipt } from "../hooks/useReadReceipt"
+import { useChatScroll } from "../hooks/useChatScroll"
 import { requestChatAccessForDialog } from "../parental/requestAccess"
-import {
-  CHAT_PAGE_SIZE,
-  mergeHeadWithTail,
-  minMessageId,
-  toMessageList,
-  uniqueMessagesSort,
-} from "../telegram/messageList"
 import { formatMessageDateSeparator, formatMessageTime, getLocalDayKey, getStickyDateTsForRow } from "../util/timeFormat"
+import {
+  findSepRowIndexForDayKey,
+  getLoadedDayKeyBounds,
+  getLoadedDayKeys,
+} from "../util/chatHistoryJump"
 import {
   formatTopicUnreadSuffix,
   forumTopicLabel,
-  getForumThreadMessages,
   isForumWithSubchats,
   sendInForumThread,
 } from "../telegram/forum"
 import { collectCustomEmojiDocumentIdsFromMessages } from "../telegram/customEmojiFromMessages"
 import { prefetchCustomEmojiDocuments } from "../telegram/customEmojiCache"
 import { appLog } from "../util/appLogger"
+import {
+  computeMessageClusterRoles,
+  type MessageClusterRole,
+} from "../telegram/messageBubbleGroup"
+import { isInboundUnreadForThread, readInboxMaxIdForThread } from "../telegram/messageUnread"
+import { readMaxIdForMarkRead } from "../telegram/markChatRead"
 import { forwardMessageInCurrentChat } from "../telegram/forwardInChat"
-import { withTransientRetry } from "../telegram/invokeWithTransientRetry"
+import { ForumTopicIcon, UnreadFilterIcon } from "./ChatFilterIcons"
+import { ScrollToBottomFab } from "./ScrollToBottomFab"
+import { JumpDateCalendarPop } from "./JumpDateCalendarPop"
 import { Button } from "./ds"
 import { MessageTextContent } from "./MessageTextContent"
 import { MessageMediaView } from "./MessageMediaView"
 import { MessageReactionPicker } from "./MessageReactionPicker"
 import { MessageReactionsView } from "./MessageReactionsView"
 import { MessageReplyView } from "./MessageReplyView"
-import { ChatMessagesVirtualList, type ChatDatedItem } from "./ChatMessagesVirtualList"
+import {
+  ChatMessagesVirtualList,
+  type ChatDatedItem,
+  type ChatMessagesVirtualListHandle,
+} from "./ChatMessagesVirtualList"
+import { MessageListSkeleton } from "./MessageListSkeleton"
 
 type Props = {
   dialog: Dialog
@@ -58,26 +73,56 @@ type ChatListItem = ChatDatedItem
 
 const VIRTUAL_MSG_THRESHOLD = 48
 
+/** DOM mount for narrow layout unread toggle (see `MainShell` mobile header). */
+export const THREAD_HEADER_ACTIONS_ID = "thread-header-actions"
+
+function UnreadOnlyMessagesToggle({
+  active,
+  onToggle,
+}: {
+  active: boolean
+  onToggle: () => void
+}) {
+  const { t } = useTranslation()
+  const uid = useId()
+  const labelId = `${uid}-unread-only-lbl`
+  return (
+    <div className="thread-header__unread">
+      <span id={labelId} className="thread-header__unread-label">
+        <UnreadFilterIcon />
+        <span>{t("chat.messagesUnreadOnly")}</span>
+      </span>
+      <button
+        type="button"
+        className="switch"
+        role="switch"
+        aria-checked={active}
+        aria-labelledby={labelId}
+        onKeyDown={(e) => {
+          if (e.key === " " || e.key === "Enter") {
+            e.preventDefault()
+            onToggle()
+          }
+        }}
+        onClick={onToggle}
+      >
+        <span className="switch__track" aria-hidden>
+          <span className="switch__thumb" />
+        </span>
+      </button>
+    </div>
+  )
+}
+
 export function ChatView({ dialog, settings, showTitle = true }: Props) {
   const { t, i18n } = useTranslation()
-  const { client, lastMessageTick } = useTelegram()
-  const [list, setList] = useState<Api.Message[]>([])
-  const [hasMoreOlder, setHasMoreOlder] = useState(true)
-  const [loadingOlder, setLoadingOlder] = useState(false)
+  const { client, lastMessageTick, refreshDialogs } = useTelegram()
   const [draft, setDraft] = useState("")
   const scrollRef = useRef<HTMLDivElement | null>(null)
-  const stickToEndRef = useRef(true)
-  const pendingScrollFixRef = useRef<{
-    type: "prepend"
-    prevTop: number
-    prevHeight: number
-  } | null>(null)
-  const loadGenRef = useRef(0)
-  const loadedConvKeyRef = useRef<string | null>(null)
-  const lastTickSyncedRef = useRef<number | null>(null)
-  const olderLoadThrottleRef = useRef(0)
+  const virtualListRef = useRef<ChatMessagesVirtualListHandle | null>(null)
+  const jumpDateButtonRef = useRef<HTMLButtonElement | null>(null)
+  const [jumpCalOpen, setJumpCalOpen] = useState(false)
   const [reactionTarget, setReactionTarget] = useState<{ id: number; x: number; y: number } | null>(null)
-  const [stickyRowIndex, setStickyRowIndex] = useState(0)
   const [replyingTo, setReplyingTo] = useState<Api.Message | null>(null)
   const [messageActionError, setMessageActionError] = useState<string | null>(null)
 
@@ -102,272 +147,137 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   const noPreview = shouldHideLinkPreviews(settings)
   const filterGifs = shouldFilterGifs(settings)
 
-  const { topics, topicId, setTopicId, topicsErr, topicsLoading } = useForumTopics(
-    client,
-    dialog.entity,
-    isForum,
-    lastMessageTick
-  )
-  const [forumUnreadOnly, setForumUnreadOnly] = useState(false)
+  const { topics, topicId, setTopicId, topicsErr, topicsLoading, refreshForumTopics } =
+    useForumTopics(client, dialog.entity, isForum, lastMessageTick)
+
+  const currentForumTopic = useMemo((): Api.ForumTopic | undefined => {
+    if (!isForum || topicId == null) {
+      return undefined
+    }
+    const tp = topics.find((x) => x.className === "ForumTopic" && x.id === topicId)
+    return tp as Api.ForumTopic | undefined
+  }, [isForum, topicId, topics])
+
+  const [messagesUnreadOnly, setMessagesUnreadOnly] = useState(false)
 
   const convKey = useMemo(
     () => `${key}|${isForum ? String(topicId ?? "null") : "direct"}`,
     [key, isForum, topicId]
   )
 
-  const topicsWithUnread = useMemo(
-    () => topics.filter((x) => (x.unreadCount ?? 0) > 0),
-    [topics]
+  // listForViewLength for the unread-seek effect inside useChatMessages.
+  // We track it via a ref that is updated each render so the async effect sees a current value.
+  const listForViewLengthRef = useRef(0)
+
+  const {
+    list,
+    hasMoreOlder,
+    loadingOlder,
+    refreshHead,
+    refreshMessagesById,
+    loadOlder,
+    patchMessageReactions,
+  } = useChatMessages({
+    client,
+    dialog,
+    convKey,
+    isForum,
+    topicId,
+    blocked,
+    appMode: settings.appMode,
+    messagesUnreadOnly,
+    listForViewLengthRef,
+    lastMessageTick,
+  })
+
+  const isInitialLoad = list.length === 0
+
+  const listForView = useMemo(() => {
+    if (!messagesUnreadOnly) {
+      return list
+    }
+    const readMax = readInboxMaxIdForThread(dialog, isForum, topicId, topics)
+    return list.filter((m) => isInboundUnreadForThread(m, readMax))
+  }, [dialog, isForum, list, messagesUnreadOnly, topicId, topics])
+
+  // Keep the ref in sync each render so useChatMessages sees the latest value on next effect run.
+  listForViewLengthRef.current = listForView.length
+
+  const showUnreadMessagesEmpty =
+    messagesUnreadOnly &&
+    list.length > 0 &&
+    listForView.length === 0 &&
+    !loadingOlder
+
+  const showUnreadToggle =
+    !blocked &&
+    ((isForum &&
+      !topicsLoading &&
+      topicsErr == null &&
+      topics.length > 0 &&
+      topicId != null) ||
+      (!isForum && (list.length > 0 || messagesUnreadOnly)))
+
+  const toggleUnreadOnly = useCallback(() => {
+    setMessagesUnreadOnly((v) => !v)
+  }, [])
+
+  const [headerActionsHost, setHeaderActionsHost] = useState<HTMLElement | null>(null)
+  useLayoutEffect(() => {
+    setHeaderActionsHost(document.getElementById(THREAD_HEADER_ACTIONS_ID))
+  }, [])
+
+  const clusterRoleByMessageId = useMemo(() => {
+    const roles = computeMessageClusterRoles(listForView)
+    const map = new Map<number, MessageClusterRole>()
+    for (let i = 0; i < listForView.length; i++) {
+      const id = listForView[i].id
+      if (id != null) {
+        map.set(Number(id), roles[i])
+      }
+    }
+    return map
+  }, [listForView])
+
+  const maxMsgIdVisible = useMemo(
+    () => readMaxIdForMarkRead(list, { isForum, topic: currentForumTopic }),
+    [list, isForum, currentForumTopic]
   )
-  const topicsForSelect = useMemo(() => {
-    if (!forumUnreadOnly) {
-      return topics
-    }
-    if (topicsWithUnread.length > 0) {
-      return topicsWithUnread
-    }
-    return topics
-  }, [forumUnreadOnly, topics, topicsWithUnread])
-  const showUnreadFilterFallback = forumUnreadOnly && topicsWithUnread.length === 0
 
-  const listRef = useRef(list)
-  listRef.current = list
-
-  const lastMessageTickRef = useRef(lastMessageTick)
-  useEffect(() => {
-    lastMessageTickRef.current = lastMessageTick
-  }, [lastMessageTick])
+  useReadReceipt({
+    client,
+    entity: dialog.entity,
+    convKey,
+    maxMsgIdVisible,
+    isForum,
+    topicId,
+    blocked,
+    appMode: settings.appMode,
+    refreshDialogs,
+    refreshForumTopics,
+  })
 
   useEffect(() => {
-    setForumUnreadOnly(false)
+    setMessagesUnreadOnly(false)
   }, [key])
 
   useEffect(() => {
     if (!isForum || topicId == null) {
       return
     }
-    if (topicsForSelect.length === 0) {
+    if (topics.length === 0) {
       return
     }
-    if (topicsForSelect.some((x) => x.id === topicId)) {
+    if (topics.some((x) => x.id === topicId)) {
       return
     }
-    setTopicId(topicsForSelect[0].id)
-  }, [isForum, topicId, topicsForSelect, setTopicId])
-
-  const fetchHeadPage = useCallback(async (): Promise<Api.Message[]> => {
-    if (!client || !dialog.entity) {
-      return []
-    }
-    const entity = dialog.entity
-    if (isForum) {
-      if (topicId == null) {
-        return []
-      }
-      return withTransientRetry(client, () =>
-        getForumThreadMessages(
-          client,
-          entity,
-          topicId,
-          CHAT_PAGE_SIZE,
-          0
-        )
-      )
-    }
-    return withTransientRetry(client, async () => {
-      const r = await client.getMessages(entity, { limit: CHAT_PAGE_SIZE })
-      return toMessageList(r)
-    })
-  }, [client, dialog.entity, isForum, topicId])
-
-  const refreshHead = useCallback(async () => {
-    if (!client || !dialog.entity) {
-      return
-    }
-    if (blocked && settings.appMode === "child") {
-      return
-    }
-    if (isForum && topicId == null) {
-      return
-    }
-    if (loadedConvKeyRef.current !== convKey) {
-      return
-    }
-    try {
-      const head = await fetchHeadPage()
-      setList((prev) => mergeHeadWithTail(prev, head))
-    } catch {
-      /* keep existing list */
-    }
-  }, [
-    client,
-    dialog.entity,
-    isForum,
-    topicId,
-    blocked,
-    settings.appMode,
-    convKey,
-    fetchHeadPage,
-  ])
-
-  const loadOlder = useCallback(async () => {
-    if (!client || !dialog.entity || loadingOlder || !hasMoreOlder) {
-      return
-    }
-    if (isForum && topicId == null) {
-      return
-    }
-    const cur = listRef.current
-    if (cur.length === 0) {
-      return
-    }
-    const minId = minMessageId(cur)
-    if (minId == null) {
-      return
-    }
-    const entity = dialog.entity
-    setLoadingOlder(true)
-    const el = scrollRef.current
-    if (el) {
-      pendingScrollFixRef.current = {
-        type: "prepend",
-        prevTop: el.scrollTop,
-        prevHeight: el.scrollHeight,
-      }
-    }
-    stickToEndRef.current = false
-    try {
-      const older: Api.Message[] = await withTransientRetry(client, async () => {
-        if (isForum) {
-          return getForumThreadMessages(
-            client,
-            entity,
-            topicId!,
-            CHAT_PAGE_SIZE,
-            minId
-          )
-        }
-        const r = await client.getMessages(entity, {
-          limit: CHAT_PAGE_SIZE,
-          offsetId: minId,
-        })
-        return toMessageList(r)
-      })
-      // An empty “older” page = no more; partial pages (n < CHAT_PAGE_SIZE) are not the end.
-      if (older.length === 0) {
-        setHasMoreOlder(false)
-      }
-      setList((prev) => uniqueMessagesSort([...older, ...prev]))
-    } catch {
-      pendingScrollFixRef.current = null
-    } finally {
-      setLoadingOlder(false)
-    }
-  }, [
-    client,
-    dialog.entity,
-    hasMoreOlder,
-    isForum,
-    loadingOlder,
-    topicId,
-  ])
-
-  useEffect(() => {
-    if (blocked && settings.appMode === "child") {
-      return
-    }
-    if (!client || !dialog.entity) {
-      return
-    }
-    if (isForum && topicId == null) {
-      return
-    }
-    loadGenRef.current += 1
-    const gen = loadGenRef.current
-    loadedConvKeyRef.current = null
-    lastTickSyncedRef.current = null
-    setReplyingTo(null)
-    setMessageActionError(null)
-    setList([])
-    setHasMoreOlder(true)
-    setLoadingOlder(false)
-    stickToEndRef.current = true
-    void (async () => {
-      try {
-        if (!client || !dialog.entity) {
-          return
-        }
-        const entity = dialog.entity
-        const head: Api.Message[] = await withTransientRetry(client, async () => {
-          if (isForum && topicId != null) {
-            return getForumThreadMessages(
-              client,
-              entity,
-              topicId,
-              CHAT_PAGE_SIZE,
-              0
-            )
-          }
-          const r = await client.getMessages(entity, { limit: CHAT_PAGE_SIZE })
-          return toMessageList(r)
-        })
-        if (loadGenRef.current !== gen) {
-          return
-        }
-        setList(mergeHeadWithTail([], head))
-        // First batch can be < CHAT_PAGE_SIZE (search/thread quirks or short history) but older
-        // pages may still exist. Only a load-older round that returns too few/empty is definitive.
-        setHasMoreOlder(head.length > 0)
-        loadedConvKeyRef.current = convKey
-        lastTickSyncedRef.current = lastMessageTickRef.current
-        stickToEndRef.current = true
-      } catch {
-        if (loadGenRef.current !== gen) {
-          return
-        }
-        setList([])
-        // Keep "has more" so scroll-up / refresh can refetch; empty list was often a transient drop.
-        setHasMoreOlder(true)
-        loadedConvKeyRef.current = convKey
-        lastTickSyncedRef.current = lastMessageTickRef.current
-      }
-    })()
-  }, [client, convKey, dialog.entity, isForum, topicId, blocked, settings.appMode])
-
-  useEffect(() => {
-    if (blocked && settings.appMode === "child") {
-      return
-    }
-    if (!client || !dialog.entity) {
-      return
-    }
-    if (isForum && topicId == null) {
-      return
-    }
-    if (loadedConvKeyRef.current !== convKey) {
-      return
-    }
-    if (lastTickSyncedRef.current === lastMessageTick) {
-      return
-    }
-    lastTickSyncedRef.current = lastMessageTick
-    void refreshHead()
-  }, [
-    lastMessageTick,
-    convKey,
-    client,
-    dialog.entity,
-    isForum,
-    topicId,
-    blocked,
-    settings.appMode,
-    refreshHead,
-  ])
+    setTopicId(topics[0].id)
+  }, [isForum, topicId, topics, setTopicId])
 
   const datedList = useMemo((): ChatListItem[] => {
     const out: ChatListItem[] = []
     let prevDay: string | null = null
-    for (const m of list) {
+    for (const m of listForView) {
       if (!m.id) {
         continue
       }
@@ -379,7 +289,23 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       out.push({ kind: "msg", message: m })
     }
     return out
-  }, [list])
+  }, [listForView])
+
+  const {
+    scrollFabVisible,
+    stickyRowIndex,
+    onScroll,
+    onVirtualStickyRow,
+    scrollToLatestMessages,
+  } = useChatScroll({
+    scrollRef,
+    datedList,
+    list,
+    loadingOlder,
+    hasMoreOlder,
+    loadOlder,
+    convKey,
+  })
 
   const stickyDateTs = useMemo(
     () => getStickyDateTsForRow(datedList, stickyRowIndex),
@@ -387,40 +313,37 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   )
   const stickyDateLabel =
     stickyDateTs != null ? formatMessageDateSeparator(stickyDateTs, i18n.language) : null
+  const loadedDayBounds = useMemo(
+    () => getLoadedDayKeyBounds(datedList),
+    [datedList]
+  )
+  const loadedDayKeys = useMemo(() => getLoadedDayKeys(datedList), [datedList])
 
-  const syncStickyChatDateShortList = useCallback(() => {
-    const el = scrollRef.current
-    if (!el || datedList.length === 0) {
-      return
-    }
-    if (datedList.length > VIRTUAL_MSG_THRESHOLD) {
-      return
-    }
-    const nodes = el.querySelectorAll<HTMLElement>("[data-chat-row-index]")
-    if (nodes.length === 0) {
-      setStickyRowIndex(0)
-      return
-    }
-    const rootTop = el.getBoundingClientRect().top
-    for (const node of nodes) {
-      const r = node.getBoundingClientRect()
-      if (r.bottom > rootTop + 2) {
-        const idx = Number(node.dataset.chatRowIndex)
-        setStickyRowIndex(Number.isFinite(idx) ? idx : 0)
-        return
-      }
-    }
-    const last = nodes[nodes.length - 1]
-    const idx = Number(last.dataset.chatRowIndex)
-    setStickyRowIndex(Number.isFinite(idx) ? idx : 0)
-  }, [datedList])
-
-  const onVirtualStickyRow = useCallback((idx: number) => {
-    setStickyRowIndex(idx)
+  const toggleJumpCalendar = useCallback(() => {
+    setJumpCalOpen((v) => !v)
   }, [])
 
+  const jumpToDayKey = useCallback(
+    (dayKey: string) => {
+      const idx = findSepRowIndexForDayKey(datedList, dayKey)
+      if (idx == null) {
+        return
+      }
+      if (datedList.length > VIRTUAL_MSG_THRESHOLD) {
+        virtualListRef.current?.scrollToRowIndex(idx, { align: "start", behavior: "smooth" })
+      } else {
+        const root = scrollRef.current
+        const node = root?.querySelector(
+          `[data-chat-day-key="${CSS.escape(dayKey)}"]`
+        ) as HTMLElement | null
+        node?.scrollIntoView({ block: "start", behavior: "smooth" })
+      }
+    },
+    [datedList]
+  )
+
   useEffect(() => {
-    setStickyRowIndex(0)
+    setJumpCalOpen(false)
   }, [convKey])
 
   useEffect(() => {
@@ -438,45 +361,6 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       window.clearTimeout(tid)
     }
   }, [client, list])
-
-  useLayoutEffect(() => {
-    const el = scrollRef.current
-    if (!el) {
-      return
-    }
-    const p = pendingScrollFixRef.current
-    if (p) {
-      const h = el.scrollHeight
-      el.scrollTop = p.prevTop + (h - p.prevHeight)
-      pendingScrollFixRef.current = null
-      syncStickyChatDateShortList()
-      return
-    }
-    if (stickToEndRef.current) {
-      el.scrollTop = el.scrollHeight
-    }
-    syncStickyChatDateShortList()
-  }, [list, syncStickyChatDateShortList])
-
-  const onScroll = useCallback(() => {
-    const el = scrollRef.current
-    if (!el) {
-      return
-    }
-    const { scrollTop, scrollHeight, clientHeight } = el
-    const nearEnd = scrollHeight - scrollTop - clientHeight < 48
-    stickToEndRef.current = nearEnd
-    syncStickyChatDateShortList()
-    if (scrollTop > 200 || !hasMoreOlder || loadingOlder) {
-      return
-    }
-    const now = Date.now()
-    if (now - olderLoadThrottleRef.current < 450) {
-      return
-    }
-    olderLoadThrottleRef.current = now
-    void loadOlder()
-  }, [hasMoreOlder, loadingOlder, loadOlder, syncStickyChatDateShortList])
 
   const onSend = async () => {
     if (!client || !dialog.entity || !draft.trim()) {
@@ -498,7 +382,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         setDraft("")
         setReplyingTo(null)
         setMessageActionError(null)
-        stickToEndRef.current = true
+        scrollToLatestMessages()
         void refreshHead()
       } catch (e) {
         appLog.warn("sendInForumThread", e)
@@ -515,7 +399,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       setDraft("")
       setReplyingTo(null)
       setMessageActionError(null)
-      stickToEndRef.current = true
+      scrollToLatestMessages()
       void refreshHead()
     } catch (e) {
       appLog.warn("sendMessage", e)
@@ -613,10 +497,23 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           </time>
         )
         if (asVirtual) {
-          return <div className="msg-date" role="presentation">{timeEl}</div>
+          return (
+            <div
+              className="msg-date"
+              role="presentation"
+              data-chat-day-key={item.dayKey}
+            >
+              {timeEl}
+            </div>
+          )
         }
         return (
-          <li className="msg-date" role="presentation" data-chat-row-index={rowIndex}>
+          <li
+            className="msg-date"
+            role="presentation"
+            data-chat-row-index={rowIndex}
+            data-chat-day-key={item.dayKey}
+          >
             {timeEl}
           </li>
         )
@@ -626,6 +523,12 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         return null
       }
       const isOut = Boolean(m.out)
+      const clusterRole = m.id != null ? clusterRoleByMessageId.get(m.id) : undefined
+      const gutterBase = isOut ? "msg-gutter msg-gutter--out" : "msg-gutter msg-gutter--in"
+      const gutterClass =
+        clusterRole != null && clusterRole !== "single"
+          ? `${gutterBase} msg-gutter--cluster-${clusterRole}`
+          : gutterBase
       const bubble = (
         <div
           className={isOut ? "msg-bubble msg-bubble--out" : "msg-bubble msg-bubble--in"}
@@ -644,7 +547,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
                 ? {
                     entity: dialog.entity,
                     onVoted: () => {
-                      void refreshHead()
+                      void refreshMessagesById([m.id!])
                     },
                   }
                 : undefined
@@ -658,8 +561,12 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             client={client}
             entity={dialog.entity ?? null}
             messageId={m.id!}
-            onUpdate={() => {
-              void refreshHead()
+            onUpdate={(fromUpdate) => {
+              if (fromUpdate != null && fromUpdate.className === "MessageReactions") {
+                patchMessageReactions(m.id!, fromUpdate as Api.MessageReactions)
+                return
+              }
+              void refreshMessagesById([m.id!])
             }}
           />
           <time className="msg-time" dateTime={new Date(m.date * 1000).toISOString()}>
@@ -669,14 +576,14 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       )
       if (asVirtual) {
         return (
-          <div className={isOut ? "msg-gutter msg-gutter--out" : "msg-gutter msg-gutter--in"}>
+          <div className={gutterClass}>
             {bubble}
           </div>
         )
       }
       return (
         <li
-          className={isOut ? "msg-gutter msg-gutter--out" : "msg-gutter msg-gutter--in"}
+          className={gutterClass}
           data-chat-row-index={rowIndex}
         >
           {bubble}
@@ -685,12 +592,14 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     },
     [
       client,
+      clusterRoleByMessageId,
       dialog.entity,
       filterGifs,
       i18n.language,
       noPreview,
       onMessageBubbleReactions,
-      refreshHead,
+      patchMessageReactions,
+      refreshMessagesById,
       t,
     ]
   )
@@ -715,7 +624,20 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
 
   return (
     <section className="thread" aria-label={name}>
-      {showTitle ? <h2 className="thread-h">{name}</h2> : null}
+      {showTitle ? (
+        <div className="thread-header-row">
+          <h2 className="thread-h">{name}</h2>
+          {showUnreadToggle ? (
+            <UnreadOnlyMessagesToggle active={messagesUnreadOnly} onToggle={toggleUnreadOnly} />
+          ) : null}
+        </div>
+      ) : null}
+      {!showTitle && showUnreadToggle && headerActionsHost
+        ? createPortal(
+            <UnreadOnlyMessagesToggle active={messagesUnreadOnly} onToggle={toggleUnreadOnly} />,
+            headerActionsHost,
+          )
+        : null}
       {isForum && (
         <div className="forum-topic-bar">
           {topicsLoading ? (
@@ -729,43 +651,28 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             </p>
           ) : null}
           {!topicsLoading && topicsErr == null && topics.length > 0 && topicId != null ? (
-            <>
-              <div className="forum-topic-bar__row">
-                <span className="forum-topic-lbl">{t("chat.forumTopic")}</span>
-                <select
-                  className="input"
-                  name="topic"
-                  aria-label={t("chat.forumTopic")}
-                  value={String(topicId)}
-                  onChange={(e) => {
-                    setTopicId(Number(e.target.value))
-                  }}
-                >
-                  {topicsForSelect.map((x) => (
-                    <option key={x.id} value={String(x.id)}>
-                      {forumTopicLabel(x)}
-                      {formatTopicUnreadSuffix(x)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <label className="forum-unread-only">
-                <input
-                  type="checkbox"
-                  className="forum-unread-only__input"
-                  checked={forumUnreadOnly}
-                  onChange={(e) => {
-                    setForumUnreadOnly(e.target.checked)
-                  }}
-                />
-                <span>{t("chat.forumTopicUnreadOnly")}</span>
-              </label>
-              {showUnreadFilterFallback ? (
-                <p className="small muted" role="status">
-                  {t("chat.forumTopicUnreadEmpty")}
-                </p>
-              ) : null}
-            </>
+            <div className="forum-topic-bar__row">
+              <span className="forum-topic-lbl">
+                <ForumTopicIcon />
+                {t("chat.forumTopic")}
+              </span>
+              <select
+                className="input"
+                name="topic"
+                aria-label={t("chat.forumTopic")}
+                value={String(topicId)}
+                onChange={(e) => {
+                  setTopicId(Number(e.target.value))
+                }}
+              >
+                {topics.map((x) => (
+                  <option key={x.id} value={String(x.id)}>
+                    {forumTopicLabel(x)}
+                    {formatTopicUnreadSuffix(x)}
+                  </option>
+                ))}
+              </select>
+            </div>
           ) : null}
           {!topicsLoading && topicsErr == null && topics.length === 0 ? (
             <p className="small muted" role="status">
@@ -774,6 +681,11 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           ) : null}
         </div>
       )}
+      {showUnreadMessagesEmpty ? (
+        <p className="small muted thread-unread-filter__hint" role="status">
+          {t("chat.messagesUnreadEmpty")}
+        </p>
+      ) : null}
       <div
         className={
           datedList.length > 0
@@ -783,7 +695,37 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         ref={scrollRef}
         onScroll={onScroll}
       >
-        {datedList.length > 0 && stickyDateLabel ? (
+        {datedList.length > 0 && stickyDateLabel && loadedDayBounds.min != null && loadedDayBounds.max != null ? (
+          <>
+            <JumpDateCalendarPop
+              open={jumpCalOpen}
+              anchorRef={jumpDateButtonRef}
+              loadedDayKeys={loadedDayKeys}
+              minDayKey={loadedDayBounds.min}
+              maxDayKey={loadedDayBounds.max}
+              initialDayKey={
+                stickyDateTs != null
+                  ? getLocalDayKey(stickyDateTs)
+                  : loadedDayBounds.max
+              }
+              onPick={jumpToDayKey}
+              onDismiss={() => setJumpCalOpen(false)}
+            />
+            <div className="message-scroll__date-overlay" aria-live="polite">
+              <button
+                ref={jumpDateButtonRef}
+                type="button"
+                className="msg-date-pill msg-date-pill--floating msg-date-pill--jump"
+                onClick={toggleJumpCalendar}
+                aria-label={t("chat.jumpToDate")}
+                aria-expanded={jumpCalOpen}
+                title={t("chat.jumpToDate")}
+              >
+                {stickyDateLabel}
+              </button>
+            </div>
+          </>
+        ) : datedList.length > 0 && stickyDateLabel ? (
           <div className="message-scroll__date-overlay" aria-live="polite">
             <time
               className="msg-date-pill msg-date-pill--floating"
@@ -793,9 +735,13 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             </time>
           </div>
         ) : null}
-        {datedList.length > VIRTUAL_MSG_THRESHOLD ? (
+        {isInitialLoad ? (
+          <MessageListSkeleton />
+        ) : datedList.length > VIRTUAL_MSG_THRESHOLD ? (
           <ChatMessagesVirtualList
+            ref={virtualListRef}
             scrollRef={scrollRef}
+            listEpoch={convKey}
             datedList={datedList}
             loadingOlder={loadingOlder}
             loadingLabel={t("loading")}
@@ -819,6 +765,11 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             })}
           </ul>
         )}
+        <ScrollToBottomFab
+          visible={scrollFabVisible && datedList.some((x) => x.kind === "msg")}
+          onClick={scrollToLatestMessages}
+          label={t("chat.scrollToBottom")}
+        />
       </div>
       <div className="compose">
         {messageActionError
@@ -929,8 +880,17 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           onClose={() => {
             setReactionTarget(null)
           }}
-          onUpdated={() => {
-            void refreshHead()
+          onUpdated={(fromUpdate) => {
+            const id = reactionTarget?.id
+            if (typeof id !== "number") {
+              void refreshHead()
+              return
+            }
+            if (fromUpdate != null && fromUpdate.className === "MessageReactions") {
+              patchMessageReactions(id, fromUpdate as Api.MessageReactions)
+              return
+            }
+            void refreshMessagesById([id])
           }}
         />
       ) : null}

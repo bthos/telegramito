@@ -1,12 +1,14 @@
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { withTransientRetry } from "../telegram/invokeWithTransientRetry"
 import { getMessageReactionsListPage, mapReactionsList, type ReactionReplierRow } from "../telegram/reactionRepliers"
 import { setMessageReactions } from "../telegram/reactionsAndPolls"
 import { Button } from "./ds"
 import { reactionsEqual, myReactionsList } from "./reactionRepliersUi"
+import { formatPollVoterTimestamp, pollVoterTimestampTitle } from "../util/timeFormat"
 
 type T = (k: string, o?: Record<string, string | number | undefined>) => string
 
@@ -22,19 +24,8 @@ type Props = {
   /** Shown in heading, e.g. "👍" or custom emoji */
   reactionLabel: string
   onClose: () => void
-  onUpdated: () => void
+  onUpdated: (reactionsFromUpdate: Api.TypeMessageReactions | null) => void
   t: T
-}
-
-function formatRowDate(d: number, locale: string): string {
-  if (d <= 0) {
-    return ""
-  }
-  try {
-    return new Date(d * 1000).toLocaleString(locale, { dateStyle: "short", timeStyle: "short" })
-  } catch {
-    return ""
-  }
 }
 
 export function MessageReactionRepliersPop({
@@ -142,8 +133,8 @@ export function MessageReactionRepliersPop({
         }
       }
       const next = current.filter((r) => !reactionsEqual(r, targetReaction))
-      await setMessageReactions(client, entity, messageId, next)
-      onUpdated()
+      const fromUpdate = await setMessageReactions(client, entity, messageId, next)
+      onUpdated(fromUpdate)
       onClose()
     } catch {
       /* no-op */
@@ -209,11 +200,11 @@ export function MessageReactionRepliersPop({
     return null
   }
 
-  return (
+  const panel = (
     <div
       ref={panelRef}
       className="msg-reaction-who"
-      style={{ top: place.top, left: place.left, position: "fixed", zIndex: 80 }}
+      style={{ top: place.top, left: place.left, position: "fixed" }}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -241,8 +232,11 @@ export function MessageReactionRepliersPop({
                 </span>
                 <span className="msg-reaction-who__end">
                   {r.date > 0 ? (
-                    <span className="msg-reaction-who__date" title={String(r.date)}>
-                      {formatRowDate(r.date, i18n.language)}
+                    <span
+                      className="msg-reaction-who__date"
+                      title={pollVoterTimestampTitle(r.date, i18n.language)}
+                    >
+                      {formatPollVoterTimestamp(r.date, i18n.language)}
                     </span>
                   ) : null}
                   {r.isMine && !err ? (
@@ -286,4 +280,6 @@ export function MessageReactionRepliersPop({
       ) : null}
     </div>
   )
+
+  return createPortal(panel, document.body)
 }
