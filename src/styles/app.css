@@ -1498,6 +1498,45 @@ button.switch:active .switch__thumb {
   border-bottom-right-radius: 0.1rem;
   margin-left: auto;
 }
+
+/* —— Vein strip (AC1, AC2) —— */
+.msg-bubble--vein-in {
+  border-left: 2.5px solid var(--ds-vein-in);
+  border-radius: 0.1rem 0.65rem 0.65rem 0.1rem;
+}
+.msg-bubble--vein-out {
+  border-right: 2.5px solid var(--ds-vein-out);
+  border-radius: 0.65rem 0.1rem 0.1rem 0.65rem;
+}
+
+/* —— Sender attribution (AC3, AC4) —— */
+.msg-cluster-col {
+  display: flex;
+  flex-direction: column;
+}
+.msg-cluster-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+.msg-cluster-avatar {
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+.msg-avatar-spacer {
+  width: var(--ds-avatar-cluster-size, 32px);
+  flex-shrink: 0;
+}
+.msg-sender-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ds-vein-in);
+  padding: 0 0 0.12rem 0.6rem;
+  line-height: 1.2;
+  min-height: 1.2em;
+  display: block;
+}
+
 .msg-text:empty {
   display: none;
   margin: 0;

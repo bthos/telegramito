@@ -39,6 +39,10 @@
   --ds-bubble-out: #1e4a7a;
   --ds-bubble-glow: #2564a0;
   --ds-bubble-out-grad-1: #2564a0;
+  --ds-vein-in:  var(--ds-color-primary);
+  --ds-vein-out: rgba(255, 255, 255, 0.18);
+  --ds-vein-out: color-mix(in srgb, var(--ds-bubble-out) 30%, transparent);
+  --ds-avatar-cluster-size: 32px;
   /* Shell surfaces (app.css) */
   --ds-color-canvas: #0a0f16;
   --ds-color-canvas-list: #0a0f16;
@@ -148,6 +152,9 @@ html[data-theme="light"] {
   --ds-bubble-out: #b8d4f8;
   --ds-bubble-glow: #3d8ad9;
   --ds-bubble-out-grad-1: #3d8ad9;
+  --ds-vein-in:  var(--ds-color-primary);
+  --ds-vein-out: rgba(0, 0, 0, 0.12);
+  --ds-vein-out: color-mix(in srgb, var(--ds-bubble-out) 30%, transparent);
   --ds-color-canvas: #ebedf0;
   --ds-color-canvas-list: #e8eaef;
   --ds-color-canvas-main: #e6e8ed;

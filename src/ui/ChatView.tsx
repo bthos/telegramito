@@ -46,6 +46,7 @@ import {
 import { isInboundUnreadForThread, readInboxMaxIdForThread } from "../telegram/messageUnread"
 import { readMaxIdForMarkRead } from "../telegram/markChatRead"
 import { forwardMessageInCurrentChat } from "../telegram/forwardInChat"
+import { InboundClusterRow } from "./InboundClusterRow"
 import { ForumTopicIcon, UnreadFilterIcon } from "./ChatFilterIcons"
 import { ScrollToBottomFab } from "./ScrollToBottomFab"
 import { JumpDateCalendarPop } from "./JumpDateCalendarPop"
@@ -131,6 +132,14 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     () => isForumWithSubchats(dialog.entity ?? undefined),
     [dialog.entity]
   )
+
+  const isGroup = useMemo(() => {
+    const e = dialog.entity
+    if (e == null) return false
+    if (e.className === "Chat") return true
+    if (e.className === "Channel" && (e as Api.Channel).megagroup === true) return true
+    return false
+  }, [dialog.entity])
 
   const allow = new Set(settings.allowlistIds)
   const isPriv = isPrivateUserDialog(dialog)
@@ -529,9 +538,15 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         clusterRole != null && clusterRole !== "single"
           ? `${gutterBase} msg-gutter--cluster-${clusterRole}`
           : gutterBase
+      const hasVein = clusterRole === "single" || clusterRole === "last"
+      const bubbleClass = [
+        "msg-bubble",
+        isOut ? "msg-bubble--out" : "msg-bubble--in",
+        hasVein ? (isOut ? "msg-bubble--vein-out" : "msg-bubble--vein-in") : "",
+      ].filter(Boolean).join(" ")
       const bubble = (
         <div
-          className={isOut ? "msg-bubble msg-bubble--out" : "msg-bubble msg-bubble--in"}
+          className={bubbleClass}
           title={client && dialog.entity ? t("chat.messageClickHint") : undefined}
           onClick={(e) => { onMessageBubbleReactions(e, m) }}
         >
@@ -574,10 +589,21 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           </time>
         </div>
       )
+      const bubbleWithAttribution =
+        clusterRole != null ? (
+          <InboundClusterRow
+            message={m}
+            clusterRole={clusterRole}
+            isGroup={isGroup}
+            client={client}
+          >
+            {bubble}
+          </InboundClusterRow>
+        ) : bubble
       if (asVirtual) {
         return (
           <div className={gutterClass}>
-            {bubble}
+            {bubbleWithAttribution}
           </div>
         )
       }
@@ -586,13 +612,14 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           className={gutterClass}
           data-chat-row-index={rowIndex}
         >
-          {bubble}
+          {bubbleWithAttribution}
         </li>
       )
     },
     [
       client,
       clusterRoleByMessageId,
+      isGroup,
       dialog.entity,
       filterGifs,
       i18n.language,
