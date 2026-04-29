@@ -1,5 +1,6 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
+import { useFocusTrap } from "../hooks/useFocusTrap"
 
 type Props = {
   url: string
@@ -12,6 +13,9 @@ type Props = {
  * Full-screen image overlay (SPA-friendly — no navigation).
  */
 export function ImageLightbox({ url, onClose, labelClose, labelBackdrop }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(containerRef, true)
+
   useEffect(() => {
     const prev = document.body.style.overflow
     document.body.style.overflow = "hidden"
@@ -30,6 +34,7 @@ export function ImageLightbox({ url, onClose, labelClose, labelBackdrop }: Props
   const node = (
     <div
       className="media-lightbox"
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-label={labelBackdrop}
