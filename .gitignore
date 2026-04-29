@@ -18,15 +18,16 @@ public/pwa*
 *.local
 
 # Editor directories and files
-.artefacts/*
-.claude/*
-.cursor/*
-.github/*
+.artefacts/
+.codemie/
+.claude/
+.cursor/
+.github/
 !.github/workflows/
 !.github/workflows/*
-.vscode/*
+.vscode/
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
