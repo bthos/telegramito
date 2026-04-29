@@ -2,6 +2,7 @@ import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useFocusTrap } from "../hooks/useFocusTrap"
 import {
   availableEntryToTypeReaction,
   getAvailableReactionsForClient,
@@ -132,6 +133,7 @@ export function MessageReactionPicker({
   const [items, setItems] = useState<Api.AvailableReaction[]>([])
   const [loadErr, setLoadErr] = useState(false)
   const panelRef = useRef<HTMLDivElement | null>(null)
+  useFocusTrap(panelRef, open)
   const [place, setPlace] = useState({ top: 0, left: 0 })
   const idBase = useId()
   const headingId = `rep-pop-t-${idBase}`

@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
+import { useFocusTrap } from "../hooks/useFocusTrap"
 import { useTranslation } from "react-i18next"
 import { useParentalSettings } from "../context/ParentalContext"
 import { verifyPin } from "../parental/pin"
@@ -15,6 +16,8 @@ export function PinDialog({ open, onClose, onSuccess }: Props) {
   const { settings } = useParentalSettings()
   const [pin, setPin] = useState("")
   const [bad, setBad] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(containerRef, open)
 
   if (!open) {
     return null
@@ -41,7 +44,7 @@ export function PinDialog({ open, onClose, onSuccess }: Props) {
 
   return (
     <div className="modal-back" role="dialog" aria-modal="true">
-      <div className="modal">
+      <div className="modal" ref={containerRef}>
         <h2>{t("pin.title")}</h2>
         {bad ? <p className="err">{t("pin.wrong")}</p> : null}
         <TextField

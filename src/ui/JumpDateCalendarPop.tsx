@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useMemo, useState, type RefObject } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react"
 import { useTranslation } from "react-i18next"
+import { useFocusTrap } from "../hooks/useFocusTrap"
 import { parseDayKey } from "../util/chatHistoryJump"
 import { getLocalDayKey } from "../util/timeFormat"
 
@@ -54,6 +55,8 @@ export function JumpDateCalendarPop({
   onDismiss,
 }: JumpDateCalendarPopProps) {
   const { t, i18n } = useTranslation()
+  const containerRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(containerRef, open)
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
 
   const minParts = useMemo(() => parseDayKey(minDayKey), [minDayKey])
@@ -212,6 +215,7 @@ export function JumpDateCalendarPop({
       <div className="jump-date-cal__backdrop" aria-hidden onClick={onDismiss} />
       <div
         className="jump-date-cal"
+        ref={containerRef}
         role="dialog"
         aria-label={t("chat.jumpCalendarTitle")}
         style={{
