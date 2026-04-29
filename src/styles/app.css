@@ -2522,7 +2522,7 @@ button.msg-bubble-action:hover {
 }
 .input-compose {
   min-height: 2.2rem;
-  max-height: 6rem;
+  max-height: var(--compose-max-height, 120px);
   resize: none;
   line-height: 1.35;
   font: inherit;
