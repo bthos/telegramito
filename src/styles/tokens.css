@@ -97,6 +97,8 @@
   --placeholder-shimmer: rgba(255, 255, 255, 0.13);
   --placeholder-delay:   100ms;
 
+  --compose-max-height: 120px;
+
   /* —— Motion —— */
   --ds-duration: 0.12s;
   --ds-ease: ease;

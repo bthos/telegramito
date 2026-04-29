@@ -73,6 +73,7 @@ type Props = {
 type ChatListItem = ChatDatedItem
 
 const VIRTUAL_MSG_THRESHOLD = 48
+const MAX_COMPOSE_HEIGHT = 120
 
 /** DOM mount for narrow layout unread toggle (see `MainShell` mobile header). */
 export const THREAD_HEADER_ACTIONS_ID = "thread-header-actions"
@@ -122,6 +123,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const virtualListRef = useRef<ChatMessagesVirtualListHandle | null>(null)
   const jumpDateButtonRef = useRef<HTMLButtonElement | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [jumpCalOpen, setJumpCalOpen] = useState(false)
   const [reactionTarget, setReactionTarget] = useState<{ id: number; x: number; y: number } | null>(null)
   const [replyingTo, setReplyingTo] = useState<Api.Message | null>(null)
@@ -455,6 +457,13 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       setReactionTarget(null)
     }
   }, [list, reactionTarget])
+
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = "auto"
+    el.style.height = `${Math.min(el.scrollHeight, MAX_COMPOSE_HEIGHT)}px`
+  }, [draft])
 
   const onMessageBubbleReactions = useCallback(
     (e: MouseEvent, m: Api.Message) => {
@@ -834,9 +843,9 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           : null}
         <div className="compose__row">
           <textarea
+            ref={textareaRef}
             className="input input-compose"
             name="m"
-            rows={1}
             value={draft}
             onChange={(e) => {
               setDraft(e.target.value)
