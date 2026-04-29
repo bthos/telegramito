@@ -3,8 +3,10 @@
  * New work: prefer --ds-*; legacy --bg, --card, --acc, … are aliases and remain valid.
  */
 :root {
-  /* —— Typography —— */
-  --ds-font-sans: system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  /* Layout shell (aligned with evgeny-nadymov/telegram-react MainPage / TelegramApp.css) */
+  --layout-page-max-width: 1680px;
+  /* —— Typography —— (Roboto + 16/21 base matches telegram-react body) */
+  --ds-font-sans: "Roboto", system-ui, "Segoe UI", "Helvetica Neue", sans-serif;
   --ds-font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
   --ds-font-emoji: system-ui, "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
@@ -86,6 +88,11 @@
   --ds-z-modal-back: 20;
   --ds-z-popover: 200;
 
+  /* —— Loading placeholders —— */
+  --placeholder-bg:      rgba(255, 255, 255, 0.07);
+  --placeholder-shimmer: rgba(255, 255, 255, 0.13);
+  --placeholder-delay:   100ms;
+
   /* —— Motion —— */
   --ds-duration: 0.12s;
   --ds-ease: ease;
@@ -103,9 +110,12 @@
   --bubble-in: var(--ds-bubble-in);
   --bubble-out: var(--ds-bubble-out);
   --bubble-fg: var(--ds-color-fg-2);
+  /* Popovers (.jump-date-cal, .msg-reaction-pop); mirrors --ds-msg-pop-bg for theme switches */
+  --msg-pop-bg: var(--ds-msg-pop-bg);
 
   font-family: var(--ds-font-sans);
-  line-height: var(--ds-line-body);
+  font-size: 16px;
+  line-height: 21px;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -149,6 +159,11 @@ html[data-theme="light"] {
   --ds-color-topbar-mid: #d8e3f2;
   --ds-color-mode-pill: #dde2e8;
   --ds-color-border-search: #b8c4d4;
+  /* —— Loading placeholders —— */
+  --placeholder-bg:      rgba(0, 0, 0, 0.07);
+  --placeholder-shimmer: rgba(0, 0, 0, 0.11);
+  --placeholder-delay:   100ms;
+
   --ds-shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.06);
   --ds-shadow-md: 0 0.4rem 1.2rem rgba(15, 25, 40, 0.12);
   --ds-shadow-card: 0 0.4rem 2.5rem rgba(15, 25, 40, 0.1);
@@ -199,6 +214,10 @@ html[data-theme="light"] .settings__field {
 html[data-theme="light"] .msg-reaction-pop {
   border-color: rgba(0, 0, 0, 0.1);
   box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.12);
+}
+html[data-theme="light"] .jump-date-cal {
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 0.45rem 1.25rem rgba(15, 25, 40, 0.14);
 }
 html[data-theme="light"] .modal-back {
   background: rgba(0, 0, 0, 0.25);

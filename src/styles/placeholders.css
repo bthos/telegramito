@@ -1,0 +1,130 @@
+/* ── No-flash appear ─────────────────────────────────── */
+@keyframes placeholder-appear {
+  to { opacity: 1; }
+}
+
+.media-placeholder,
+.msg-list-skeleton__bubble {
+  opacity: 0;
+  animation: placeholder-appear 0ms step-end var(--placeholder-delay) forwards;
+}
+
+/* ── Media placeholder variants ─────────────────────── */
+.media-placeholder {
+  background: var(--placeholder-bg);
+  border-radius: var(--ds-radius-md);
+}
+
+.media-placeholder--visual {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--ds-radius-lg);
+}
+
+.media-placeholder--sticker {
+  width: 112px;
+  height: 112px;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--ds-radius-md);
+}
+
+.media-placeholder--audio {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  background: transparent;
+}
+
+.media-placeholder__avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--placeholder-bg);
+}
+
+.media-placeholder__waveform {
+  flex: 1;
+  height: 3px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--placeholder-bg);
+}
+
+.media-placeholder--attachment {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  height: auto;
+  background: transparent;
+}
+
+.media-placeholder__icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--ds-radius-sm);
+  background: var(--placeholder-bg);
+}
+
+.media-placeholder__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.media-placeholder__text-line {
+  height: 8px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--placeholder-bg);
+}
+
+.media-placeholder__text-line--wide {
+  width: 70%;
+}
+
+.media-placeholder__text-line--narrow {
+  width: 35%;
+}
+
+/* ── Skeleton message list bubbles ───────────────────── */
+.msg-list-skeleton__bubble {
+  height: 40px;
+  border-radius: var(--ds-radius-xl);
+  background: var(--placeholder-bg);
+  max-width: 85%;
+  margin-bottom: 6px;
+}
+
+/* ── Shimmer (PaidMedia card + future use) ───────────── */
+@keyframes placeholder-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.placeholder--shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--placeholder-bg)      0%,
+    var(--placeholder-shimmer) 50%,
+    var(--placeholder-bg)      100%
+  );
+  background-size: 200% 100%;
+  animation: placeholder-shimmer 1.6s ease-in-out infinite;
+}
+
+/* ── Reduced motion (AC-8) ───────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .media-placeholder,
+  .msg-list-skeleton__bubble {
+    /* Snap visible immediately; skip appear animation */
+    opacity: 1;
+    animation: none;
+  }
+  .placeholder--shimmer {
+    animation: none;
+  }
+}

@@ -68,6 +68,56 @@ export function formatMessageDateSeparator(
   return day.toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })
 }
 
+/** Poll voters / reaction repliers rows — readable datetime, aligned with chat (24h). */
+export function formatPollVoterTimestamp(unixSec: number, locale: string, now = new Date()): string {
+  if (unixSec <= 0) {
+    return ""
+  }
+  const d = new Date(unixSec * 1000)
+  try {
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    const startVote = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+    if (startVote === startToday) {
+      return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", hour12: false })
+    }
+    if (d.getFullYear() === now.getFullYear()) {
+      return d.toLocaleString(locale, {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })
+    }
+    return d.toLocaleString(locale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+  } catch {
+    return ""
+  }
+}
+
+/** Tooltip for voter/replier time (full date + time). */
+export function pollVoterTimestampTitle(unixSec: number, locale: string): string {
+  if (unixSec <= 0) {
+    return ""
+  }
+  try {
+    return new Date(unixSec * 1000).toLocaleString(locale, {
+      dateStyle: "full",
+      timeStyle: "short",
+      hour12: false,
+    })
+  } catch {
+    return ""
+  }
+}
+
 /** For chat list: time if today, else short date. */
 export function formatDialogListTime(ts: number, locale: string, now = new Date()): string {
   const d = new Date(ts * 1000)

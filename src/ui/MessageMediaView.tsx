@@ -1,13 +1,8 @@
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import {
-  formatDocumentSize,
-  getDocumentFileName,
-  getMessageDocument,
-  safeFileDownloadName,
-} from "../telegram/documentFile"
+import { getMessageDocument, getDocumentFileName, formatDocumentSize, safeFileDownloadName } from "../telegram/documentFile"
 import {
   isAnimatedDoc,
   isCustomEmojiDoc,
@@ -15,10 +10,18 @@ import {
   isTgsShapedDoc,
   isVideoDoc,
 } from "../telegram/documentMediaKind"
+import { getMessageMediaPollFromMessage } from "../telegram/messagePollMedia"
 import { MessagePollView } from "./MessagePollView"
 import { makeBlobUrl } from "./messageMediaBlobUtils"
 import type { MessageMediaTranslateFn } from "./messageMediaI18n"
 import { PollReadonly, useWpPreview, WebPageView } from "./messageMediaPollWeb"
+import {
+  isNonBlobVisualMedia,
+  resolveMessageMediaForDisplay,
+} from "../telegram/messageMediaUnwrap"
+import { MessageMediaStatic } from "./MessageMediaStatic"
+import { ImageLightbox } from "./ImageLightbox"
+import { MediaPlaceholder, resolveMediaPlaceholderType } from "./MediaPlaceholder"
 
 type MediaBlobState =
   | { k: "i"; u: string }
@@ -37,8 +40,9 @@ function useBlob(
 ) {
   const [s, setS] = useState<MediaBlobState>({ k: "d" })
   const uref = useRef<string | null>(null)
-  const media = m.media
-  const d = getMessageDocument(m)
+  const resolved = resolveMessageMediaForDisplay(m)
+  const media = resolved.media
+  const d = getMessageDocument(resolved)
 
   useEffect(() => {
     if (uref.current) {
@@ -49,7 +53,12 @@ function useBlob(
       setS({ k: "z" })
       return
     }
-    if (!media || media.className === "MessageMediaEmpty" || media.className === "MessageMediaPoll" || media.className === "MessageMediaWebPage") {
+    if (
+      !media
+      || media.className === "MessageMediaEmpty"
+      || media.className === "MessageMediaWebPage"
+      || getMessageMediaPollFromMessage(m)
+    ) {
       setS({ k: "z" })
       return
     }
@@ -131,16 +140,22 @@ function useBlob(
             }
             return
           }
-          if (isVideoDoc(d) && d.mimeType?.startsWith("video/")) {
-            const b2 = await c.downloadMedia(m, {})
-            if (on) {
-              if (b2) {
-                vid(b2, d.mimeType || "video/mp4", false)
-              } else {
-                setS({ k: "e" })
+          {
+            const mtLower = d.mimeType?.toLowerCase() ?? ""
+            const hasVideoMime = mtLower.startsWith("video/")
+            /** TL often omits or mislabels mime; trust DocumentAttributeVideo or a video/* mime. */
+            if (isVideoDoc(d) || (hasVideoMime && !isAnimatedDoc(d))) {
+              const b2 = await c.downloadMedia(m, {})
+              if (on) {
+                if (b2) {
+                  const mt = hasVideoMime ? (d.mimeType || "video/mp4") : "video/mp4"
+                  vid(b2, mt, false)
+                } else {
+                  setS({ k: "e" })
+                }
               }
+              return
             }
-            return
           }
           if (d.mimeType?.startsWith("image/")) {
             const b2 = await c.downloadMedia(m, {})
@@ -224,7 +239,7 @@ function useBlob(
         uref.current = null
       }
     }
-  }, [c, filterGifs, media, d, m.id, m])
+  }, [c, filterGifs, media, d, m])
   return s
 }
 
@@ -241,13 +256,20 @@ export function MessageMediaView({
   const { t: te } = useTranslation()
   const wpT = useWpPreview(message, client, noPreview)
   const s = useBlob(message, client, filterGifs)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
   const errLabel = te("error")
-  if (message.media?.className === "MessageMediaPoll") {
-    const pol = message.media as Api.MessageMediaPoll
+  const resolved = useMemo(() => resolveMessageMediaForDisplay(message), [message])
+
+  const imagePreviewUrl = s.k === "i" ? s.u : null
+  useEffect(() => {
+    setLightboxOpen(false)
+  }, [message.id, imagePreviewUrl])
+  const pollMedia = getMessageMediaPollFromMessage(message)
+  if (pollMedia) {
     if (client && pollVoter) {
       return (
         <MessagePollView
-          media={pol}
+          media={pollMedia}
           t={t}
           client={client}
           messageId={message.id!}
@@ -256,32 +278,63 @@ export function MessageMediaView({
         />
       )
     }
-    return <PollReadonly media={pol} t={t} client={client} />
+    return <PollReadonly media={pollMedia} t={t} client={client} />
   }
   if (message.media?.className === "MessageMediaWebPage" && !noPreview) {
     return <WebPageView m={message} no={noPreview} t={t} thumb={wpT} />
   }
+  if (isNonBlobVisualMedia(resolved.media)) {
+    return <MessageMediaStatic m={resolved} t={t} />
+  }
+  if (
+    message.media?.className === "MessageMediaPaidMedia"
+    && resolved.media === message.media
+  ) {
+    return (
+      <div
+        className="msg-media msg-media--card placeholder--shimmer"
+        role="status"
+        aria-label={te("chat.mediaLoading")}
+        aria-busy="true"
+      >
+        <span className="msg-media-card__muted">{t("chat.paidBundlePlaceholder")}</span>
+      </div>
+    )
+  }
   if (s.k === "f") {
     return <div className="msg-media msg-media--filtered" role="status">{t("chat.filteredGif")}</div>
   }
-  if (s.k === "d" || s.k === "e") {
-    if (s.k === "e") {
-      return <div className="msg-media msg-media--err" role="status" aria-label={errLabel} />
-    }
+  if (s.k === "d") {
+    const placeholderType = resolveMediaPlaceholderType(resolved, getMessageDocument(resolved))
+    return <MediaPlaceholder type={placeholderType} />
+  }
+  if (s.k === "e") {
+    return <div className="msg-media msg-media--err" role="status" aria-label={errLabel} />
   }
   if (s.k === "i") {
     return (
       <div className="msg-media msg-media--photo">
-        <a
+        <button
+          type="button"
           className="msg-img-link"
-          href={s.u}
-          target="_blank"
-          rel="noopener noreferrer"
-          title={te("chat.fileSaveHint")}
+          title={te("chat.openPhoto")}
           aria-label={te("chat.openPhoto")}
+          onClick={() => {
+            setLightboxOpen(true)
+          }}
         >
-          <img className="msg-img" src={s.u} alt="" />
-        </a>
+          <img className="msg-img" src={s.u} alt="" draggable={false} />
+        </button>
+        {lightboxOpen ? (
+          <ImageLightbox
+            url={s.u}
+            onClose={() => {
+              setLightboxOpen(false)
+            }}
+            labelClose={te("chat.imageViewerClose")}
+            labelBackdrop={te("chat.imageViewerBackdrop")}
+          />
+        ) : null}
       </div>
     )
   }

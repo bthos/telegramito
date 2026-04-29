@@ -40,6 +40,36 @@ function pickThumbType(doc: Api.Document): string {
   return ""
 }
 
+/** Ordered thumb sizes to try — Telegram packs differ; one size may be TGS another PNG/WebP. */
+function thumbTypesToTry(doc: Api.Document): string[] {
+  const preferred = pickThumbType(doc)
+  const out: string[] = []
+  const seen = new Set<string>()
+  const push = (t: string) => {
+    if (!seen.has(t)) {
+      seen.add(t)
+      out.push(t)
+    }
+  }
+  if (preferred) {
+    push(preferred)
+  }
+  for (const t of THUMB_ORDER) {
+    push(t)
+  }
+  if (doc.thumbs?.length) {
+    for (const th of doc.thumbs) {
+      const ty = (th as { type?: string }).type
+      if (ty) {
+        push(ty)
+      }
+    }
+  }
+  /* Full document last — often animated TGS; gzip skipped in downloader. */
+  push("")
+  return out
+}
+
 function mimeForDoc(doc: Api.Document): string {
   const m = (doc as { mimeType?: string }).mimeType
   if (m && m.startsWith("image/")) {
@@ -52,6 +82,64 @@ function mimeForDoc(doc: Api.Document): string {
     return "image/png"
   }
   return "image/webp"
+}
+
+function looksLikeGzipLottieOrTgs(u8: Uint8Array): boolean {
+  return u8.length >= 2 && u8[0] === 0x1f && u8[1] === 0x8b
+}
+
+function mimeFromRasterHeader(u8: Uint8Array): string | null {
+  if (u8.length < 3) {
+    return null
+  }
+  if (u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4e) {
+    return "image/png"
+  }
+  if (u8[0] === 0xff && u8[1] === 0xd8) {
+    return "image/jpeg"
+  }
+  if (u8[0] === 0x47 && u8[1] === 0x49 && u8[2] === 0x46) {
+    return "image/gif"
+  }
+  if (u8[0] === 0x52 && u8[1] === 0x49 && u8[2] === 0x46 && u8.length >= 12) {
+    return "image/webp"
+  }
+  return null
+}
+
+/**
+ * Download a displayable raster for an emoji {@link Api.Document} (try several thumb sizes).
+ * Skips animated TGS bodies (gzip). Caller supplies a fresh doc from the API (valid file_reference).
+ */
+async function createRasterObjectUrlFromDocument(
+  client: TelegramClient,
+  doc: Api.Document,
+): Promise<string | null> {
+  for (const ts of thumbTypesToTry(doc)) {
+    const loc = new Api.InputDocumentFileLocation({
+      id: doc.id,
+      accessHash: doc.accessHash,
+      fileReference: doc.fileReference,
+      thumbSize: ts,
+    })
+    try {
+      const raw = await client.downloadFile(loc, {})
+      if (raw == null) {
+        continue
+      }
+      const u8 = bufferLikeToU8(raw)
+      if (u8.length === 0 || looksLikeGzipLottieOrTgs(u8)) {
+        continue
+      }
+      const mime =
+        mimeFromRasterHeader(u8) ??
+        (mimeForDoc(doc).startsWith("image/") ? mimeForDoc(doc) : "image/webp")
+      return URL.createObjectURL(new Blob([u8.slice()], { type: mime }))
+    } catch {
+      /* try next thumbSize */
+    }
+  }
+  return null
 }
 
 /**
@@ -88,29 +176,14 @@ export function getCustomEmojiObjectUrl(
       return null
     }
     const doc = d as Api.Document
-    const ts = pickThumbType(doc)
-    const loc = new Api.InputDocumentFileLocation({
-      id: doc.id,
-      accessHash: doc.accessHash,
-      fileReference: doc.fileReference,
-      thumbSize: ts,
-    })
-    try {
-      const buf = await client.downloadFile(loc, {})
-      if (buf == null) {
-        inFlight.delete(idKey)
-        return null
-      }
-      const u8 = bufferLikeToU8(buf)
-      const blob = new Blob([u8.slice()], { type: mimeForDoc(doc) })
-      const url = URL.createObjectURL(blob)
-      blobByDocId.set(idKey, url)
-      inFlight.delete(idKey)
-      return url
-    } catch {
+    const url = await createRasterObjectUrlFromDocument(client, doc)
+    if (url == null) {
       inFlight.delete(idKey)
       return null
     }
+    blobByDocId.set(idKey, url)
+    inFlight.delete(idKey)
+    return url
   })()
   inFlight.set(idKey, p)
   return p
@@ -153,29 +226,6 @@ export async function prefetchCustomEmojiDocuments(
 
 const reactionIconInflight = new Map<string, Promise<string | null>>()
 
-function looksLikeGzipLottieOrTgs(u8: Uint8Array): boolean {
-  return u8.length >= 2 && u8[0] === 0x1f && u8[1] === 0x8b
-}
-
-function mimeFromRasterHeader(u8: Uint8Array): string | null {
-  if (u8.length < 3) {
-    return null
-  }
-  if (u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4e) {
-    return "image/png"
-  }
-  if (u8[0] === 0xff && u8[1] === 0xd8) {
-    return "image/jpeg"
-  }
-  if (u8[0] === 0x47 && u8[1] === 0x49 && u8[2] === 0x46) {
-    return "image/gif"
-  }
-  if (u8[0] === 0x52 && u8[1] === 0x49 && u8[2] === 0x46 && u8.length >= 12) {
-    return "image/webp"
-  }
-  return null
-}
-
 /**
  * Icon for a reaction in the picker (3D / custom emoji from {@link Api.AvailableReaction}):
  * 1) same path as message custom emoji; 2) thumb from the inline `Document` from the API.
@@ -206,40 +256,11 @@ export function getReactionStaticIconObjectUrl(
       if (u) {
         return u
       }
-      const byType = (doc: Api.Document): string[] => {
-        const t = pickThumbType(doc)
-        if (t) {
-          return [...new Set([t, ...THUMB_ORDER])] as string[]
-        }
-        return [...THUMB_ORDER] as string[]
+      const u2 = await createRasterObjectUrlFromDocument(client, d)
+      if (u2) {
+        blobByDocId.set(idKey, u2)
       }
-      for (const ts of byType(d)) {
-        const loc = new Api.InputDocumentFileLocation({
-          id: d.id,
-          accessHash: d.accessHash,
-          fileReference: d.fileReference,
-          thumbSize: ts,
-        })
-        try {
-          const raw = await client.downloadFile(loc, {})
-          if (raw == null) {
-            continue
-          }
-          const u8 = bufferLikeToU8(raw)
-          if (u8.length === 0 || looksLikeGzipLottieOrTgs(u8)) {
-            continue
-          }
-          const t = mimeFromRasterHeader(u8) ?? (
-            mimeForDoc(d).startsWith("image/") ? mimeForDoc(d) : "image/webp"
-          )
-          const url = URL.createObjectURL(new Blob([u8.slice()], { type: t }))
-          blobByDocId.set(idKey, url)
-          return url
-        } catch {
-          /* */
-        }
-      }
-      return null
+      return u2
     } catch {
       return null
     } finally {

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { getPollVotesPage, mapPollVotesList, type PollVoterRow } from "../telegram/pollVoters"
+import { formatPollVoterTimestamp, pollVoterTimestampTitle } from "../util/timeFormat"
 import { Button } from "./ds"
 import type { TelegramClient } from "telegram"
 
@@ -16,17 +18,6 @@ type Props = {
   optionBytes: unknown
   onClose: () => void
   t: T
-}
-
-function formatRowDate(d: number, locale: string): string {
-  if (d <= 0) {
-    return ""
-  }
-  try {
-    return new Date(d * 1000).toLocaleString(locale, { dateStyle: "short", timeStyle: "short" })
-  } catch {
-    return ""
-  }
 }
 
 export function MessagePollVotersPop({
@@ -139,11 +130,11 @@ export function MessagePollVotersPop({
     }
   }, [onClose])
 
-  return (
+  const panel = (
     <div
       ref={panelRef}
       className="msg-reaction-who"
-      style={{ top: place.top, left: place.left, position: "fixed", zIndex: 80 }}
+      style={{ top: place.top, left: place.left, position: "fixed" }}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -177,8 +168,11 @@ export function MessagePollVotersPop({
                     <span className="msg-reaction-who__end">
                       {r.date > 0
                         ? (
-                            <span className="msg-reaction-who__date" title={String(r.date)}>
-                              {formatRowDate(r.date, i18n.language)}
+                            <span
+                              className="msg-reaction-who__date"
+                              title={pollVoterTimestampTitle(r.date, i18n.language)}
+                            >
+                              {formatPollVoterTimestamp(r.date, i18n.language)}
                             </span>
                           )
                         : null}
@@ -204,4 +198,6 @@ export function MessagePollVotersPop({
         : null}
     </div>
   )
+
+  return createPortal(panel, document.body)
 }

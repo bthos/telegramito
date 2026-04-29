@@ -1,4 +1,4 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from "react"
+import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from "react"
 import type { TelegramClient } from "telegram"
 import { Api } from "telegram"
 import type { Dialog } from "telegram/tl/custom/dialog"
@@ -38,6 +38,7 @@ export function useForumTopics(
   setTopicId: Dispatch<SetStateAction<number | null>>
   topicsErr: string | null
   topicsLoading: boolean
+  refreshForumTopics: () => Promise<void>
 } {
   const [topics, setTopics] = useState<Api.ForumTopic[]>([])
   const [topicId, setTopicId] = useState<number | null>(null)
@@ -112,5 +113,17 @@ export function useForumTopics(
     }
   }, [client, entity, isForum, lastMessageTick])
 
-  return { topics, topicId, setTopicId, topicsErr, topicsLoading }
+  const refreshForumTopics = useCallback(async () => {
+    if (!client || !entity || !isForum) {
+      return
+    }
+    try {
+      const tList = await listForumTopics(client, entity)
+      applyTopicList(tList, setTopics, setTopicId)
+    } catch {
+      /* keep previous topics */
+    }
+  }, [client, entity, isForum])
+
+  return { topics, topicId, setTopicId, topicsErr, topicsLoading, refreshForumTopics }
 }

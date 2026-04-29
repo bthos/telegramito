@@ -1,13 +1,30 @@
 import { Api } from "telegram"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { useEffect, useLayoutEffect, type ReactNode, type RefObject } from "react"
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  type ReactNode,
+  type RefObject,
+} from "react"
 
 export type ChatDatedItem =
   | { kind: "sep"; dayKey: string; ts: number }
   | { kind: "msg"; message: Api.Message }
 
+export type ChatMessagesVirtualListHandle = {
+  scrollToRowIndex: (
+    index: number,
+    options?: { align?: "auto" | "start" | "center" | "end"; behavior?: ScrollBehavior },
+  ) => void
+}
+
 type Props = {
   scrollRef: RefObject<HTMLDivElement | null>
+  /** Bump when the chat/thread changes so internal sticky bookkeeping resets. */
+  listEpoch?: string
   datedList: readonly ChatDatedItem[]
   loadingOlder: boolean
   loadingLabel: string
@@ -18,34 +35,64 @@ type Props = {
 /**
  * Windowed message list for long threads; keeps the scroll parent as the measurement element.
  */
-export function ChatMessagesVirtualList({
-  scrollRef,
-  datedList,
-  loadingOlder,
-  loadingLabel,
-  renderRow,
-  onFirstVisibleRowIndexChange,
-}: Props) {
+export const ChatMessagesVirtualList = forwardRef<
+  ChatMessagesVirtualListHandle,
+  Props
+>(function ChatMessagesVirtualList(
+  {
+    scrollRef,
+    listEpoch = "",
+    datedList,
+    loadingOlder,
+    loadingLabel,
+    renderRow,
+    onFirstVisibleRowIndexChange,
+  },
+  ref,
+) {
+  const lastStickyReportRef = useRef<number>(-1)
+
   const rowVirtualizer = useVirtualizer({
     count: datedList.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 56,
-    overscan: 12,
+    estimateSize: (index) => (datedList[index]?.kind === "sep" ? 38 : 58),
+    overscan: 8,
   })
 
-  useLayoutEffect(() => {
-    rowVirtualizer.measure()
-  }, [datedList, rowVirtualizer])
+  useImperativeHandle(
+    ref,
+    () => ({
+      scrollToRowIndex: (index, options) => {
+        rowVirtualizer.scrollToIndex(index, {
+          align: options?.align ?? "start",
+          behavior: options?.behavior ?? "smooth",
+        })
+      },
+    }),
+    [rowVirtualizer],
+  )
+
+  useEffect(() => {
+    lastStickyReportRef.current = -1
+  }, [listEpoch])
 
   useLayoutEffect(() => {
     if (!onFirstVisibleRowIndexChange) {
       return
     }
-    const vis = rowVirtualizer.getVirtualItems()
-    if (vis.length === 0) {
+    const idx = (() => {
+      const r = rowVirtualizer.range
+      if (r != null) return r.startIndex
+      const vis = rowVirtualizer.getVirtualItems()
+      return vis.length > 0 ? vis[0].index : null
+    })()
+    if (idx == null) {
       return
     }
-    onFirstVisibleRowIndexChange(vis[0].index)
+    if (lastStickyReportRef.current !== idx) {
+      lastStickyReportRef.current = idx
+      onFirstVisibleRowIndexChange(idx)
+    }
   }, [datedList, loadingOlder, rowVirtualizer, onFirstVisibleRowIndexChange])
 
   useEffect(() => {
@@ -54,11 +101,20 @@ export function ChatMessagesVirtualList({
     }
     const el = scrollRef.current
     const run = () => {
-      const vis = rowVirtualizer.getVirtualItems()
-      if (vis.length === 0) {
+      const idx = (() => {
+        const r = rowVirtualizer.range
+        if (r != null) return r.startIndex
+        const vis = rowVirtualizer.getVirtualItems()
+        return vis.length > 0 ? vis[0].index : null
+      })()
+      if (idx == null) {
         return
       }
-      onFirstVisibleRowIndexChange(vis[0].index)
+      if (lastStickyReportRef.current === idx) {
+        return
+      }
+      lastStickyReportRef.current = idx
+      onFirstVisibleRowIndexChange(idx)
     }
     run()
     if (el) {
@@ -69,7 +125,7 @@ export function ChatMessagesVirtualList({
         el.removeEventListener("scroll", run)
       }
     }
-  }, [scrollRef, rowVirtualizer, datedList, onFirstVisibleRowIndexChange])
+  }, [scrollRef, rowVirtualizer, onFirstVisibleRowIndexChange])
 
   return (
     <>
@@ -110,4 +166,6 @@ export function ChatMessagesVirtualList({
       </div>
     </>
   )
-}
+})
+
+ChatMessagesVirtualList.displayName = "ChatMessagesVirtualList"
