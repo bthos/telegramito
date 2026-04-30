@@ -28,6 +28,7 @@ public/pwa*
 .vscode/
 !.vscode/extensions.json
 .idea/
+.specstory/
 .DS_Store
 *.suo
 *.ntvs*
