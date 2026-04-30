@@ -1,4 +1,4 @@
-import { Fragment } from "react"
+import { Fragment, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import { getDialogPreviewText } from "../telegram/dialogPreview"
@@ -38,6 +38,24 @@ export function ChatList({
   loadedDialogCount,
 }: Props) {
   const { t, i18n } = useTranslation()
+
+  const sentinelRef = useRef<HTMLLIElement>(null)
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel || !hasMoreDialogs || !loadMoreDialogs || dialogsLoadingMore) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMoreDialogs()
+        }
+      },
+      { threshold: 0.1 }
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasMoreDialogs, loadMoreDialogs, dialogsLoadingMore])
+
   if (nightListHidden) {
     return (
       <div className="side-panel side-night">
@@ -134,24 +152,18 @@ export function ChatList({
           </li>
         )
       })}
+      {hasMoreDialogs ? (
+        <li ref={sentinelRef} className="chat-list-sentinel" aria-hidden>
+          {dialogsLoadingMore
+            ? <p className="small muted" role="status">{t("loading")}</p>
+            : null}
+        </li>
+      ) : null}
     </ul>
-    {hasMoreDialogs && loadMoreDialogs ? (
-      <div className="chat-list-footer">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={dialogsLoadingMore}
-          onClick={() => {
-            void loadMoreDialogs()
-          }}
-        >
-          {dialogsLoadingMore ? t("loading") : t("chat.loadMoreChats")}
-        </Button>
-        <p className="small muted">{t("chat.dialogsListNote", { n: String(loadedDialogCount ?? dialogs.length) })}</p>
-      </div>
-    ) : (loadedDialogCount ?? dialogs.length) >= 100 && !hasMoreDialogs ? (
-      <p className="small muted chat-list-footer">{t("chat.dialogsListNote", { n: String(loadedDialogCount ?? dialogs.length) })}</p>
+    {!hasMoreDialogs && (loadedDialogCount ?? dialogs.length) >= 100 ? (
+      <p className="small muted chat-list-footer">
+        {t("chat.dialogsListNote", { n: String(loadedDialogCount ?? dialogs.length) })}
+      </p>
     ) : null}
     </Fragment>
   )
