@@ -154,7 +154,18 @@
     "pollClosed": "closed",
     "pollAnswer": "Answer",
     "mediaLoading": "Loading media",
-    "messageListLoading": "Loading messages"
+    "messageListLoading": "Loading messages",
+    "info": "Chat info",
+    "sharedMedia": "Shared media",
+    "noSharedMedia": "No shared media",
+    "quickActions": "Quick actions",
+    "searchInChat": "Search in chat",
+    "muteUnmute": "Mute / Unmute",
+    "blockUser": "Block user",
+    "leaveGroup": "Leave group",
+    "leaveGroupConfirm": "Are you sure you want to leave this group?",
+    "confirmLeave": "Leave",
+    "cancel": "Cancel"
   },
   "mode": {
     "label": "Profile",

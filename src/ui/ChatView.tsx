@@ -62,6 +62,7 @@ import {
   type ChatMessagesVirtualListHandle,
 } from "./ChatMessagesVirtualList"
 import { MessageListSkeleton } from "./MessageListSkeleton"
+import { ChatContextPanel } from "./ChatContextPanel"
 
 type Props = {
   dialog: Dialog
@@ -130,6 +131,12 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   const [messageActionError, setMessageActionError] = useState<string | null>(null)
 
   const { key, name } = getPeerInfo(dialog)
+
+  const [isPanelOpen, setIsPanelOpen] = useState(false)
+  useEffect(() => {
+    setIsPanelOpen(false)
+  }, [key])
+
   const isForum = useMemo(
     () => isForumWithSubchats(dialog.entity ?? undefined),
     [dialog.entity]
@@ -659,6 +666,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   }
 
   return (
+    <div className="thread-layout" data-panel-open={String(isPanelOpen)}>
     <section className="thread" aria-label={name}>
       {showTitle ? (
         <div className="thread-header-row">
@@ -666,6 +674,15 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           {showUnreadToggle ? (
             <UnreadOnlyMessagesToggle active={messagesUnreadOnly} onToggle={toggleUnreadOnly} />
           ) : null}
+          <button
+            type="button"
+            aria-label={t("chat.info")}
+            aria-pressed={isPanelOpen}
+            className={isPanelOpen ? "btn-icon btn-icon--active" : "btn-icon"}
+            onClick={() => setIsPanelOpen((v) => !v)}
+          >
+            ℹ
+          </button>
         </div>
       ) : null}
       {!showTitle && showUnreadToggle && headerActionsHost
@@ -930,6 +947,15 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           }}
         />
       ) : null}
+      <ChatContextPanel
+        entity={dialog.entity as import("telegram").Api.User | import("telegram").Api.Chat | import("telegram").Api.Channel | null | undefined}
+        peerName={name}
+        peerId={key}
+        client={client}
+        isOpen={isPanelOpen}
+        onClose={() => setIsPanelOpen(false)}
+      />
     </section>
+    </div>
   )
 }

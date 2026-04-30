@@ -154,7 +154,18 @@
     "pollClosed": "закрыта",
     "pollAnswer": "Адказ",
     "mediaLoading": "Загрузка медыя",
-    "messageListLoading": "Загрузка паведамленняў"
+    "messageListLoading": "Загрузка паведамленняў",
+    "info": "Інфармацыя пра чат",
+    "sharedMedia": "Агульныя медыяфайлы",
+    "noSharedMedia": "Агульных медыяфайлаў няма",
+    "quickActions": "Хуткія дзеянні",
+    "searchInChat": "Пошук у чаце",
+    "muteUnmute": "Выключыць / уключыць гукі",
+    "blockUser": "Заблакаваць карыстальніка",
+    "leaveGroup": "Выйсці з групы",
+    "leaveGroupConfirm": "Вы ўпэўнены, што хочаце выйсці з групы?",
+    "confirmLeave": "Выйсці",
+    "cancel": "Адмена"
   },
   "mode": {
     "label": "Рэжым",

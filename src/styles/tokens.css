@@ -91,6 +91,10 @@
   --ds-z-topbar: 10;
   --ds-z-modal-back: 20;
   --ds-z-popover: 200;
+  --z-panel: 30;
+  /* —— Surface aliases (context panel) —— */
+  --clr-surface-raised: var(--ds-color-raised);
+  --clr-divider: var(--ds-color-line);
 
   /* —— Loading placeholders —— */
   --placeholder-bg:      rgba(255, 255, 255, 0.07);

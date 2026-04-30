@@ -2737,3 +2737,87 @@ button.msg-bubble-action:hover {
   outline-offset: 1px;
   z-index: 1;
 }
+
+/* —— Chat info / context panel —— */
+.thread-layout { display: flex; position: relative; }
+@media (min-width: 1024px) {
+  .chat-context-panel { width: 360px; min-width: 360px; overflow-y: auto; background: var(--clr-surface-raised, var(--bg-raised)); border-left: 1px solid var(--line); }
+  .thread-layout[data-panel-open="false"] .chat-context-panel { display: none; }
+  .thread-layout[data-panel-open="true"] .thread { flex: 1; min-width: 0; }
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  .chat-context-panel {
+    position: fixed; right: 0; top: 0; height: 100dvh; width: 360px;
+    z-index: var(--z-panel); transform: translateX(100%); transition: transform 0.22s ease-out;
+    background: var(--clr-surface-raised, var(--bg-raised)); border-left: 1px solid var(--line);
+  }
+  .chat-context-panel.context-panel--open { transform: translateX(0); }
+  .context-panel__backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: calc(var(--z-panel) - 1);
+  }
+}
+@media (max-width: 639px) {
+  .chat-context-panel {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 82dvh;
+    border-top-left-radius: 24px; border-top-right-radius: 24px;
+    z-index: var(--z-panel); transform: translateY(100%); transition: transform 0.22s ease-out;
+    background: var(--clr-surface-raised, var(--bg-raised));
+  }
+  .chat-context-panel.context-panel--open { transform: translateY(0); }
+  .chat-context-panel::before {
+    content: ""; display: block; margin: 8px auto 4px; width: 40px; height: 4px;
+    border-radius: 2px; background: var(--clr-divider, var(--line));
+  }
+  .context-panel__backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: calc(var(--z-panel) - 1);
+  }
+}
+.context-panel__header {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 1rem 1rem 0.75rem; border-bottom: 1px solid var(--line);
+}
+.context-panel__name {
+  font-size: 1rem; font-weight: 700; margin: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.context-panel__section {
+  padding: 0.75rem 1rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.context-panel__section-title {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted); margin: 0 0 0.5rem 0;
+}
+.context-panel__empty { font-size: 0.88rem; color: var(--muted); margin: 0; }
+.context-panel__media-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+.context-panel__media-cell { aspect-ratio: 1; overflow: hidden; background: var(--clr-surface-raised, var(--bg-raised)); }
+.context-panel__media-cell--loading {
+  background: var(--placeholder-bg, rgba(255,255,255,0.07));
+  animation: placeholder-shimmer 1.4s ease-in-out infinite;
+}
+.context-panel__media-cell--placeholder {
+  background: var(--placeholder-bg, rgba(255,255,255,0.07)); opacity: 0.4;
+}
+.context-panel__media-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.context-panel__media-cell a { display: block; width: 100%; height: 100%; }
+.context-panel__actions { display: flex; flex-direction: column; gap: 0.25rem; }
+.context-panel__action-btn {
+  display: block; width: 100%; text-align: left; padding: 0.55rem 0.65rem;
+  background: transparent; border: 0; border-radius: var(--ds-radius-md); color: var(--text);
+  font: inherit; font-size: 0.9rem; cursor: pointer; transition: background 0.1s ease;
+}
+.context-panel__action-btn:hover { background: var(--ds-color-elevated-hover); }
+.context-panel__action-btn--danger { color: var(--err, #f58b8b); }
+.context-panel__confirm-row {
+  display: flex; flex-direction: column; gap: 0.35rem; padding: 0.35rem 0 0.25rem;
+}
+.context-panel__confirm-label { font-size: 0.85rem; color: var(--muted); padding: 0 0.65rem; }
+.btn-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--muted); font-size: 1rem; cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+  flex-shrink: 0;
+}
+.btn-icon:hover { background: var(--ds-color-elevated-hover); color: var(--text); }
+.btn-icon--active { background: rgba(90,160,255,0.15); color: var(--acc); }
