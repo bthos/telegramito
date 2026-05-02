@@ -46,11 +46,13 @@ import {
 import { isInboundUnreadForThread, readInboxMaxIdForThread } from "../telegram/messageUnread"
 import { readMaxIdForMarkRead } from "../telegram/markChatRead"
 import { forwardMessageInCurrentChat } from "../telegram/forwardInChat"
+import { toMessageList } from "../telegram/messageList"
+import { withTransientRetry } from "../telegram/invokeWithTransientRetry"
 import { InboundClusterRow } from "./InboundClusterRow"
 import { ForumTopicIcon, UnreadFilterIcon } from "./ChatFilterIcons"
 import { ScrollToBottomFab } from "./ScrollToBottomFab"
 import { JumpDateCalendarPop } from "./JumpDateCalendarPop"
-import { Button } from "./ds"
+import { Button, TextField } from "./ds"
 import { MessageTextContent } from "./MessageTextContent"
 import { MessageMediaView } from "./MessageMediaView"
 import { MessageReactionPicker } from "./MessageReactionPicker"
@@ -133,9 +135,26 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   const { key, name } = getPeerInfo(dialog)
 
   const [isPanelOpen, setIsPanelOpen] = useState(false)
+  const [inChatSearchOpen, setInChatSearchOpen] = useState(false)
+  const [inChatSearchQuery, setInChatSearchQuery] = useState("")
+  const [inChatSearchResults, setInChatSearchResults] = useState<Api.Message[]>([])
+  const [inChatSearchBusy, setInChatSearchBusy] = useState(false)
+  const [inChatSearchRan, setInChatSearchRan] = useState(false)
+  const inChatSearchInputRef = useRef<HTMLInputElement>(null)
+  const pendingScrollToMessageIdRef = useRef<number | null>(null)
+
   useEffect(() => {
     setIsPanelOpen(false)
   }, [key])
+
+  useEffect(() => {
+    if (!inChatSearchOpen) {
+      return
+    }
+    queueMicrotask(() => {
+      inChatSearchInputRef.current?.focus()
+    })
+  }, [inChatSearchOpen])
 
   const isForum = useMemo(
     () => isForumWithSubchats(dialog.entity ?? undefined),
@@ -182,6 +201,14 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     () => `${key}|${isForum ? String(topicId ?? "null") : "direct"}`,
     [key, isForum, topicId]
   )
+
+  useEffect(() => {
+    setInChatSearchOpen(false)
+    setInChatSearchQuery("")
+    setInChatSearchResults([])
+    setInChatSearchRan(false)
+    pendingScrollToMessageIdRef.current = null
+  }, [convKey])
 
   // listForViewLength for the unread-seek effect inside useChatMessages.
   // We track it via a ref that is updated each render so the async effect sees a current value.
@@ -359,6 +386,82 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     },
     [datedList]
   )
+
+  const runInChatSearch = useCallback(async () => {
+    const q = inChatSearchQuery.trim()
+    if (!client || !dialog.entity) {
+      setInChatSearchResults([])
+      setInChatSearchRan(true)
+      return
+    }
+    if (isForum) {
+      setInChatSearchResults([])
+      setInChatSearchRan(true)
+      return
+    }
+    if (!q) {
+      setInChatSearchResults([])
+      setInChatSearchRan(true)
+      return
+    }
+    setInChatSearchBusy(true)
+    setInChatSearchRan(true)
+    try {
+      const raw = await withTransientRetry(client, () =>
+        client.getMessages(dialog.entity as never, { search: q, limit: 40 }),
+      )
+      setInChatSearchResults(toMessageList(raw))
+    } catch {
+      setInChatSearchResults([])
+    } finally {
+      setInChatSearchBusy(false)
+    }
+  }, [client, dialog.entity, inChatSearchQuery, isForum])
+
+  const jumpToMessageFromSearch = useCallback(
+    async (m: Api.Message) => {
+      const id = m.id
+      if (typeof id !== "number") {
+        return
+      }
+      setMessagesUnreadOnly(false)
+      setInChatSearchOpen(false)
+      setIsPanelOpen(false)
+      try {
+        await refreshMessagesById([id])
+        pendingScrollToMessageIdRef.current = id
+      } catch {
+        appLog.warn("jumpToMessageFromSearch failed", { id })
+      }
+    },
+    [refreshMessagesById],
+  )
+
+  useLayoutEffect(() => {
+    const id = pendingScrollToMessageIdRef.current
+    if (id == null) {
+      return
+    }
+    const idx = datedList.findIndex(
+      (row) => row.kind === "msg" && row.message.id === id,
+    )
+    if (idx < 0) {
+      return
+    }
+    pendingScrollToMessageIdRef.current = null
+    if (datedList.length > VIRTUAL_MSG_THRESHOLD) {
+      virtualListRef.current?.scrollToRowIndex(idx, {
+        align: "center",
+        behavior: "smooth",
+      })
+    } else {
+      const root = scrollRef.current
+      const node = root?.querySelector(
+        `[data-chat-row-index="${idx}"]`,
+      ) as HTMLElement | null
+      node?.scrollIntoView({ block: "center", behavior: "smooth" })
+    }
+  }, [datedList])
 
   useEffect(() => {
     setJumpCalOpen(false)
@@ -739,6 +842,76 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           {t("chat.messagesUnreadEmpty")}
         </p>
       ) : null}
+      {inChatSearchOpen ? (
+        <div className="thread-in-chat-search" role="search">
+          <div className="thread-in-chat-search__row">
+            <TextField
+              ref={inChatSearchInputRef}
+              variant="search"
+              type="search"
+              aria-label={t("chat.searchInChat")}
+              placeholder={t("chat.searchPlaceholder")}
+              value={inChatSearchQuery}
+              onChange={(e) => setInChatSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  void runInChatSearch()
+                }
+              }}
+              disabled={isForum || inChatSearchBusy}
+            />
+            <Button
+              type="button"
+              size="sm"
+              disabled={isForum || inChatSearchBusy}
+              onClick={() => void runInChatSearch()}
+            >
+              {t("chat.searchRun")}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setInChatSearchOpen(false)}>
+              {t("chat.cancel")}
+            </Button>
+          </div>
+          {inChatSearchBusy ? (
+            <p className="small muted" aria-live="polite">
+              {t("chat.searchRunning")}
+            </p>
+          ) : null}
+          {!inChatSearchBusy && inChatSearchRan && inChatSearchResults.length === 0 ? (
+            <p className="small muted" role="status">
+              {t("chat.searchNoHits")}
+            </p>
+          ) : null}
+          {inChatSearchResults.length > 0 ? (
+            <ul className="thread-in-chat-search__hits">
+              {inChatSearchResults.map((m) => {
+                const id = m.id
+                if (id == null) {
+                  return null
+                }
+                const raw = typeof m.message === "string" ? m.message.trim() : ""
+                const preview =
+                  raw.length > 0 ? (raw.length > 120 ? `${raw.slice(0, 117)}…` : raw) : t("chat.searchHitNoText")
+                return (
+                  <li key={id}>
+                    <button
+                      type="button"
+                      className="thread-in-chat-search__hit"
+                      onClick={() => void jumpToMessageFromSearch(m)}
+                    >
+                      <span className="thread-in-chat-search__hit-preview">{preview}</span>
+                      <time className="thread-in-chat-search__hit-time" dateTime={new Date(m.date * 1000).toISOString()}>
+                        {formatMessageTime(m.date, i18n.language)}
+                      </time>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
       <div
         className={
           datedList.length > 0
@@ -954,6 +1127,12 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         client={client}
         isOpen={isPanelOpen}
         onClose={() => setIsPanelOpen(false)}
+        isForum={isForum}
+        onOpenInChatSearch={() => {
+          setInChatSearchRan(false)
+          setInChatSearchOpen(true)
+        }}
+        onAfterBlock={() => void refreshDialogs()}
       />
     </section>
     </div>

@@ -2739,7 +2739,26 @@ button.msg-bubble-action:hover {
 }
 
 /* —— Chat info / context panel —— */
-.thread-layout { display: flex; position: relative; }
+/**
+ * `ChatView` root: must fill `.chat-main` / `.chats-narrow__thread` height. Previously only
+ * `section.thread` had `flex: 1` from `.chat-main .thread`, but the direct flex child is this
+ * wrapper — without `flex: 1; min-height: 0` the message list (.message-scroll) collapsed.
+ */
+.thread-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+}
+.thread-layout > .thread {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
 @media (min-width: 1024px) {
   .chat-context-panel { width: 360px; min-width: 360px; overflow-y: auto; background: var(--clr-surface-raised, var(--bg-raised)); border-left: 1px solid var(--line); }
   .thread-layout[data-panel-open="false"] .chat-context-panel { display: none; }
@@ -2811,7 +2830,23 @@ button.msg-bubble-action:hover {
 .context-panel__confirm-row {
   display: flex; flex-direction: column; gap: 0.35rem; padding: 0.35rem 0 0.25rem;
 }
-.context-panel__confirm-label { font-size: 0.85rem; color: var(--muted); padding: 0 0.65rem; }
+.context-panel__action-err { color: var(--err, #f58b8b); font-size: 0.86rem; margin: 0 0 0.4rem; }
+.thread-in-chat-search {
+  padding: 0.5rem 0.75rem 0.65rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--clr-surface-raised, var(--bg-raised));
+}
+.thread-in-chat-search__row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.thread-in-chat-search__row .input { flex: 1 1 12rem; min-width: 0; }
+.thread-in-chat-search__hits { list-style: none; margin: 0.5rem 0 0; padding: 0; max-height: 10rem; overflow: auto; }
+.thread-in-chat-search__hit {
+  display: flex; width: 100%; align-items: flex-start; justify-content: space-between; gap: 0.5rem;
+  text-align: left; padding: 0.4rem 0.35rem; border: 0; background: transparent; color: var(--text);
+  font: inherit; font-size: 0.86rem; cursor: pointer; border-radius: var(--ds-radius-md, 6px);
+}
+.thread-in-chat-search__hit:hover { background: var(--ds-color-elevated-hover); }
+.thread-in-chat-search__hit-preview { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.thread-in-chat-search__hit-time { flex-shrink: 0; color: var(--muted); font-size: 0.78rem; }
 .btn-icon {
   display: inline-flex; align-items: center; justify-content: center;
   width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: 50%;

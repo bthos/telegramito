@@ -37,3 +37,30 @@ public/pwa*
 *.sw?
 AGENTS.md
 CLAUDE.md
+
+
+# >>> agentic-kit (managed) >>>
+# Managed by agentic-kit. Re-run `agentic-kit/init.sh` to refresh, or
+# `agentic-kit/teardown.sh` to remove the whole block. Edits inside this block
+# are overwritten on init.
+#
+# --- Runtime / ephemeral (pipeline scratch; usually not committed) ---
+.agentic-kit-artefacts/memory/
+.agentic-kit-artefacts/features/
+.agentic-kit-artefacts/archive/
+.agentic-kit-artefacts/proposed-patches/
+.agentic-kit-artefacts/SESSION-STATE.md
+.agentic-kit-artefacts/MEMORY.md
+.agentic-kit-artefacts/PROJECT_PROFILE.md
+#
+# --- Per-machine kit bookkeeping (usually not committed) ---
+.agentic-kit-artefacts/.agentic-kit.cfg
+.agentic-kit-artefacts/.agentic-kit.files
+#
+# Optional — ignore all of .agentic-kit-artefacts/ except PIPELINE.md + PROJECT.md (uncomment all 4 lines):
+# .agentic-kit-artefacts/**
+# !.agentic-kit-artefacts/
+# !.agentic-kit-artefacts/PIPELINE.md
+# !.agentic-kit-artefacts/PROJECT.md
+#
+# <<< agentic-kit (managed) <<<
