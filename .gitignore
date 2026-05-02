@@ -18,7 +18,6 @@ public/pwa*
 *.local
 
 # Editor directories and files
-.artefacts/
 .codemie/
 .claude/
 .cursor/
@@ -45,17 +44,7 @@ CLAUDE.md
 # are overwritten on init.
 #
 # --- Runtime / ephemeral (pipeline scratch; usually not committed) ---
-.agentic-kit-artefacts/memory/
-.agentic-kit-artefacts/features/
-.agentic-kit-artefacts/archive/
-.agentic-kit-artefacts/proposed-patches/
-.agentic-kit-artefacts/SESSION-STATE.md
-.agentic-kit-artefacts/MEMORY.md
-.agentic-kit-artefacts/PROJECT_PROFILE.md
-#
-# --- Per-machine kit bookkeeping (usually not committed) ---
-.agentic-kit-artefacts/.agentic-kit.cfg
-.agentic-kit-artefacts/.agentic-kit.files
+.agentic-kit-artefacts/
 #
 # Optional — ignore all of .agentic-kit-artefacts/ except PIPELINE.md + PROJECT.md (uncomment all 4 lines):
 # .agentic-kit-artefacts/**
