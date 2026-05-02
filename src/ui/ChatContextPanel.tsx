@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from "react"
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { useTranslation } from "react-i18next"
+import { blockTelegramUser } from "../telegram/blockUser"
+import {
+  getPeerMuteUntil,
+  isPeerNotifyMuted,
+  setPeerMuted,
+} from "../telegram/peerMute"
 import { PeerAvatar } from "./PeerAvatar"
 import { usePeerRecentMedia } from "../hooks/usePeerRecentMedia"
 import { makeBlobUrl } from "./messageMediaBlobUtils"
@@ -15,6 +21,12 @@ type Props = {
   client: TelegramClient | null
   isOpen: boolean
   onClose: () => void
+  /** Forum / topics: in-chat search is not wired yet — hide or disable search action. */
+  isForum?: boolean
+  /** Opens the in-thread search strip in {@link ChatView} and should close the panel. */
+  onOpenInChatSearch?: () => void
+  /** Called after a successful block so the shell can refresh dialogs. */
+  onAfterBlock?: () => void
 }
 
 /** Returns true when the entity is a private (user) peer. */
@@ -89,6 +101,9 @@ export function ChatContextPanel({
   client,
   isOpen,
   onClose,
+  isForum = false,
+  onOpenInChatSearch,
+  onAfterBlock,
 }: Props) {
   const { t } = useTranslation()
   const panelRef = useRef<HTMLDivElement | null>(null)
@@ -108,6 +123,32 @@ export function ChatContextPanel({
   }, [isOpen, onClose])
 
   const [leaveConfirm, setLeaveConfirm] = useState(false)
+  const [blockConfirm, setBlockConfirm] = useState(false)
+  const [muteUntil, setMuteUntil] = useState<number | null>(null)
+  const [muteBusy, setMuteBusy] = useState(false)
+  const [blockBusy, setBlockBusy] = useState(false)
+  const [actionErr, setActionErr] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isOpen || !client || !entity) {
+      setMuteUntil(null)
+      setActionErr(null)
+      setBlockConfirm(false)
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      try {
+        const u = await getPeerMuteUntil(client, entity)
+        if (!cancelled) setMuteUntil(u)
+      } catch {
+        if (!cancelled) setMuteUntil(0)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen, client, entity])
 
   const handleLeave = async () => {
     if (!client || !entity) return
@@ -134,6 +175,39 @@ export function ChatContextPanel({
 
   const showPrivateActions = isPrivatePeer(entity)
   const showGroupActions = isGroupPeer(entity)
+  const muted =
+    muteUntil != null ? isPeerNotifyMuted(muteUntil) : false
+
+  const handleMuteToggle = async () => {
+    if (!client || !entity || muteUntil == null || muteBusy) return
+    setMuteBusy(true)
+    setActionErr(null)
+    try {
+      await setPeerMuted(client, entity, !muted)
+      const next = await getPeerMuteUntil(client, entity)
+      setMuteUntil(next)
+    } catch (e) {
+      setActionErr(e instanceof Error ? e.message : t("chat.muteFailed"))
+    } finally {
+      setMuteBusy(false)
+    }
+  }
+
+  const handleBlock = async () => {
+    if (!client || !entity || entity.className !== "User" || blockBusy) return
+    setBlockBusy(true)
+    setActionErr(null)
+    try {
+      await blockTelegramUser(client, entity)
+      setBlockConfirm(false)
+      onAfterBlock?.()
+      onClose()
+    } catch (e) {
+      setActionErr(e instanceof Error ? e.message : t("chat.blockUserFailed"))
+    } finally {
+      setBlockBusy(false)
+    }
+  }
 
   // Placeholder cells to fill grid up to 6 when fewer items are available
   const placeholderCount = Math.max(0, 6 - items.length)
@@ -194,12 +268,21 @@ export function ChatContextPanel({
         {/* Quick actions */}
         <section className="context-panel__section" aria-label={t("chat.quickActions")}>
           <h4 className="context-panel__section-title">{t("chat.quickActions")}</h4>
+          {actionErr ? (
+            <p className="context-panel__action-err small" role="alert">
+              {actionErr}
+            </p>
+          ) : null}
           <div className="context-panel__actions">
             <button
               type="button"
               className="context-panel__action-btn"
+              disabled={isForum}
+              title={isForum ? t("chat.searchForumDisabled") : undefined}
               onClick={() => {
-                /* stub — search in chat: unblocked when UX-14 ships */
+                if (isForum) return
+                onOpenInChatSearch?.()
+                onClose()
               }}
             >
               {t("chat.searchInChat")}
@@ -208,23 +291,48 @@ export function ChatContextPanel({
             <button
               type="button"
               className="context-panel__action-btn"
+              disabled={muteUntil == null || muteBusy}
               onClick={() => {
-                /* stub — mute/unmute: V2 */
+                void handleMuteToggle()
               }}
             >
-              {t("chat.muteUnmute")}
+              {muted ? t("chat.unmute") : t("chat.mute")}
             </button>
 
             {showPrivateActions ? (
-              <button
-                type="button"
-                className="context-panel__action-btn context-panel__action-btn--danger"
-                onClick={() => {
-                  /* stub — block user: V2 */
-                }}
-              >
-                {t("chat.blockUser")}
-              </button>
+              blockConfirm ? (
+                <div className="context-panel__confirm-row">
+                  <span className="context-panel__confirm-label">
+                    {t("chat.blockUserConfirm")}
+                  </span>
+                  <button
+                    type="button"
+                    className="context-panel__action-btn context-panel__action-btn--danger"
+                    disabled={blockBusy}
+                    onClick={() => {
+                      void handleBlock()
+                    }}
+                  >
+                    {t("chat.blockUser")}
+                  </button>
+                  <button
+                    type="button"
+                    className="context-panel__action-btn"
+                    disabled={blockBusy}
+                    onClick={() => setBlockConfirm(false)}
+                  >
+                    {t("chat.cancel")}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="context-panel__action-btn context-panel__action-btn--danger"
+                  onClick={() => setBlockConfirm(true)}
+                >
+                  {t("chat.blockUser")}
+                </button>
+              )
             ) : null}
 
             {showGroupActions ? (

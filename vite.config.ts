@@ -107,5 +107,10 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    pool: "forks",
+    /** Telegram`s dependency graph is huge — run test files one at a time to avoid fork OOM. */
+    maxWorkers: 1,
+    fileParallelism: false,
+    execArgv: ["--max-old-space-size=16384"],
   },
 })
