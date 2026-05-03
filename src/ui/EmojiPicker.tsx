@@ -11,6 +11,7 @@ import {
 import { useTranslation } from "react-i18next"
 import { EMOJI_GROUPS, type EmojiItem } from "../data/emojiGroups"
 import { useFocusTrap } from "../hooks/useFocusTrap"
+import { EmojiOutlineIcon } from "./ChatChromeIcons"
 import { loadRecentEmojis, saveRecentEmoji } from "../util/recentEmojis"
 
 export type EmojiPickerPanelProps = {
@@ -405,9 +406,7 @@ export function EmojiPickerButton({
           setOpen((v) => !v)
         }}
       >
-        <span className="emoji-picker__trigger-glyph" aria-hidden>
-          🙂
-        </span>
+        <EmojiOutlineIcon className="emoji-picker__trigger-ico" aria-hidden />
       </button>
       <EmojiPickerPanel
         open={open}

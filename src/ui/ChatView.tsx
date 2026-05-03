@@ -70,6 +70,7 @@ import {
   type ChatMessagesVirtualListHandle,
 } from "./ChatMessagesVirtualList"
 import { MessageListSkeleton } from "./MessageListSkeleton"
+import { ChatInfoIcon, SearchInChatIcon } from "./ChatChromeIcons"
 import { ChatContextPanel } from "./ChatContextPanel"
 import { makeTypingSender, useTypingIndicators } from "../hooks/useTypingIndicators"
 import { useDraftAttachments } from "../hooks/useDraftAttachments"
@@ -763,7 +764,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     }
   }, [list, reactionTarget])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = textareaRef.current
     if (!el) return
     el.style.height = "auto"
@@ -991,7 +992,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
 
   return (
     <div className="thread-layout" data-panel-open={String(isPanelOpen)}>
-    <section className="thread" aria-label={name}>
+      <section className="thread" aria-label={name}>
       {showTitle ? (
         searchMode ? (
           <div className="thread-header-row thread-header-row--search">
@@ -1023,7 +1024,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
               title={t("chat.searchInChat")}
               onClick={openSearchMode}
             >
-              <span aria-hidden>🔍</span>
+              <SearchInChatIcon />
             </button>
             <button
               type="button"
@@ -1032,7 +1033,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
               className={isPanelOpen ? "btn-icon btn-icon--active" : "btn-icon"}
               onClick={() => setIsPanelOpen((v) => !v)}
             >
-              ℹ
+              <ChatInfoIcon />
             </button>
           </div>
         )
@@ -1071,7 +1072,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
                   title={t("chat.searchInChat")}
                   onClick={openSearchMode}
                 >
-                  <span aria-hidden>🔍</span>
+                  <SearchInChatIcon />
                 </button>
               ) : null}
               {showUnreadToggle ? (
@@ -1129,15 +1130,16 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           {t("chat.messagesUnreadEmpty")}
         </p>
       ) : null}
-      <div
-        className={
-          datedList.length > 0
-            ? "message-scroll message-scroll--has-date-float"
-            : "message-scroll"
-        }
-        ref={scrollRef}
-        onScroll={onScroll}
-      >
+      <div className="message-scroll">
+        <div
+          className={
+            datedList.length > 0
+              ? "message-scroll__inner message-scroll__inner--has-date-float"
+              : "message-scroll__inner"
+          }
+          ref={scrollRef}
+          onScroll={onScroll}
+        >
         {datedList.length > 0 && stickyDateLabel && loadedDayBounds.min != null && loadedDayBounds.max != null ? (
           <>
             <JumpDateCalendarPop
@@ -1208,8 +1210,10 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             })}
           </ul>
         )}
+        </div>
         <ScrollToBottomFab
           visible={scrollFabVisible && datedList.some((x) => x.kind === "msg")}
+          unreadBadge={dialog.unreadCount ?? 0}
           onClick={scrollToLatestMessages}
           label={t("chat.scrollToBottom")}
         />
@@ -1307,6 +1311,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             ref={textareaRef}
             className="input input-compose"
             name="m"
+            rows={1}
             value={draft}
             onChange={(e) => {
               setDraft(e.target.value)
@@ -1405,6 +1410,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           }}
         />
       ) : null}
+      </section>
       <ChatContextPanel
         entity={dialog.entity as import("telegram").Api.User | import("telegram").Api.Chat | import("telegram").Api.Channel | null | undefined}
         peerName={name}
@@ -1418,7 +1424,6 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         }}
         onAfterBlock={() => void refreshDialogs()}
       />
-    </section>
     </div>
   )
 }

@@ -5,6 +5,7 @@ import {
   useState,
 } from "react"
 import { useTranslation } from "react-i18next"
+import { AttachClipIcon } from "./ChatChromeIcons"
 
 type Props = {
   onFilesSelected: (files: File[]) => void
@@ -109,7 +110,7 @@ export function AttachMenu({ onFilesSelected, disabled }: Props) {
           setOpen((v) => !v)
         }}
       >
-        <span className="attach-menu__clip" aria-hidden>📎</span>
+        <AttachClipIcon className="attach-menu__clip-ico" aria-hidden />
       </button>
       {open ? (
         <div

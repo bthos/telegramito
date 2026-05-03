@@ -1,6 +1,6 @@
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 import { getMessageDocument, getDocumentFileName, formatDocumentSize, safeFileDownloadName } from "../telegram/documentFile"
 import {
@@ -17,7 +17,9 @@ import type { MessageMediaTranslateFn } from "./messageMediaI18n"
 import { PollReadonly, useWpPreview, WebPageView } from "./messageMediaPollWeb"
 import {
   isNonBlobVisualMedia,
+  listPaidBundleSlots,
   resolveMessageMediaForDisplay,
+  shouldRenderPaidBundleBlock,
 } from "../telegram/messageMediaUnwrap"
 import { MessageMediaStatic } from "./MessageMediaStatic"
 import { ImageLightbox } from "./ImageLightbox"
@@ -40,9 +42,8 @@ function useBlob(
 ) {
   const [s, setS] = useState<MediaBlobState>({ k: "d" })
   const uref = useRef<string | null>(null)
-  const resolved = resolveMessageMediaForDisplay(m)
-  const media = resolved.media
-  const d = getMessageDocument(resolved)
+  const media = m.media
+  const d = getMessageDocument(m)
 
   useEffect(() => {
     if (uref.current) {
@@ -243,6 +244,45 @@ function useBlob(
   return s
 }
 
+function PaidBundlePreviewRow({
+  preview,
+  te,
+}: {
+  preview: Api.MessageExtendedMediaPreview
+  te: (key: string, options?: Record<string, string | number | undefined>) => string
+}) {
+  const w = preview.w
+  const h = preview.h
+  const dur = preview.videoDuration
+  const hasAspect = typeof w === "number" && typeof h === "number" && w > 0 && h > 0
+  return (
+    <div
+      className="msg-paid-slot msg-paid-slot--preview placeholder--shimmer"
+      role="status"
+      aria-busy="true"
+      aria-label={te("chat.paidBundleLockedPreviewAria")}
+      data-has-ar={hasAspect ? "1" : undefined}
+      style={
+        hasAspect
+          ? ({ "--msg-paid-ar": `${w} / ${h}` } as CSSProperties)
+          : undefined
+      }
+    >
+      <span className="msg-media-card__muted">
+        {te("chat.paidBundleLockedPreview", {
+          w: w != null ? String(w) : "—",
+          h: h != null ? String(h) : "—",
+        })}
+      </span>
+      {dur != null && dur > 0 ? (
+        <span className="msg-media-card__muted">
+          {te("chat.paidBundleVideoDuration", { s: String(dur) })}
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
 export function MessageMediaView({
   message, client, noPreview, filterGifs, t, pollVoter,
 }: {
@@ -254,16 +294,90 @@ export function MessageMediaView({
   pollVoter?: { entity: unknown; onVoted: () => void }
 }) {
   const { t: te } = useTranslation()
-  const wpT = useWpPreview(message, client, noPreview)
-  const s = useBlob(message, client, filterGifs)
+  const paidBundleSlots = useMemo(() => {
+    if (message.media?.className !== "MessageMediaPaidMedia") {
+      return null
+    }
+    return listPaidBundleSlots(message.media as Api.MessageMediaPaidMedia)
+  }, [message])
+
+  const renderPaidAsBundle = Boolean(
+    paidBundleSlots && shouldRenderPaidBundleBlock(paidBundleSlots),
+  )
+
+  const resolved = useMemo(() => {
+    if (
+      paidBundleSlots != null
+      && paidBundleSlots.length === 1
+      && paidBundleSlots[0].kind === "full"
+      && !renderPaidAsBundle
+    ) {
+      return { ...message, media: paidBundleSlots[0].media } as Api.Message
+    }
+    return resolveMessageMediaForDisplay(message)
+  }, [message, paidBundleSlots, renderPaidAsBundle])
+
+  const blobSourceMessage = useMemo(() => {
+    if (renderPaidAsBundle) {
+      return {
+        ...message,
+        media: { className: "MessageMediaEmpty" } as Api.MessageMediaEmpty,
+      } as Api.Message
+    }
+    if (
+      paidBundleSlots != null
+      && paidBundleSlots.length === 1
+      && paidBundleSlots[0].kind === "full"
+    ) {
+      return { ...message, media: paidBundleSlots[0].media } as Api.Message
+    }
+    return resolveMessageMediaForDisplay(message)
+  }, [message, paidBundleSlots, renderPaidAsBundle])
+
+  const wpT = useWpPreview(resolved, client, noPreview)
+  const s = useBlob(blobSourceMessage, client, filterGifs)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const errLabel = te("error")
-  const resolved = useMemo(() => resolveMessageMediaForDisplay(message), [message])
 
   const imagePreviewUrl = s.k === "i" ? s.u : null
   useEffect(() => {
     setLightboxOpen(false)
   }, [message.id, imagePreviewUrl])
+
+  if (renderPaidAsBundle && paidBundleSlots) {
+    return (
+      <div
+        className="msg-paid-bundle"
+        role="group"
+        aria-label={te("chat.paidBundleGroupAria")}
+      >
+        {paidBundleSlots.map((slot, i) =>
+          slot.kind === "preview"
+            ? (
+                <PaidBundlePreviewRow key={i} preview={slot.preview} te={te} />
+              )
+            : (
+                <MessageMediaView
+                  key={i}
+                  message={
+                    Object.assign(
+                      Object.create(Object.getPrototypeOf(message)),
+                      message,
+                      { media: slot.media },
+                    ) as Api.Message
+                  }
+                  client={client}
+                  noPreview={noPreview}
+                  filterGifs={filterGifs}
+                  t={t}
+                  pollVoter={pollVoter}
+                />
+              ),
+        )}
+      </div>
+    )
+  }
+
   const pollMedia = getMessageMediaPollFromMessage(message)
   if (pollMedia) {
     if (client && pollVoter) {
@@ -280,8 +394,8 @@ export function MessageMediaView({
     }
     return <PollReadonly media={pollMedia} t={t} client={client} />
   }
-  if (message.media?.className === "MessageMediaWebPage" && !noPreview) {
-    return <WebPageView m={message} no={noPreview} t={t} thumb={wpT} />
+  if (resolved.media?.className === "MessageMediaWebPage" && !noPreview) {
+    return <WebPageView m={resolved} no={noPreview} t={t} thumb={wpT} />
   }
   if (isNonBlobVisualMedia(resolved.media)) {
     return <MessageMediaStatic m={resolved} t={t} />

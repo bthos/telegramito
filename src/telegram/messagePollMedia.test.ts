@@ -17,6 +17,32 @@ describe("getMessageMediaPollFromMessage", () => {
     expect(getMessageMediaPollFromMessage(m)).toBe(pollWrap)
   })
 
+  it("reads poll nested in MessageMediaInvoice extendedMedia", () => {
+    const pollWrap = {
+      className: "MessageMediaPoll" as const,
+      poll: { className: "Poll" as const },
+      results: { className: "PollResults" as const },
+    }
+    const invoice = {
+      className: "MessageMediaInvoice" as const,
+      title: "t",
+      description: "d",
+      currency: "XTR",
+      totalAmount: { toString: () => "0" },
+      startParam: "",
+      extendedMedia: {
+        className: "MessageExtendedMedia" as const,
+        media: pollWrap,
+      },
+    }
+    const m = {
+      className: "Message" as const,
+      id: 21,
+      media: invoice,
+    } as unknown as Api.Message
+    expect(getMessageMediaPollFromMessage(m)).toBe(pollWrap)
+  })
+
   it("reads poll nested in MessageMediaPaidMedia", () => {
     const pollWrap = {
       className: "MessageMediaPoll" as const,

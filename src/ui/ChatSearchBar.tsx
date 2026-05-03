@@ -10,6 +10,11 @@ import {
   SearchResultRow,
   searchResultSenderLabel,
 } from "./SearchResultRow"
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CloseCrossIcon,
+} from "./ChatChromeIcons"
 import { useFocusTrap } from "../hooks/useFocusTrap"
 
 export type ChatSearchBarProps = {
@@ -132,7 +137,7 @@ export function ChatSearchBar({
             onNavigate("up")
           }}
         >
-          ▲
+          <ChevronUpIcon className="chat-search-bar__ctrl-ico" />
         </Button>
         <Button
           type="button"
@@ -144,7 +149,7 @@ export function ChatSearchBar({
             onNavigate("down")
           }}
         >
-          ▼
+          <ChevronDownIcon className="chat-search-bar__ctrl-ico" />
         </Button>
         <Button
           type="button"
@@ -153,7 +158,7 @@ export function ChatSearchBar({
           aria-label={t("chat.cancel")}
           onClick={onClose}
         >
-          ×
+          <CloseCrossIcon className="chat-search-bar__ctrl-ico" />
         </Button>
       </div>
       <div className="chat-search-bar__panel">

@@ -112,6 +112,10 @@ export function getMessageMediaTypeLabel(m: Api.Message, t: Tr): string {
     return t("chat.previewGame")
   }
   if (cn === "MessageMediaInvoice") {
+    const r = resolveMessageMediaForDisplay(m)
+    if (r.media !== med) {
+      return getMessageMediaTypeLabel(r, t)
+    }
     return t("chat.previewInvoice")
   }
   if (cn === "MessageMediaGeoLive") {

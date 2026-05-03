@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest"
 import { Api } from "telegram"
 import {
   collectPaidInnerMedias,
+  deepResolveSingleMedia,
   getMessageDocumentResolved,
   isNonBlobVisualMedia,
+  listPaidBundleSlots,
   mapsUrlFromGeoPoint,
   resolveMessageMediaForDisplay,
+  shouldRenderPaidBundleBlock,
 } from "./messageMediaUnwrap"
 import { getMessageDocument } from "./documentFile"
 import { getMessageMediaTypeLabel } from "./dialogPreview"
@@ -38,6 +41,113 @@ describe("messageMediaUnwrap", () => {
       ],
     } as unknown as Api.MessageMediaPaidMedia
     expect(collectPaidInnerMedias(paid)).toEqual([])
+  })
+
+  it("resolveMessageMediaForDisplay unwraps invoice extendedMedia to inner media", () => {
+    const pollWrap = {
+      className: "MessageMediaPoll" as const,
+      poll: { className: "Poll" as const },
+      results: { className: "PollResults" as const },
+    }
+    const inv = {
+      className: "MessageMediaInvoice" as const,
+      title: "t",
+      description: "d",
+      currency: "",
+      totalAmount: { toString: () => "0" },
+      startParam: "",
+      extendedMedia: {
+        className: "MessageExtendedMedia" as const,
+        media: pollWrap,
+      },
+    }
+    const m = { className: "Message" as const, id: 9, media: inv } as unknown as Api.Message
+    expect(resolveMessageMediaForDisplay(m).media).toBe(pollWrap)
+  })
+
+  it("resolveMessageMediaForDisplay unwraps paid wrapping invoice then photo", () => {
+    const photo = { className: "MessageMediaPhoto" as const, photo: {} }
+    const invoice = {
+      className: "MessageMediaInvoice" as const,
+      title: "t",
+      description: "d",
+      currency: "XTR",
+      totalAmount: { toString: () => "1" },
+      startParam: "",
+      extendedMedia: {
+        className: "MessageExtendedMedia" as const,
+        media: photo,
+      },
+    }
+    const paid = {
+      className: "MessageMediaPaidMedia" as const,
+      starsAmount: { toString: () => "1" },
+      extendedMedia: [
+        { className: "MessageExtendedMedia" as const, media: invoice },
+      ],
+    }
+    const m = { className: "Message" as const, id: 3, media: paid } as unknown as Api.Message
+    expect(resolveMessageMediaForDisplay(m).media).toBe(photo)
+  })
+
+  it("deepResolveSingleMedia unwraps invoice-wrapped poll", () => {
+    const pollWrap = {
+      className: "MessageMediaPoll" as const,
+      poll: { className: "Poll" as const },
+      results: { className: "PollResults" as const },
+    }
+    const inv = {
+      className: "MessageMediaInvoice" as const,
+      title: "t",
+      description: "d",
+      currency: "",
+      totalAmount: { toString: () => "0" },
+      startParam: "",
+      extendedMedia: {
+        className: "MessageExtendedMedia" as const,
+        media: pollWrap,
+      },
+    }
+    expect(deepResolveSingleMedia(inv as Api.TypeMessageMedia)).toBe(pollWrap)
+  })
+
+  it("listPaidBundleSlots deep-resolves invoice inside a slot", () => {
+    const photo = { className: "MessageMediaPhoto" as const, photo: {} }
+    const invoice = {
+      className: "MessageMediaInvoice" as const,
+      title: "t",
+      description: "d",
+      currency: "",
+      totalAmount: { toString: () => "0" },
+      startParam: "",
+      extendedMedia: {
+        className: "MessageExtendedMedia" as const,
+        media: photo,
+      },
+    }
+    const paid = {
+      className: "MessageMediaPaidMedia" as const,
+      extendedMedia: [
+        { className: "MessageExtendedMedia" as const, media: invoice },
+      ],
+    } as unknown as Api.MessageMediaPaidMedia
+    const slots = listPaidBundleSlots(paid)
+    expect(slots).toHaveLength(1)
+    expect(slots[0]?.kind).toBe("full")
+    if (slots[0]?.kind === "full") {
+      expect(slots[0].media).toBe(photo)
+    }
+  })
+
+  it("shouldRenderPaidBundleBlock when multiple full slots", () => {
+    const a = { className: "MessageMediaPhoto" as const, photo: {} }
+    const b = { className: "MessageMediaGeo" as const, geo: {} }
+    expect(
+      shouldRenderPaidBundleBlock([
+        { kind: "full", media: a as Api.TypeMessageMedia },
+        { kind: "full", media: b as Api.TypeMessageMedia },
+      ]),
+    ).toBe(true)
   })
 
   it("resolveMessageMediaForDisplay passes through non-paid message unchanged", () => {

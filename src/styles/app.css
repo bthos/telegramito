@@ -1285,12 +1285,40 @@ button.switch:active .switch__thumb {
   align-items: center;
   justify-content: center;
   padding: 0;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.message-scroll__fab--hidden {
+  opacity: 0;
+  transform: scale(0.82);
+  pointer-events: none;
 }
 .message-scroll__fab:hover {
   background: var(--ds-color-elevated-hover);
 }
 .message-scroll__fab:active {
   transform: scale(0.96);
+}
+.message-scroll__fab--hidden:active {
+  transform: scale(0.82);
+}
+.message-scroll__fab-badge {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.15rem;
+  min-width: 1.1rem;
+  height: 1.15rem;
+  padding: 0 0.28rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.15rem;
+  text-align: center;
+  background: var(--acc, #5aa0ff);
+  color: var(--ds-color-on-primary, #fff);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
 }
 /* Extra top padding was for absolute overlay; sticky overlay sits in flow — keep base padding. */
 .message-scroll__inner.message-scroll__inner--has-date-float {
@@ -1791,6 +1819,28 @@ button.switch:active .switch__thumb {
 .msg-media-dice-value {
   font-size: 1rem;
   font-weight: 600;
+}
+.msg-paid-bundle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 100%;
+}
+.msg-paid-slot--preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  justify-content: center;
+  min-height: 3.5rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--ds-radius-md);
+  border: 1px dashed rgba(120, 180, 255, 0.35);
+  background: rgba(0, 0, 0, 0.08);
+}
+.msg-paid-slot--preview[data-has-ar="1"] {
+  aspect-ratio: var(--msg-paid-ar);
+  max-width: 100%;
 }
 .msg-sr-only {
   position: absolute;
@@ -2796,6 +2846,7 @@ button.msg-bubble-action:hover {
 .input-compose {
   min-height: 2.2rem;
   max-height: var(--compose-max-height, 120px);
+  overflow-y: auto;
   resize: none;
   line-height: 1.35;
   font: inherit;
