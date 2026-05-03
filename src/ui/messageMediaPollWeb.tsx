@@ -81,7 +81,7 @@ export function PollReadonly({
   return (
     <div className="msg-poll">
       <div className="msg-poll-question">
-        {client ? renderMessageEntities(q, qE, client, t) : <span className="msg-text-richtext">{q}</span>}
+        {renderMessageEntities(q, qE, client, t)}
         {pollP.quiz ? <span> · {t("chat.pollQuiz")}</span> : null}
         {pollP.closed ? <span> — {t("chat.pollClosed")}</span> : null}
       </div>
@@ -110,9 +110,7 @@ export function PollReadonly({
                   )
                 : null}
               <div className="msg-poll-line">
-                {client
-                  ? renderMessageEntities(text, entities, client, t)
-                  : <span className="msg-text-richtext">{text}</span>}
+                {renderMessageEntities(text, entities, client, t)}
                 {showStats
                   ? (
                       <span

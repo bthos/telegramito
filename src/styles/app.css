@@ -729,13 +729,17 @@ button.switch:active .switch__thumb {
 .thread-header-row .thread-h {
   flex: 1;
   min-width: 0;
+  /* Global `.thread-h` has margin-bottom — skews vertical align vs row controls */
+  margin: 0;
 }
 .thread-header__actions {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 0.35rem;
   min-width: 0;
+  align-self: center;
 }
 .thread-header__unread {
   display: inline-flex;
@@ -1246,6 +1250,14 @@ button.switch:active .switch__thumb {
 .message-scroll {
   flex: 1 1 0;
   min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.message-scroll__inner {
+  flex: 1 1 0;
+  min-height: 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -1255,7 +1267,6 @@ button.switch:active .switch__thumb {
     var(--ds-color-canvas-grad-1) 0%,
     var(--ds-color-canvas-grad-2) 50%
   );
-  position: relative;
 }
 .message-scroll__fab {
   position: absolute;
@@ -1282,7 +1293,7 @@ button.switch:active .switch__thumb {
   transform: scale(0.96);
 }
 /* Extra top padding was for absolute overlay; sticky overlay sits in flow — keep base padding. */
-.message-scroll.message-scroll--has-date-float {
+.message-scroll__inner.message-scroll__inner--has-date-float {
   padding-top: 0.35rem;
 }
 .message-scroll__date-overlay {
@@ -1569,8 +1580,13 @@ button.switch:active .switch__thumb {
   font-family: var(--ds-font-sans);
 }
 .msg-text-richtext {
-  /* Let emoji render with color fonts; keep body text on the same line box */
-  font-family: inherit;
+  /* Rich text only: add color-emoji fonts without touching plain .msg-text (URL digits). */
+  font-family:
+    var(--ds-font-sans),
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Noto Color Emoji",
+    sans-serif;
   font-size: inherit;
   line-height: inherit;
 }
@@ -1682,6 +1698,20 @@ button.switch:active .switch__thumb {
 }
 .msg-bubble--in .msg-custom-emoji-ph {
   background: rgba(0, 0, 0, 0.1);
+}
+.msg-custom-emoji-fallback {
+  display: inline-block;
+  min-width: 0.9em;
+  text-align: center;
+  vertical-align: -0.15em;
+  line-height: 1;
+  font-family:
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Noto Color Emoji",
+    "Segoe UI Symbol",
+    sans-serif;
+  font-size: 1.05em;
 }
 .msg-entity--tag-link {
   text-decoration: none;
@@ -2537,6 +2567,7 @@ button.msg-reaction-pick--on {
 .attach-menu {
   position: relative;
   flex: 0 0 auto;
+  align-self: flex-end;
 }
 .attach-menu__input-hidden {
   position: absolute;
@@ -2549,9 +2580,10 @@ button.msg-reaction-pick--on {
 .attach-menu__trigger {
   flex-shrink: 0;
 }
-.attach-menu__clip {
-  font-size: 1.1rem;
-  line-height: 1;
+.attach-menu__clip-ico {
+  display: block;
+  width: 1.15em;
+  height: 1.15em;
 }
 .attach-menu__popover {
   position: absolute;
@@ -3000,14 +3032,15 @@ button.msg-bubble-action:hover {
 }
 .emoji-picker__trigger {
   flex-shrink: 0;
-  align-self: stretch;
+  align-self: flex-end;
   min-width: 2.4rem;
   font-size: 1.15rem;
   line-height: 1;
 }
-.emoji-picker__trigger-glyph {
+.emoji-picker__trigger-ico {
   display: block;
-  transform: translateY(1px);
+  width: 1.15em;
+  height: 1.15em;
 }
 
 .thread-header--mobile {
@@ -3065,6 +3098,11 @@ button.msg-bubble-action:hover {
 .chat-search-bar__controls .input-search {
   flex: 1 1 auto;
   min-width: 0;
+}
+.chat-search-bar__ctrl-ico {
+  display: block;
+  width: 1.1em;
+  height: 1.1em;
 }
 .chat-search-bar__count {
   flex: 0 0 auto;

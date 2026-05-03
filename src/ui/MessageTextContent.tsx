@@ -73,25 +73,58 @@ function SpoilerText({
 function CustomEmojiImage({
   documentId,
   client,
+  fallbackText,
 }: {
   documentId: BigInteger
   client: TelegramClient
+  /** Telegram puts a placeholder char in the message string — show it if download never succeeds. */
+  fallbackText: string
 }) {
   const [url, setUrl] = useState<string | null>(null)
+  const [showFallback, setShowFallback] = useState(false)
   const idStr = String(documentId)
   useEffect(() => {
-    let o = true
-    void getCustomEmojiObjectUrl(client, documentId).then((u) => {
-      if (o) {
-        setUrl(u)
+    let cancelled = false
+    setShowFallback(false)
+    void (async () => {
+      for (let attempt = 0; attempt < 4; attempt++) {
+        if (cancelled) {
+          return
+        }
+        if (attempt > 0) {
+          await new Promise<void>((r) => {
+            setTimeout(r, 180 * attempt)
+          })
+        }
+        if (cancelled) {
+          return
+        }
+        const u = await getCustomEmojiObjectUrl(client, documentId)
+        if (cancelled) {
+          return
+        }
+        if (u) {
+          setUrl(u)
+          return
+        }
       }
-    })
+      if (!cancelled) {
+        setShowFallback(true)
+      }
+    })()
     return () => {
-      o = false
+      cancelled = true
     }
   }, [client, idStr, documentId])
   if (url) {
     return <img className="msg-custom-emoji-img" src={url} alt="" decoding="async" loading="lazy" />
+  }
+  if (showFallback && fallbackText.trim().length > 0) {
+    return (
+      <span className="msg-custom-emoji-fallback" aria-hidden>
+        {fallbackText}
+      </span>
+    )
   }
   return <span className="msg-custom-emoji-ph" aria-hidden />
 }
@@ -101,7 +134,7 @@ function unparseToReact(
   entities: Api.TypeMessageEntity[],
   _offset = 0,
   _length: number | undefined = undefined,
-  client: TelegramClient,
+  client: TelegramClient | null,
   t?: TFun
 ): ReactNode {
   if (!text || !entities || !entities.length) {
@@ -241,11 +274,23 @@ function unparseToReact(
         </a>
       )
     } else if (entity instanceof Api.MessageEntityCustomEmoji) {
-      out.push(
-        <span key={i} className="msg-entity-inline-emoji" role="img" aria-hidden>
-          <CustomEmojiImage documentId={entity.documentId} client={client} />
-        </span>
-      )
+      if (!client) {
+        out.push(
+          <span key={i} className="msg-entity-inline-emoji msg-custom-emoji-fallback" role="img" aria-hidden>
+            {slice.length > 0 ? slice : "\u2753"}
+          </span>
+        )
+      } else {
+        out.push(
+          <span key={i} className="msg-entity-inline-emoji" role="img" aria-hidden>
+            <CustomEmojiImage
+              documentId={entity.documentId}
+              client={client}
+              fallbackText={slice}
+            />
+          </span>
+        )
+      }
     } else if (entity instanceof Api.MessageEntityHashtag) {
       const tag = slice.replace(/^#/, "")
       out.push(
@@ -302,7 +347,7 @@ export function renderMessageEntities(
   if (!text.trim()) {
     return null
   }
-  if (entities && entities.length && client) {
+  if (entities && entities.length) {
     return (
       <span className="msg-text-richtext">
         {unparseToReact(text, entities, 0, undefined, client, t)}
@@ -341,7 +386,7 @@ export function MessageTextContent({ message, client, noPreview, t }: MessageTex
     }
     return <span className="msg-text-richtext">{getMessageMediaTypeLabel(message, t)}</span>
   }
-  if (message.entities && message.entities.length > 0 && client) {
+  if (message.entities && message.entities.length > 0) {
     return (
       <span className="msg-text-richtext">
         {unparseToReact(raw, message.entities, 0, undefined, client, t)}
