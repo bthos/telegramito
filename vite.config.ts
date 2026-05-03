@@ -49,6 +49,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallback: "index.html",
+        /** Single-file bundle inlines app into `index.html` (~2.3+ MiB); Workbox default is 2 MiB. */
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       devOptions: {
         enabled: false,
