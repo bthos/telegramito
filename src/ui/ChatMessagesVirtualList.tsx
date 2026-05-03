@@ -19,6 +19,11 @@ export type ChatMessagesVirtualListHandle = {
     index: number,
     options?: { align?: "auto" | "start" | "center" | "end"; behavior?: ScrollBehavior },
   ) => void
+  scrollToMessageId: (
+    messageId: number,
+    datedList: readonly ChatDatedItem[],
+    options?: { align?: "auto" | "start" | "center" | "end"; behavior?: ScrollBehavior },
+  ) => void
 }
 
 type Props = {
@@ -65,6 +70,18 @@ export const ChatMessagesVirtualList = forwardRef<
       scrollToRowIndex: (index, options) => {
         rowVirtualizer.scrollToIndex(index, {
           align: options?.align ?? "start",
+          behavior: options?.behavior ?? "smooth",
+        })
+      },
+      scrollToMessageId: (messageId, datedList, options) => {
+        const idx = datedList.findIndex(
+          (row) => row.kind === "msg" && row.message.id === messageId,
+        )
+        if (idx < 0) {
+          return
+        }
+        rowVirtualizer.scrollToIndex(idx, {
+          align: options?.align ?? "center",
           behavior: options?.behavior ?? "smooth",
         })
       },

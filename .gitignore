@@ -44,12 +44,22 @@ CLAUDE.md
 # are overwritten on init.
 #
 # --- Runtime / ephemeral (pipeline scratch; usually not committed) ---
-.agentic-kit-artefacts/
+.artefacts/memory/
+.artefacts/features/
+.artefacts/archive/
+.artefacts/proposed-patches/
+.artefacts/SESSION-STATE.md
+.artefacts/MEMORY.md
+.artefacts/PROJECT_PROFILE.md
 #
-# Optional — ignore all of .agentic-kit-artefacts/ except PIPELINE.md + PROJECT.md (uncomment all 4 lines):
-# .agentic-kit-artefacts/**
-# !.agentic-kit-artefacts/
-# !.agentic-kit-artefacts/PIPELINE.md
-# !.agentic-kit-artefacts/PROJECT.md
+# --- Per-machine kit bookkeeping (usually not committed) ---
+.artefacts/.agentic-kit.cfg
+.artefacts/.agentic-kit.files
+#
+# Optional — ignore all of .artefacts/ except PIPELINE.md + PROJECT.md (uncomment all 4 lines):
+# .artefacts/**
+# !.artefacts/
+# !.artefacts/PIPELINE.md
+# !.artefacts/PROJECT.md
 #
 # <<< agentic-kit (managed) <<<

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next"
+import type { TelegramClient } from "telegram"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import type { ParentalSettings } from "../parental/types"
 import { getPeerInfo } from "../telegram/dialogUtils"
@@ -20,6 +21,7 @@ type Props = {
   dialogsLoadingMore?: boolean
   /** Total dialogs loaded in session (for list footnote). */
   loadedDialogCount?: number
+  client?: TelegramClient | null
 }
 
 export function ChatsListPanel({
@@ -36,6 +38,7 @@ export function ChatsListPanel({
   loadMoreDialogs,
   dialogsLoadingMore,
   loadedDialogCount,
+  client,
 }: Props) {
   const { t } = useTranslation()
   return (
@@ -66,6 +69,7 @@ export function ChatsListPanel({
         loadMoreDialogs={loadMoreDialogs}
         dialogsLoadingMore={dialogsLoadingMore}
         loadedDialogCount={loadedDialogCount}
+        client={client}
       />
     </>
   )

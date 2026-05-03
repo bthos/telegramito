@@ -45,14 +45,20 @@ import {
 } from "../telegram/messageBubbleGroup"
 import { isInboundUnreadForThread, readInboxMaxIdForThread } from "../telegram/messageUnread"
 import { readMaxIdForMarkRead } from "../telegram/markChatRead"
+import {
+  getTickState,
+  isBroadcastChannelEntity,
+  readOutboxMaxIdFromDialog,
+} from "../telegram/messageTickState"
 import { forwardMessageInCurrentChat } from "../telegram/forwardInChat"
-import { toMessageList } from "../telegram/messageList"
-import { withTransientRetry } from "../telegram/invokeWithTransientRetry"
+import { ChatSearchBar } from "./ChatSearchBar"
+import { insertAtCursor } from "../util/insertAtCursor"
+import { useInChatSearch } from "../hooks/useInChatSearch"
 import { InboundClusterRow } from "./InboundClusterRow"
 import { ForumTopicIcon, UnreadFilterIcon } from "./ChatFilterIcons"
 import { ScrollToBottomFab } from "./ScrollToBottomFab"
 import { JumpDateCalendarPop } from "./JumpDateCalendarPop"
-import { Button, TextField } from "./ds"
+import { Button } from "./ds"
 import { MessageTextContent } from "./MessageTextContent"
 import { MessageMediaView } from "./MessageMediaView"
 import { MessageReactionPicker } from "./MessageReactionPicker"
@@ -65,6 +71,14 @@ import {
 } from "./ChatMessagesVirtualList"
 import { MessageListSkeleton } from "./MessageListSkeleton"
 import { ChatContextPanel } from "./ChatContextPanel"
+import { makeTypingSender, useTypingIndicators } from "../hooks/useTypingIndicators"
+import { useDraftAttachments } from "../hooks/useDraftAttachments"
+import { AttachMenu } from "./AttachMenu"
+import { AttachmentPreviewStrip } from "./AttachmentPreviewStrip"
+import { AttachUploadProgress } from "./AttachUploadProgress"
+import { TickIcon } from "./TickIcon"
+import { EmojiPickerButton } from "./EmojiPicker"
+import { TypingIndicator } from "./TypingIndicator"
 
 type Props = {
   dialog: Dialog
@@ -77,6 +91,9 @@ type ChatListItem = ChatDatedItem
 
 const VIRTUAL_MSG_THRESHOLD = 48
 const MAX_COMPOSE_HEIGHT = 120
+
+/** DOM mount for narrow layout chat title (see `MainShell` mobile header). */
+export const THREAD_HEADER_CENTER_ID = "thread-header-center"
 
 /** DOM mount for narrow layout unread toggle (see `MainShell` mobile header). */
 export const THREAD_HEADER_ACTIONS_ID = "thread-header-actions"
@@ -122,43 +139,41 @@ function UnreadOnlyMessagesToggle({
 export function ChatView({ dialog, settings, showTitle = true }: Props) {
   const { t, i18n } = useTranslation()
   const { client, lastMessageTick, refreshDialogs } = useTelegram()
+  const { typers } = useTypingIndicators(dialog.entity, client)
+  const notifyTyping = useMemo(
+    () => makeTypingSender(dialog.entity, client),
+    [dialog.entity, client],
+  )
   const [draft, setDraft] = useState("")
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const virtualListRef = useRef<ChatMessagesVirtualListHandle | null>(null)
   const jumpDateButtonRef = useRef<HTMLButtonElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  /** Snapshot selection when textarea blurs (emoji picker, etc.). */
+  const textareaSelectionRef = useRef({ start: 0, end: 0 })
   const [jumpCalOpen, setJumpCalOpen] = useState(false)
   const [reactionTarget, setReactionTarget] = useState<{ id: number; x: number; y: number } | null>(null)
   const [replyingTo, setReplyingTo] = useState<Api.Message | null>(null)
   const [messageActionError, setMessageActionError] = useState<string | null>(null)
+  const {
+    attachments,
+    addFiles,
+    removeAttachment,
+    clearAttachments,
+    markFailed,
+  } = useDraftAttachments()
+  const [attachPickErr, setAttachPickErr] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState<{
+    sent: number
+    total: number
+  } | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const { key, name } = getPeerInfo(dialog)
 
-  const [isPanelOpen, setIsPanelOpen] = useState(false)
-  const [inChatSearchOpen, setInChatSearchOpen] = useState(false)
-  const [inChatSearchQuery, setInChatSearchQuery] = useState("")
-  const [inChatSearchResults, setInChatSearchResults] = useState<Api.Message[]>([])
-  const [inChatSearchBusy, setInChatSearchBusy] = useState(false)
-  const [inChatSearchRan, setInChatSearchRan] = useState(false)
-  const inChatSearchInputRef = useRef<HTMLInputElement>(null)
-  const pendingScrollToMessageIdRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    setIsPanelOpen(false)
-  }, [key])
-
-  useEffect(() => {
-    if (!inChatSearchOpen) {
-      return
-    }
-    queueMicrotask(() => {
-      inChatSearchInputRef.current?.focus()
-    })
-  }, [inChatSearchOpen])
-
   const isForum = useMemo(
     () => isForumWithSubchats(dialog.entity ?? undefined),
-    [dialog.entity]
+    [dialog.entity],
   )
 
   const isGroup = useMemo(() => {
@@ -168,6 +183,45 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     if (e.className === "Channel" && (e as Api.Channel).megagroup === true) return true
     return false
   }, [dialog.entity])
+
+  const {
+    query: searchQuery,
+    setQuery: setSearchQuery,
+    results: searchResults,
+    loading: searchLoading,
+  } = useInChatSearch({
+    client,
+    entity: dialog.entity,
+    disabled: isForum,
+  })
+
+  const [searchMode, setSearchMode] = useState(false)
+  const [searchResultIndex, setSearchResultIndex] = useState(0)
+  const [highlightedMessageId, setHighlightedMessageId] = useState<number | null>(null)
+  const messageScrollTopBeforeSearchRef = useRef(0)
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingScrollToMessageIdRef = useRef<number | null>(null)
+
+  const [isPanelOpen, setIsPanelOpen] = useState(false)
+
+  useEffect(() => {
+    setIsPanelOpen(false)
+  }, [key])
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current != null) {
+        clearTimeout(highlightTimerRef.current)
+      }
+    }
+  }, [])
+
+  const readOutboxMaxId = useMemo(() => readOutboxMaxIdFromDialog(dialog), [dialog])
+
+  const isBroadcastChannel = useMemo(
+    () => isBroadcastChannelEntity(dialog.entity),
+    [dialog.entity],
+  )
 
   const allow = new Set(settings.allowlistIds)
   const isPriv = isPrivateUserDialog(dialog)
@@ -203,12 +257,16 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   )
 
   useEffect(() => {
-    setInChatSearchOpen(false)
-    setInChatSearchQuery("")
-    setInChatSearchResults([])
-    setInChatSearchRan(false)
+    setSearchMode(false)
+    setSearchQuery("")
+    setSearchResultIndex(0)
     pendingScrollToMessageIdRef.current = null
-  }, [convKey])
+  }, [convKey, setSearchQuery])
+
+  useEffect(() => {
+    clearAttachments()
+    setAttachPickErr(null)
+  }, [convKey, clearAttachments])
 
   // listForViewLength for the unread-seek effect inside useChatMessages.
   // We track it via a ref that is updated each render so the async effect sees a current value.
@@ -268,9 +326,11 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   }, [])
 
   const [headerActionsHost, setHeaderActionsHost] = useState<HTMLElement | null>(null)
+  const [headerCenterHost, setHeaderCenterHost] = useState<HTMLElement | null>(null)
   useLayoutEffect(() => {
     setHeaderActionsHost(document.getElementById(THREAD_HEADER_ACTIONS_ID))
-  }, [])
+    setHeaderCenterHost(document.getElementById(THREAD_HEADER_CENTER_ID))
+  }, [key])
 
   const clusterRoleByMessageId = useMemo(() => {
     const roles = computeMessageClusterRoles(listForView)
@@ -387,36 +447,49 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     [datedList]
   )
 
-  const runInChatSearch = useCallback(async () => {
-    const q = inChatSearchQuery.trim()
-    if (!client || !dialog.entity) {
-      setInChatSearchResults([])
-      setInChatSearchRan(true)
-      return
+  const openSearchMode = useCallback(() => {
+    const el = scrollRef.current
+    if (el) {
+      messageScrollTopBeforeSearchRef.current = el.scrollTop
     }
-    if (isForum) {
-      setInChatSearchResults([])
-      setInChatSearchRan(true)
-      return
-    }
-    if (!q) {
-      setInChatSearchResults([])
-      setInChatSearchRan(true)
-      return
-    }
-    setInChatSearchBusy(true)
-    setInChatSearchRan(true)
-    try {
-      const raw = await withTransientRetry(client, () =>
-        client.getMessages(dialog.entity as never, { search: q, limit: 40 }),
-      )
-      setInChatSearchResults(toMessageList(raw))
-    } catch {
-      setInChatSearchResults([])
-    } finally {
-      setInChatSearchBusy(false)
-    }
-  }, [client, dialog.entity, inChatSearchQuery, isForum])
+    setSearchMode(true)
+    setIsPanelOpen(false)
+  }, [])
+
+  const closeSearchMode = useCallback(() => {
+    setSearchMode(false)
+    setSearchQuery("")
+    setSearchResultIndex(0)
+    window.setTimeout(() => {
+      const el = scrollRef.current
+      if (el) {
+        el.scrollTop = messageScrollTopBeforeSearchRef.current
+      }
+    }, 0)
+  }, [setSearchQuery])
+
+  const navigateSearchResult = useCallback((dir: "up" | "down") => {
+    setSearchResultIndex((i) => {
+      const n = searchResults.length
+      if (n === 0) {
+        return 0
+      }
+      if (dir === "down") {
+        return Math.min(n - 1, i + 1)
+      }
+      return Math.max(0, i - 1)
+    })
+  }, [searchResults.length])
+
+  useEffect(() => {
+    setSearchResultIndex((i) => {
+      const n = searchResults.length
+      if (n === 0) {
+        return 0
+      }
+      return Math.min(i, n - 1)
+    })
+  }, [searchResults.length])
 
   const jumpToMessageFromSearch = useCallback(
     async (m: Api.Message) => {
@@ -425,8 +498,16 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         return
       }
       setMessagesUnreadOnly(false)
-      setInChatSearchOpen(false)
+      closeSearchMode()
       setIsPanelOpen(false)
+      if (highlightTimerRef.current != null) {
+        clearTimeout(highlightTimerRef.current)
+      }
+      setHighlightedMessageId(id)
+      highlightTimerRef.current = window.setTimeout(() => {
+        setHighlightedMessageId(null)
+        highlightTimerRef.current = null
+      }, 1500)
       try {
         await refreshMessagesById([id])
         pendingScrollToMessageIdRef.current = id
@@ -434,7 +515,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         appLog.warn("jumpToMessageFromSearch failed", { id })
       }
     },
-    [refreshMessagesById],
+    [closeSearchMode, refreshMessagesById],
   )
 
   useLayoutEffect(() => {
@@ -450,7 +531,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     }
     pendingScrollToMessageIdRef.current = null
     if (datedList.length > VIRTUAL_MSG_THRESHOLD) {
-      virtualListRef.current?.scrollToRowIndex(idx, {
+      virtualListRef.current?.scrollToMessageId(id, datedList, {
         align: "center",
         behavior: "smooth",
       })
@@ -483,8 +564,126 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     }
   }, [client, list])
 
+  const canCompose =
+    !isForum ||
+    (!topicsLoading && topicsErr == null && topicId != null && topics.length > 0)
+
+  const showAttach =
+    settings.appMode !== "child" || settings.allowOutgoingMedia !== false
+
+  const pendingAttachments = useMemo(
+    () => attachments.filter((a) => !a.failed),
+    [attachments],
+  )
+
+  const canSendNow =
+    canCompose &&
+    !isUploading &&
+    (draft.trim().length > 0 || pendingAttachments.length > 0)
+
+  const retryAttachmentSend = async (id: string) => {
+    if (!client || !dialog.entity || isUploading) {
+      return
+    }
+    const att = attachments.find((a) => a.id === id)
+    if (!att?.failed) {
+      return
+    }
+    if (isForum && topicId == null) {
+      return
+    }
+    markFailed(id, false)
+    setIsUploading(true)
+    setMessageActionError(null)
+    try {
+      await client.sendFile(dialog.entity, {
+        file: att.file,
+        caption: "",
+        ...(isForum && topicId != null ? { topMsgId: topicId } : {}),
+      })
+      removeAttachment(id)
+      setReplyingTo(null)
+      scrollToLatestMessages()
+      void refreshHead()
+    } catch (e) {
+      appLog.warn("sendFile retry", e)
+      markFailed(id, true)
+      setMessageActionError(
+        e instanceof Error ? e.message : t("chat.sendFailed"),
+      )
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   const onSend = async () => {
-    if (!client || !dialog.entity || !draft.trim()) {
+    if (!client || !dialog.entity || !canCompose || isUploading) {
+      return
+    }
+    const text = draft.trim()
+    const queue = attachments.filter((a) => !a.failed)
+
+    if (queue.length > 0) {
+      if (settings.appMode === "child" && settings.allowOutgoingMedia === false) {
+        setMessageActionError(t("chat.attachBlockedChild"))
+        clearAttachments()
+        return
+      }
+      if (isForum && topicId == null) {
+        return
+      }
+
+      const captionText = text
+      const rId = replyingTo?.className === "Message" ? replyingTo.id : undefined
+      const validReply = typeof rId === "number" && rId > 0 ? rId : undefined
+
+      setIsUploading(true)
+      setUploadProgress({ sent: 0, total: queue.length })
+      setAttachPickErr(null)
+      setMessageActionError(null)
+
+      let broke = false
+      try {
+        let first = true
+        for (let i = 0; i < queue.length; i++) {
+          const att = queue[i]
+          try {
+            await client.sendFile(dialog.entity, {
+              file: att.file,
+              caption: first ? captionText : "",
+              replyTo: first ? validReply : undefined,
+              ...(isForum && topicId != null ? { topMsgId: topicId } : {}),
+            })
+            removeAttachment(att.id)
+            if (first && captionText) {
+              setDraft("")
+            }
+            first = false
+            setUploadProgress({ sent: i + 1, total: queue.length })
+            scrollToLatestMessages()
+            void refreshHead()
+          } catch (e) {
+            appLog.warn("sendFile", e)
+            markFailed(att.id, true)
+            setMessageActionError(
+              e instanceof Error ? e.message : t("chat.sendFailed"),
+            )
+            broke = true
+            break
+          }
+        }
+        if (!broke) {
+          setReplyingTo(null)
+          setMessageActionError(null)
+        }
+      } finally {
+        setIsUploading(false)
+        setUploadProgress(null)
+      }
+      return
+    }
+
+    if (!text) {
       return
     }
     if (isForum) {
@@ -496,7 +695,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         await sendInForumThread(
           client,
           dialog.entity as NonNullable<Dialog["entity"]>,
-          draft,
+          text,
           topicId,
           typeof rId === "number" && rId > 0 ? rId : undefined
         )
@@ -514,7 +713,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     const rId = replyingTo?.className === "Message" ? replyingTo.id : undefined
     try {
       await client.sendMessage(dialog.entity, {
-        message: draft,
+        message: text,
         ...(typeof rId === "number" && rId > 0 ? { replyTo: rId } : {}),
       })
       setDraft("")
@@ -529,10 +728,6 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       )
     }
   }
-
-  const canCompose =
-    !isForum ||
-    (!topicsLoading && topicsErr == null && topicId != null && topics.length > 0)
 
   const pickerMessage = useMemo(
     () =>
@@ -651,12 +846,26 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         return null
       }
       const isOut = Boolean(m.out)
+      const tickState =
+        isOut && m.className === "Message"
+          ? getTickState(m, readOutboxMaxId, { isBroadcastChannel })
+          : null
+      let tickAria = ""
+      if (tickState === "sent") tickAria = t("chat.tickSent")
+      else if (tickState === "delivered") tickAria = t("chat.tickDelivered")
+      else if (tickState === "read") tickAria = t("chat.tickRead")
       const clusterRole = m.id != null ? clusterRoleByMessageId.get(m.id) : undefined
       const gutterBase = isOut ? "msg-gutter msg-gutter--out" : "msg-gutter msg-gutter--in"
+      const gutterHighlight =
+        highlightedMessageId != null && m.id === highlightedMessageId
+          ? " msg-gutter--search-hit"
+          : ""
       const gutterClass =
-        clusterRole != null && clusterRole !== "single"
-          ? `${gutterBase} msg-gutter--cluster-${clusterRole}`
-          : gutterBase
+        (
+          clusterRole != null && clusterRole !== "single"
+            ? `${gutterBase} msg-gutter--cluster-${clusterRole}`
+            : gutterBase
+        ) + gutterHighlight
       const hasVein = clusterRole === "single" || clusterRole === "last"
       const bubbleClass = [
         "msg-bubble",
@@ -703,9 +912,18 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
               void refreshMessagesById([m.id!])
             }}
           />
-          <time className="msg-time" dateTime={new Date(m.date * 1000).toISOString()}>
-            {formatMessageTime(m.date, i18n.language)}
-          </time>
+          {tickState != null ? (
+            <span className="msg-time-row">
+              <TickIcon state={tickState} label={tickAria} />
+              <time className="msg-time" dateTime={new Date(m.date * 1000).toISOString()}>
+                {formatMessageTime(m.date, i18n.language)}
+              </time>
+            </span>
+          ) : (
+            <time className="msg-time" dateTime={new Date(m.date * 1000).toISOString()}>
+              {formatMessageTime(m.date, i18n.language)}
+            </time>
+          )}
         </div>
       )
       const bubbleWithAttribution =
@@ -745,7 +963,10 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       noPreview,
       onMessageBubbleReactions,
       patchMessageReactions,
+      readOutboxMaxId,
       refreshMessagesById,
+      isBroadcastChannel,
+      highlightedMessageId,
       t,
     ]
   )
@@ -772,25 +993,91 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     <div className="thread-layout" data-panel-open={String(isPanelOpen)}>
     <section className="thread" aria-label={name}>
       {showTitle ? (
-        <div className="thread-header-row">
-          <h2 className="thread-h">{name}</h2>
-          {showUnreadToggle ? (
-            <UnreadOnlyMessagesToggle active={messagesUnreadOnly} onToggle={toggleUnreadOnly} />
-          ) : null}
-          <button
-            type="button"
-            aria-label={t("chat.info")}
-            aria-pressed={isPanelOpen}
-            className={isPanelOpen ? "btn-icon btn-icon--active" : "btn-icon"}
-            onClick={() => setIsPanelOpen((v) => !v)}
-          >
-            ℹ
-          </button>
-        </div>
+        searchMode ? (
+          <div className="thread-header-row thread-header-row--search">
+            <ChatSearchBar
+              query={searchQuery}
+              onQueryChange={setSearchQuery}
+              onClose={closeSearchMode}
+              results={searchResults}
+              currentIndex={searchResultIndex}
+              loading={searchLoading}
+              onNavigate={navigateSearchResult}
+              onSelect={(msg) => {
+                void jumpToMessageFromSearch(msg)
+              }}
+              peerDisplayName={name}
+              forumDisabled={isForum}
+            />
+          </div>
+        ) : (
+          <div className="thread-header-row">
+            <h2 className="thread-h">{name}</h2>
+            {showUnreadToggle ? (
+              <UnreadOnlyMessagesToggle active={messagesUnreadOnly} onToggle={toggleUnreadOnly} />
+            ) : null}
+            <button
+              type="button"
+              className="btn-icon"
+              aria-label={t("chat.searchInChat")}
+              title={t("chat.searchInChat")}
+              onClick={openSearchMode}
+            >
+              <span aria-hidden>🔍</span>
+            </button>
+            <button
+              type="button"
+              aria-label={t("chat.info")}
+              aria-pressed={isPanelOpen}
+              className={isPanelOpen ? "btn-icon btn-icon--active" : "btn-icon"}
+              onClick={() => setIsPanelOpen((v) => !v)}
+            >
+              ℹ
+            </button>
+          </div>
+        )
       ) : null}
-      {!showTitle && showUnreadToggle && headerActionsHost
+      {!showTitle && headerCenterHost
         ? createPortal(
-            <UnreadOnlyMessagesToggle active={messagesUnreadOnly} onToggle={toggleUnreadOnly} />,
+            searchMode ? (
+              <ChatSearchBar
+                query={searchQuery}
+                onQueryChange={setSearchQuery}
+                onClose={closeSearchMode}
+                results={searchResults}
+                currentIndex={searchResultIndex}
+                loading={searchLoading}
+                onNavigate={navigateSearchResult}
+                onSelect={(msg) => {
+                  void jumpToMessageFromSearch(msg)
+                }}
+                peerDisplayName={name}
+                forumDisabled={isForum}
+              />
+            ) : (
+              <h2 className="thread-header__h">{name}</h2>
+            ),
+            headerCenterHost,
+          )
+        : null}
+      {!showTitle && headerActionsHost
+        ? createPortal(
+            <>
+              {!searchMode ? (
+                <button
+                  type="button"
+                  className="btn-icon"
+                  aria-label={t("chat.searchInChat")}
+                  title={t("chat.searchInChat")}
+                  onClick={openSearchMode}
+                >
+                  <span aria-hidden>🔍</span>
+                </button>
+              ) : null}
+              {showUnreadToggle ? (
+                <UnreadOnlyMessagesToggle active={messagesUnreadOnly} onToggle={toggleUnreadOnly} />
+              ) : null}
+            </>,
             headerActionsHost,
           )
         : null}
@@ -841,76 +1128,6 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         <p className="small muted thread-unread-filter__hint" role="status">
           {t("chat.messagesUnreadEmpty")}
         </p>
-      ) : null}
-      {inChatSearchOpen ? (
-        <div className="thread-in-chat-search" role="search">
-          <div className="thread-in-chat-search__row">
-            <TextField
-              ref={inChatSearchInputRef}
-              variant="search"
-              type="search"
-              aria-label={t("chat.searchInChat")}
-              placeholder={t("chat.searchPlaceholder")}
-              value={inChatSearchQuery}
-              onChange={(e) => setInChatSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault()
-                  void runInChatSearch()
-                }
-              }}
-              disabled={isForum || inChatSearchBusy}
-            />
-            <Button
-              type="button"
-              size="sm"
-              disabled={isForum || inChatSearchBusy}
-              onClick={() => void runInChatSearch()}
-            >
-              {t("chat.searchRun")}
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setInChatSearchOpen(false)}>
-              {t("chat.cancel")}
-            </Button>
-          </div>
-          {inChatSearchBusy ? (
-            <p className="small muted" aria-live="polite">
-              {t("chat.searchRunning")}
-            </p>
-          ) : null}
-          {!inChatSearchBusy && inChatSearchRan && inChatSearchResults.length === 0 ? (
-            <p className="small muted" role="status">
-              {t("chat.searchNoHits")}
-            </p>
-          ) : null}
-          {inChatSearchResults.length > 0 ? (
-            <ul className="thread-in-chat-search__hits">
-              {inChatSearchResults.map((m) => {
-                const id = m.id
-                if (id == null) {
-                  return null
-                }
-                const raw = typeof m.message === "string" ? m.message.trim() : ""
-                const preview =
-                  raw.length > 0 ? (raw.length > 120 ? `${raw.slice(0, 117)}…` : raw) : t("chat.searchHitNoText")
-                return (
-                  <li key={id}>
-                    <button
-                      type="button"
-                      className="thread-in-chat-search__hit"
-                      onClick={() => void jumpToMessageFromSearch(m)}
-                    >
-                      <span className="thread-in-chat-search__hit-preview">{preview}</span>
-                      <time className="thread-in-chat-search__hit-time" dateTime={new Date(m.date * 1000).toISOString()}>
-                        {formatMessageTime(m.date, i18n.language)}
-                      </time>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          ) : null}
-        </div>
       ) : null}
       <div
         className={
@@ -1005,6 +1222,11 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
               </p>
             )
           : null}
+        {attachPickErr ? (
+          <p className="msg-action-err" role="alert">
+            {attachPickErr}
+          </p>
+        ) : null}
         {replyingTo
           ? (
               <div className="msg-reply-bar" role="status">
@@ -1031,7 +1253,56 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
               </div>
             )
           : null}
+        {attachments.length > 0 ? (
+          <>
+            <AttachmentPreviewStrip
+              attachments={attachments}
+              onRemove={removeAttachment}
+              onRetry={(id) => {
+                void retryAttachmentSend(id)
+              }}
+            />
+            <AttachUploadProgress
+              sent={uploadProgress?.sent ?? 0}
+              total={uploadProgress?.total ?? 0}
+            />
+          </>
+        ) : null}
+        <TypingIndicator typers={typers} />
         <div className="compose__row">
+          <EmojiPickerButton
+            disabled={!canCompose || isUploading}
+            onEmojiSelected={(emoji) => {
+              const ta = textareaRef.current
+              if (!ta) return
+              const { newValue, newCursorPos } = insertAtCursor(
+                ta,
+                emoji,
+                textareaSelectionRef.current,
+              )
+              setDraft(newValue)
+              window.setTimeout(() => {
+                ta.focus()
+                ta.setSelectionRange(newCursorPos, newCursorPos)
+                textareaSelectionRef.current = {
+                  start: newCursorPos,
+                  end: newCursorPos,
+                }
+              }, 0)
+            }}
+          />
+          {showAttach ? (
+            <AttachMenu
+              disabled={!canCompose || isUploading}
+              onFilesSelected={(files) => {
+                setAttachPickErr(null)
+                const { rejectedCount } = addFiles(files)
+                if (rejectedCount > 0) {
+                  setAttachPickErr(t("chat.attachFileTooLarge"))
+                }
+              }}
+            />
+          ) : null}
           <textarea
             ref={textareaRef}
             className="input input-compose"
@@ -1039,13 +1310,27 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             value={draft}
             onChange={(e) => {
               setDraft(e.target.value)
+              notifyTyping?.()
+            }}
+            onSelect={(e) => {
+              const el = e.currentTarget
+              textareaSelectionRef.current = {
+                start: el.selectionStart,
+                end: el.selectionEnd,
+              }
+            }}
+            onBlur={(e) => {
+              textareaSelectionRef.current = {
+                start: e.currentTarget.selectionStart,
+                end: e.currentTarget.selectionEnd,
+              }
             }}
             placeholder={t("chat.messagePlaceholder")}
-            disabled={!canCompose}
+            disabled={!canCompose || isUploading}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault()
-                if (canCompose) void onSend()
+                if (canSendNow) void onSend()
               }
             }}
           />
@@ -1054,7 +1339,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             type="button"
             onClick={() => { void onSend() }}
             aria-label={t("chat.send")}
-            disabled={!canCompose}
+            disabled={!canSendNow}
           >
             {t("chat.send")}
           </Button>
@@ -1129,8 +1414,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         onClose={() => setIsPanelOpen(false)}
         isForum={isForum}
         onOpenInChatSearch={() => {
-          setInChatSearchRan(false)
-          setInChatSearchOpen(true)
+          openSearchMode()
         }}
         onAfterBlock={() => void refreshDialogs()}
       />

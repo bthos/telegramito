@@ -11,7 +11,7 @@ export function TypingIndicator({ typers }: Props) {
   const visible = typers.length > 0
   return (
     <div
-      className="typing-indicator"
+      className={`typing-indicator${visible ? " typing-indicator--visible" : ""}`}
       style={{ visibility: visible ? "visible" : "hidden" }}
       aria-live="polite"
       aria-atomic="true"
@@ -25,7 +25,9 @@ export function TypingIndicator({ typers }: Props) {
           </span>
           <span className="typing-label">{buildLabel(typers)}</span>
         </>
-      ) : null}
+      ) : (
+        <span className="typing-indicator__spacer" aria-hidden="true" />
+      )}
     </div>
   )
 }

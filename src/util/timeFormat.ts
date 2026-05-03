@@ -130,3 +130,12 @@ export function formatDialogListTime(ts: number, locale: string, now = new Date(
   }
   return d.toLocaleDateString(locale, { day: "numeric", month: "short", year: "2-digit" })
 }
+
+/** Relative date for in-chat search rows ("Yesterday", short weekday date). */
+export function formatSearchResultRowDate(
+  unixSec: number,
+  locale: string,
+  now = new Date(),
+): string {
+  return formatMessageDateSeparator(unixSec, locale, now)
+}

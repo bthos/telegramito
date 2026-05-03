@@ -20,31 +20,43 @@ function extractName(entity: unknown): string {
   return ""
 }
 
+function idsEqual(a: unknown, b: unknown): boolean {
+  try {
+    return bigInt(String(a)).equals(bigInt(String(b)))
+  } catch {
+    return false
+  }
+}
+
+function chatEntityMatchesUpdate(
+  entity: Api.Chat | Api.Channel,
+  chatId: unknown,
+): boolean {
+  return idsEqual((entity as Api.Chat | Api.Channel).id, chatId)
+}
+
 export function useTypingIndicators(
   entity: Dialog["entity"],
   client: TelegramClient | null,
-  sendOwnTyping = true,
 ): { typers: string[] } {
   const [typers, setTypers] = useState<string[]>([])
 
-  const ownUserIdRef = useRef<bigint | null>(null)
+  const ownUserIdRef = useRef<ReturnType<typeof bigInt> | null>(null)
   const typerNamesRef = useRef(new Map<string, string>())
   const timersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>())
 
-  // Fetch own user ID once for self-echo filtering (AC4)
   useEffect(() => {
     if (!client) return
     void (async () => {
       try {
-        const me = await (client as unknown as { getMe(): Promise<{ id: bigint }> }).getMe()
-        if (me?.id) ownUserIdRef.current = me.id
+        const me = await client.getMe()
+        if (me?.id != null) ownUserIdRef.current = bigInt(String(me.id))
       } catch {
         // best-effort
       }
     })()
   }, [client])
 
-  // Clear state on peer change (AC5)
   useEffect(() => {
     for (const t of timersRef.current.values()) clearTimeout(t)
     timersRef.current.clear()
@@ -56,14 +68,16 @@ export function useTypingIndicators(
     if (!client || !entity) return
 
     function removeTyper(key: string) {
-      clearTimeout(timersRef.current.get(key))
+      const existing = timersRef.current.get(key)
+      if (existing != null) clearTimeout(existing)
       timersRef.current.delete(key)
       typerNamesRef.current.delete(key)
       setTypers([...typerNamesRef.current.values()])
     }
 
     function scheduleRemove(key: string) {
-      clearTimeout(timersRef.current.get(key))
+      const existing = timersRef.current.get(key)
+      if (existing != null) clearTimeout(existing)
       timersRef.current.set(
         key,
         setTimeout(() => removeTyper(key), TYPER_TIMEOUT_MS),
@@ -93,36 +107,40 @@ export function useTypingIndicators(
 
       if (update.className === "UpdateUserTyping") {
         if (entity.className !== "User") return
+
+        const uid = update.userId
+        if (ownUserIdRef.current != null && idsEqual(uid, ownUserIdRef.current)) return
+
         const eUser = entity as Api.User
-        if (!bigInt(String(update.userId)).equals(bigInt(String(eUser.id)))) return
-        if (ownUserIdRef.current != null) {
-          if (bigInt(String(update.userId)).equals(bigInt(String(ownUserIdRef.current)))) {
-            return
-          }
+        if (!idsEqual(uid, eUser.id)) return
+
+        const key = String(uid)
+        if (isCancel) {
+          removeTyper(key)
+          return
         }
-        const key = String(update.userId)
-        if (isCancel) { removeTyper(key); return }
-        void addTyper(
-          key,
-          new Api.PeerUser({ userId: bigInt(String(update.userId)) }),
-        )
+        void addTyper(key, new Api.PeerUser({ userId: bigInt(String(uid)) }))
         return
       }
 
       if (update.className === "UpdateChatUserTyping") {
+        if (entity.className !== "Chat" && entity.className !== "Channel") return
         const eGroup = entity as Api.Chat | Api.Channel
-        if (update.chatId !== eGroup.id) return
+        if (!chatEntityMatchesUpdate(eGroup, update.chatId)) return
+
         const fromPeer = update.fromId
-        if (!fromPeer || fromPeer.className !== "PeerUser" || fromPeer.userId == null) return
+        if (!fromPeer || fromPeer.className !== "PeerUser" || fromPeer.userId == null)
+          return
+
         const fromId = fromPeer.userId
-        if (
-          ownUserIdRef.current != null &&
-          bigInt(String(fromId)).equals(bigInt(String(ownUserIdRef.current)))
-        ) {
+        if (ownUserIdRef.current != null && idsEqual(fromId, ownUserIdRef.current))
+          return
+
+        const key = String(fromId)
+        if (isCancel) {
+          removeTyper(key)
           return
         }
-        const key = String(fromId)
-        if (isCancel) { removeTyper(key); return }
         void addTyper(key, new Api.PeerUser({ userId: bigInt(String(fromId)) }))
       }
     }
@@ -134,32 +152,42 @@ export function useTypingIndicators(
     }
   }, [client, entity])
 
-  // sendOwnTyping wiring: ChatView calls makeTypingSender() for the textarea onChange
-  void sendOwnTyping
-
   return { typers }
 }
 
-/** Returns a debounced function to call on textarea input events. */
+const OWN_TYPING_MIN_INTERVAL_MS = 3_000
+
+/**
+ * Throttled caller for `messages.SetTyping` (at most once per `intervalMs` while typing).
+ * Returns `null` when typing cannot be sent for the current peer.
+ */
 export function makeTypingSender(
   entity: Dialog["entity"],
   client: TelegramClient | null,
-  debounceMs = 3_000,
+  intervalMs = OWN_TYPING_MIN_INTERVAL_MS,
 ): (() => void) | null {
   if (!client || !entity) return null
-  let timer: ReturnType<typeof setTimeout> | null = null
+
+  let lastSent = 0
+  let inputPeer: Api.TypeInputPeer | undefined
+
   return () => {
-    if (timer != null) return
-    timer = setTimeout(() => {
-      timer = null
-      void client
-        .invoke(
+    const now = Date.now()
+    if (now - lastSent < intervalMs) return
+    lastSent = now
+
+    void (async () => {
+      try {
+        if (!inputPeer) inputPeer = await client.getInputEntity(entity)
+        await client.invoke(
           new Api.messages.SetTyping({
-            peer: entity as unknown as Api.TypeInputPeer,
+            peer: inputPeer,
             action: new Api.SendMessageTypingAction(),
           }),
         )
-        .catch(() => undefined)
-    }, debounceMs)
+      } catch {
+        inputPeer = undefined
+      }
+    })()
   }
 }

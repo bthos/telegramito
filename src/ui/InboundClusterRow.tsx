@@ -78,6 +78,7 @@ export function InboundClusterRow({
             name={senderName}
             size={AVATAR_SIZE}
             className="msg-cluster-avatar"
+            client={client}
           />
         )}
         {showSpacer && (

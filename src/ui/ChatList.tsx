@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
+import type { TelegramClient } from "telegram"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import { getDialogPreviewText } from "../telegram/dialogPreview"
 import { getPeerInfo, isPrivateUserDialog, isUserContactForPolicy } from "../telegram/dialogUtils"
@@ -22,6 +23,8 @@ type Props = {
   loadMoreDialogs?: () => void
   dialogsLoadingMore?: boolean
   loadedDialogCount?: number
+  /** When set, chat rows load profile photos for peers. */
+  client?: TelegramClient | null
 }
 
 export function ChatList({
@@ -36,6 +39,7 @@ export function ChatList({
   loadMoreDialogs,
   dialogsLoadingMore = false,
   loadedDialogCount,
+  client,
 }: Props) {
   const { t, i18n } = useTranslation()
 
@@ -94,7 +98,7 @@ export function ChatList({
           return (
             <li key={key}>
               <div className="chat-blocked-row">
-                <PeerAvatar className="peer-avatar--dim" id={key} name={name} size={44} />
+                <PeerAvatar className="peer-avatar--dim" id={key} name={name} size={44} client={client} />
                 <div className="chat-blocked-row__body">
                   <span className="chat-blocked-row__name">{name}</span>
                   <div className="chat-blocked-row__actions">
@@ -122,7 +126,7 @@ export function ChatList({
                 onSelect(d)
               }}
             >
-              <PeerAvatar id={key} name={name} size={48} />
+              <PeerAvatar id={key} name={name} size={48} client={client} />
               <div className="chat-row__body">
                 <div className="chat-row__top">
                   <div className="chat-row__title">

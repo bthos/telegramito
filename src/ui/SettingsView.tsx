@@ -190,6 +190,14 @@ export function SettingsView({ canEdit, onRequestPin }: Props) {
             }}
             label={t("parental.filterGifs")}
           />
+          <Switch
+            idSuffix="outmedia"
+            checked={settings.allowOutgoingMedia}
+            onChange={(v) => {
+              void setSettings({ ...settings, allowOutgoingMedia: v })
+            }}
+            label={t("parental.allowOutgoingMedia")}
+          />
         </div>
       </section>
 

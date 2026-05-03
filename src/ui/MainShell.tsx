@@ -21,7 +21,7 @@ import { requestChatAccessForDialog } from "../parental/requestAccess"
 import { isNightListHidden, isPrivateOmittedInChildListForDeny } from "../parental/policy"
 import type { AppMode } from "../parental/types"
 import type { ThemePreference } from "../theme/storage"
-import { ChatView, THREAD_HEADER_ACTIONS_ID } from "./ChatView"
+import { ChatView, THREAD_HEADER_ACTIONS_ID, THREAD_HEADER_CENTER_ID } from "./ChatView"
 import { ChatsListPanel } from "./ChatsListPanel"
 import { SettingsView } from "./SettingsView"
 import { PinDialog } from "./PinDialog"
@@ -330,7 +330,7 @@ export function MainShell() {
                   >
                     <BackIcon />
                   </Button>
-                  <h2 className="thread-header__h">{getPeerInfo(selected).name}</h2>
+                  <div className="thread-header__center" id={THREAD_HEADER_CENTER_ID} aria-live="polite" />
                   <div className="thread-header__actions" id={THREAD_HEADER_ACTIONS_ID} />
                 </div>
                 <div className="chats-narrow__thread">
@@ -358,6 +358,7 @@ export function MainShell() {
                   loadMoreDialogs={loadMoreDialogs}
                   dialogsLoadingMore={dialogsLoadingMore}
                   loadedDialogCount={dialogs.length}
+                  client={client}
                 />
               </div>
             )
@@ -378,6 +379,7 @@ export function MainShell() {
                   loadMoreDialogs={loadMoreDialogs}
                   dialogsLoadingMore={dialogsLoadingMore}
                   loadedDialogCount={dialogs.length}
+                  client={client}
                 />
               </aside>
               <div className="chat-main">

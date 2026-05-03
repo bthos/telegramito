@@ -1,4 +1,4 @@
-import { renderHook, act, waitFor } from "@testing-library/react"
+import { renderHook, act } from "@testing-library/react"
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest"
 import type { TelegramClient } from "telegram"
 
@@ -12,9 +12,16 @@ vi.mock("telegram", async () => ({
   Api: {
     UpdateUserTyping: class {},
     UpdateChatUserTyping: class {},
-    PeerUser: class MockPeerUser { userId: bigint; constructor({ userId }: { userId: bigint }) { this.userId = userId } },
+    PeerUser: class MockPeerUser {
+      userId: bigint
+      constructor({ userId }: { userId: bigint }) {
+        this.userId = userId
+      }
+    },
     messages: {
-      SetTyping: class { constructor(_opts: unknown) {} },
+      SetTyping: class {
+        constructor(_opts: unknown) {}
+      },
     },
     SendMessageTypingAction: class {},
   },
@@ -51,7 +58,7 @@ function makeClient(opts: { meId?: bigint; resolvedName?: string; shouldThrow?: 
   let capturedHandler: ((update: unknown) => void) | null = null
 
   const client = {
-    addEventHandler: vi.fn((handler: (u: unknown) => void) => {
+    addEventHandler: vi.fn((handler: (u: unknown) => void, _builder?: unknown) => {
       capturedHandler = handler
     }),
     removeEventHandler: vi.fn(),
@@ -69,19 +76,19 @@ function makeClient(opts: { meId?: bigint; resolvedName?: string; shouldThrow?: 
   return { client, fire }
 }
 
+/** Flush microtasks after async hook updates (mock getEntity). */
+async function flushMicrotasks(): Promise<void> {
+  await act(async () => {
+    await Promise.resolve()
+    await Promise.resolve()
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe("useTypingIndicators", () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   it("returns empty typers initially", () => {
     const { client } = makeClient()
     const { result } = renderHook(() => useTypingIndicators(makeUserEntity(BigInt(1)), client))
@@ -99,10 +106,15 @@ describe("useTypingIndicators", () => {
     const { result } = renderHook(() => useTypingIndicators(entity, client))
 
     act(() => {
-      fire({ className: "UpdateUserTyping", userId: BigInt(42), action: { className: "SendMessageTypingAction" } })
+      fire({
+        className: "UpdateUserTyping",
+        userId: BigInt(42),
+        action: { className: "SendMessageTypingAction" },
+      })
     })
+    await flushMicrotasks()
 
-    await waitFor(() => expect(result.current.typers).toEqual(["Alice"]))
+    expect(result.current.typers).toEqual(["Alice"])
   })
 
   it("accumulates two typer names for group chat (AC2)", async () => {
@@ -115,48 +127,118 @@ describe("useTypingIndicators", () => {
     const { result } = renderHook(() => useTypingIndicators(entity, client))
 
     act(() => {
-      fire({ className: "UpdateChatUserTyping", chatId: BigInt(100), fromId: { className: "PeerUser", userId: BigInt(1) }, action: { className: "SendMessageTypingAction" } })
+      fire({
+        className: "UpdateChatUserTyping",
+        chatId: BigInt(100),
+        fromId: { className: "PeerUser", userId: BigInt(1) },
+        action: { className: "SendMessageTypingAction" },
+      })
     })
     act(() => {
-      fire({ className: "UpdateChatUserTyping", chatId: BigInt(100), fromId: { className: "PeerUser", userId: BigInt(2) }, action: { className: "SendMessageTypingAction" } })
+      fire({
+        className: "UpdateChatUserTyping",
+        chatId: BigInt(100),
+        fromId: { className: "PeerUser", userId: BigInt(2) },
+        action: { className: "SendMessageTypingAction" },
+      })
     })
+    await flushMicrotasks()
 
-    await waitFor(() => {
-      expect(result.current.typers).toHaveLength(2)
-      expect(result.current.typers).toContain("Alice")
-      expect(result.current.typers).toContain("Bob")
-    })
+    expect(result.current.typers).toHaveLength(2)
+    expect(result.current.typers).toContain("Alice")
+    expect(result.current.typers).toContain("Bob")
   })
 
   it("ignores UpdateUserTyping from own userId (AC4)", async () => {
     const ownId = BigInt(999)
-    const entity = makeUserEntity(BigInt(42))
+    const entity = makeUserEntity(ownId)
     const { client, fire } = makeClient({ meId: ownId })
     const { result } = renderHook(() => useTypingIndicators(entity, client))
 
-    await waitFor(() => expect(client.getMe).toHaveBeenCalled())
+    await flushMicrotasks()
+    expect(client.getMe).toHaveBeenCalled()
 
     act(() => {
-      fire({ className: "UpdateUserTyping", userId: ownId, action: { className: "SendMessageTypingAction" } })
+      fire({
+        className: "UpdateUserTyping",
+        userId: ownId,
+        action: { className: "SendMessageTypingAction" },
+      })
     })
+    await flushMicrotasks()
 
-    await act(async () => { await Promise.resolve() })
     expect(result.current.typers).toEqual([])
   })
 
-  it("removes typer after 5 000 ms timeout", async () => {
-    const entity = makeUserEntity(BigInt(42))
-    const { client, fire } = makeClient({ resolvedName: "Alice" })
-    const { result } = renderHook(() => useTypingIndicators(entity, client))
-
-    act(() => {
-      fire({ className: "UpdateUserTyping", userId: BigInt(42), action: { className: "SendMessageTypingAction" } })
+  describe("timeouts (fake timers)", () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
     })
-    await waitFor(() => expect(result.current.typers).toEqual(["Alice"]))
 
-    act(() => { vi.advanceTimersByTime(5_001) })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
 
-    expect(result.current.typers).toEqual([])
+    it("removes typer after 5 000 ms timeout", async () => {
+      const entity = makeUserEntity(BigInt(42))
+      const { client, fire } = makeClient({ resolvedName: "Alice" })
+      const { result } = renderHook(() => useTypingIndicators(entity, client))
+
+      act(() => {
+        fire({
+          className: "UpdateUserTyping",
+          userId: BigInt(42),
+          action: { className: "SendMessageTypingAction" },
+        })
+      })
+      await flushMicrotasks()
+
+      expect(result.current.typers).toEqual(["Alice"])
+
+      act(() => {
+        vi.advanceTimersByTime(5_001)
+      })
+
+      expect(result.current.typers).toEqual([])
+    })
+
+    it("resets 5 s timer on repeated event from same typer", async () => {
+      const entity = makeUserEntity(BigInt(42))
+      const { client, fire } = makeClient({ resolvedName: "Alice" })
+      const { result } = renderHook(() => useTypingIndicators(entity, client))
+
+      act(() => {
+        fire({
+          className: "UpdateUserTyping",
+          userId: BigInt(42),
+          action: { className: "SendMessageTypingAction" },
+        })
+      })
+      await flushMicrotasks()
+
+      expect(result.current.typers).toEqual(["Alice"])
+
+      act(() => {
+        vi.advanceTimersByTime(4_000)
+      })
+      act(() => {
+        fire({
+          className: "UpdateUserTyping",
+          userId: BigInt(42),
+          action: { className: "SendMessageTypingAction" },
+        })
+      })
+
+      act(() => {
+        vi.advanceTimersByTime(4_000)
+      })
+      expect(result.current.typers).toEqual(["Alice"])
+
+      act(() => {
+        vi.advanceTimersByTime(1_100)
+      })
+      expect(result.current.typers).toEqual([])
+    })
   })
 
   it("removes typer immediately on SendMessageCancelAction", async () => {
@@ -165,13 +247,24 @@ describe("useTypingIndicators", () => {
     const { result } = renderHook(() => useTypingIndicators(entity, client))
 
     act(() => {
-      fire({ className: "UpdateUserTyping", userId: BigInt(42), action: { className: "SendMessageTypingAction" } })
+      fire({
+        className: "UpdateUserTyping",
+        userId: BigInt(42),
+        action: { className: "SendMessageTypingAction" },
+      })
     })
-    await waitFor(() => expect(result.current.typers).toEqual(["Alice"]))
+    await flushMicrotasks()
+
+    expect(result.current.typers).toEqual(["Alice"])
 
     act(() => {
-      fire({ className: "UpdateUserTyping", userId: BigInt(42), action: { className: "SendMessageCancelAction" } })
+      fire({
+        className: "UpdateUserTyping",
+        userId: BigInt(42),
+        action: { className: "SendMessageCancelAction" },
+      })
     })
+    await flushMicrotasks()
 
     expect(result.current.typers).toEqual([])
   })
@@ -186,11 +279,19 @@ describe("useTypingIndicators", () => {
     )
 
     act(() => {
-      fire({ className: "UpdateUserTyping", userId: BigInt(42), action: { className: "SendMessageTypingAction" } })
+      fire({
+        className: "UpdateUserTyping",
+        userId: BigInt(42),
+        action: { className: "SendMessageTypingAction" },
+      })
     })
-    await waitFor(() => expect(result.current.typers).toEqual(["Alice"]))
+    await flushMicrotasks()
 
-    act(() => { rerender({ entity: entityB }) })
+    expect(result.current.typers).toEqual(["Alice"])
+
+    act(() => {
+      rerender({ entity: entityB })
+    })
 
     expect(result.current.typers).toEqual([])
   })
@@ -201,10 +302,14 @@ describe("useTypingIndicators", () => {
     const { result } = renderHook(() => useTypingIndicators(entity, client))
 
     act(() => {
-      fire({ className: "UpdateUserTyping", userId: BigInt(77), action: { className: "SendMessageTypingAction" } })
+      fire({
+        className: "UpdateUserTyping",
+        userId: BigInt(77),
+        action: { className: "SendMessageTypingAction" },
+      })
     })
 
-    await act(async () => { await Promise.resolve() })
+    await flushMicrotasks()
     expect(result.current.typers).toEqual([])
   })
 
@@ -215,40 +320,21 @@ describe("useTypingIndicators", () => {
     expect(client.removeEventHandler).toHaveBeenCalledTimes(1)
   })
 
-  it("resets 5 s timer on repeated event from same typer", async () => {
-    const entity = makeUserEntity(BigInt(42))
-    const { client, fire } = makeClient({ resolvedName: "Alice" })
-    const { result } = renderHook(() => useTypingIndicators(entity, client))
-
-    act(() => {
-      fire({ className: "UpdateUserTyping", userId: BigInt(42), action: { className: "SendMessageTypingAction" } })
-    })
-    await waitFor(() => expect(result.current.typers).toEqual(["Alice"]))
-
-    act(() => { vi.advanceTimersByTime(4_000) })
-    act(() => {
-      fire({ className: "UpdateUserTyping", userId: BigInt(42), action: { className: "SendMessageTypingAction" } })
-    })
-
-    // 4 s after reset — still within 5 s window, typer must remain
-    act(() => { vi.advanceTimersByTime(4_000) })
-    expect(result.current.typers).toEqual(["Alice"])
-
-    // another 1.1 s takes us past the reset timer
-    act(() => { vi.advanceTimersByTime(1_100) })
-    expect(result.current.typers).toEqual([])
-  })
-
   it("falls back to userId string when getEntity throws", async () => {
     const entity = makeUserEntity(BigInt(42))
     const { client, fire } = makeClient({ shouldThrow: true })
     const { result } = renderHook(() => useTypingIndicators(entity, client))
 
     act(() => {
-      fire({ className: "UpdateUserTyping", userId: BigInt(42), action: { className: "SendMessageTypingAction" } })
+      fire({
+        className: "UpdateUserTyping",
+        userId: BigInt(42),
+        action: { className: "SendMessageTypingAction" },
+      })
     })
+    await flushMicrotasks()
 
-    await waitFor(() => expect(result.current.typers).toHaveLength(1))
+    expect(result.current.typers).toHaveLength(1)
     expect(typeof result.current.typers[0]).toBe("string")
   })
 })

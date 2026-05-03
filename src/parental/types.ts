@@ -19,6 +19,8 @@ export type ParentalSettings = {
   blockUnknownPrivate: boolean
   hideLinkPreviews: boolean
   filterGifs: boolean
+  /** When false in child mode, compose attach / outgoing uploads are disabled (see attach-menu spec). */
+  allowOutgoingMedia: boolean
   nightMode: NightMode
   allowlistIds: string[]
   pinHash: string | null
@@ -34,6 +36,7 @@ export function defaultParentalSettings(): ParentalSettings {
     blockUnknownPrivate: false,
     hideLinkPreviews: false,
     filterGifs: false,
+    allowOutgoingMedia: true,
     nightMode: { enabled: false, start: "22:00", end: "07:00" },
     allowlistIds: [],
     pinHash: null,
@@ -55,6 +58,10 @@ export function normalizeParentalSettings(
   return {
     ...d,
     ...s,
+    allowOutgoingMedia:
+      typeof s.allowOutgoingMedia === "boolean"
+        ? s.allowOutgoingMedia
+        : d.allowOutgoingMedia,
     nightMode: { ...d.nightMode, ...s.nightMode },
     logLevel: isAppLogLevel(s.logLevel) ? s.logLevel : d.logLevel,
   }

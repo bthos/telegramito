@@ -11,6 +11,9 @@ import {
 import { PeerAvatar } from "./PeerAvatar"
 import { usePeerRecentMedia } from "../hooks/usePeerRecentMedia"
 import { makeBlobUrl } from "./messageMediaBlobUtils"
+import { getMessageDocument } from "../telegram/documentFile"
+import { isAnimatedDoc, isVideoDoc } from "../telegram/documentMediaKind"
+import { resolveMessageMediaForDisplay } from "../telegram/messageMediaUnwrap"
 
 type PeerEntity = Api.User | Api.Chat | Api.Channel
 
@@ -42,7 +45,32 @@ function isGroupPeer(entity: PeerEntity | null | undefined): boolean {
   return false
 }
 
-/** Thumbnail cell: fetches blob for a single photo message and renders as <img>. */
+/** Photo vs video for shared-media grid (aligned with {@link resolveMessageMediaForDisplay} / paid unwrap). */
+function mediaThumbKind(message: Api.Message): "photo" | "video" {
+  const r = resolveMessageMediaForDisplay(message)
+  const med = r.media
+  if (!med) return "photo"
+  if (med.className === "MessageMediaPhoto") return "photo"
+  if (med.className === "MessageMediaDocument") {
+    const d = getMessageDocument(r)
+    if (!d) return "photo"
+    if (isVideoDoc(d)) return "video"
+    const mt = d.mimeType?.toLowerCase() ?? ""
+    if (mt.startsWith("video/")) return "video"
+    if (isAnimatedDoc(d) && mt.includes("video")) return "video"
+  }
+  return "photo"
+}
+
+function videoMimeForThumb(message: Api.Message): string {
+  const r = resolveMessageMediaForDisplay(message)
+  const d = getMessageDocument(r)
+  const mt = d?.mimeType?.toLowerCase() ?? ""
+  if (d && mt.startsWith("video/")) return d.mimeType || "video/mp4"
+  return "video/mp4"
+}
+
+/** Thumbnail cell: downloads media blob and renders <img> or <video> for photo/video messages. */
 function MediaThumbCell({
   message,
   client,
@@ -50,20 +78,29 @@ function MediaThumbCell({
   message: Api.Message
   client: TelegramClient | null
 }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null)
+  const blobUrlRef = useRef<string | null>(null)
+  const [thumb, setThumb] = useState<
+    { url: string; kind: "photo" | "video" } | null
+  >(null)
 
   useEffect(() => {
     if (!client) return
     let cancelled = false
-    let url: string | null = null
+    setThumb(null)
 
     void (async () => {
       try {
         const buf = await client.downloadMedia(message as never, {})
         if (cancelled) return
         if (buf) {
-          url = makeBlobUrl(buf, "image/jpeg")
-          setBlobUrl(url)
+          const kind = mediaThumbKind(message)
+          const mime = kind === "video" ? videoMimeForThumb(message) : "image/jpeg"
+          const nextUrl = makeBlobUrl(buf, mime)
+          if (blobUrlRef.current) {
+            URL.revokeObjectURL(blobUrlRef.current)
+          }
+          blobUrlRef.current = nextUrl
+          setThumb({ url: nextUrl, kind })
         }
       } catch {
         // silently ignore thumbnail errors
@@ -72,11 +109,14 @@ function MediaThumbCell({
 
     return () => {
       cancelled = true
-      if (url) URL.revokeObjectURL(url)
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current)
+        blobUrlRef.current = null
+      }
     }
   }, [message, client])
 
-  if (!blobUrl) {
+  if (!thumb) {
     return (
       <div
         className="context-panel__media-cell context-panel__media-cell--loading"
@@ -87,8 +127,19 @@ function MediaThumbCell({
 
   return (
     <div className="context-panel__media-cell">
-      <a href={blobUrl} target="_blank" rel="noopener noreferrer" tabIndex={0}>
-        <img src={blobUrl} alt="" loading="lazy" />
+      <a href={thumb.url} target="_blank" rel="noopener noreferrer" tabIndex={0}>
+        {thumb.kind === "video" ? (
+          <video
+            className="context-panel__media-thumb-video"
+            src={thumb.url}
+            muted
+            playsInline
+            preload="metadata"
+            aria-hidden
+          />
+        ) : (
+          <img src={thumb.url} alt="" loading="lazy" />
+        )}
       </a>
     </div>
   )
@@ -230,7 +281,7 @@ export function ChatContextPanel({
       >
         {/* Peer header */}
         <div className="context-panel__header">
-          <PeerAvatar id={peerId} name={peerName} size={48} />
+          <PeerAvatar id={peerId} name={peerName} size={48} client={client} />
           <h3 className="context-panel__name">{peerName}</h3>
         </div>
 

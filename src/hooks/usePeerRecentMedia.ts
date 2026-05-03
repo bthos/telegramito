@@ -17,11 +17,12 @@ function entityKey(entity: PeerEntity): string {
 }
 
 /**
- * Fetches the 6 most recent photo/video messages for a peer.
+ * Fetches the 6 most recent photo OR video messages for a peer.
  *
  * - Returns idle state immediately when entity or client is absent.
  * - Serves from module-level cache synchronously on cache hit.
- * - Fetches via client.getMessages with InputMessagesFilterPhotos on miss.
+ * - Fetches via `client.getMessages` with {@link Api.InputMessagesFilterPhotoVideo} on miss
+ *   (photos + videos in one pass; aligns with “full media” shared grid).
  * - Filters out non-Message entries (e.g. MessageService) from raw results.
  * - On error, sets error string and leaves items empty.
  */
@@ -58,7 +59,7 @@ export function usePeerRecentMedia(
     void (async () => {
       try {
         const raw = await client.getMessages(entity as never, {
-          filter: new Api.InputMessagesFilterPhotos(),
+          filter: new Api.InputMessagesFilterPhotoVideo(),
           limit: 6,
         })
         if (cancelled) return

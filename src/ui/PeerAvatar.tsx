@@ -1,4 +1,6 @@
 import type { CSSProperties } from "react"
+import type { TelegramClient } from "telegram"
+import { usePeerPhoto } from "../hooks/usePeerPhoto"
 
 function hueFromKey(id: string): [number, number, number] {
   let h = 0
@@ -15,9 +17,12 @@ type Props = {
   name: string
   size?: number
   className?: string
+  /** When set, loads profile photo via GramJS and shows it over the letter fallback. */
+  client?: TelegramClient | null
 }
 
-export function PeerAvatar({ id, name, size = 40, className = "" }: Props) {
+export function PeerAvatar({ id, name, size = 40, className = "", client }: Props) {
+  const photoUrl = usePeerPhoto(id || null, client ?? null)
   const [h, s, l] = hueFromKey(id)
   const trimmed = name.trim() || "?"
   const ch =
@@ -41,7 +46,16 @@ export function PeerAvatar({ id, name, size = 40, className = "" }: Props) {
       }
       aria-hidden
     >
-      {ch}
+      {photoUrl ? (
+        <img
+          src={photoUrl}
+          alt=""
+          className="peer-avatar__img"
+          draggable={false}
+        />
+      ) : (
+        ch
+      )}
     </span>
   )
 }
