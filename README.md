@@ -21,7 +21,7 @@ A static, browser-only Telegram client built on [GramJS](https://gram.js.org/) (
 |---|---|
 | UI | React 19, TypeScript |
 | Bundler | Vite 8, `vite-plugin-pwa`, `vite-plugin-singlefile` |
-| Telegram | GramJS (`telegram@2.26.22`) |
+| Telegram | GramJS — исходники в git submodule [`vendor/gramjs`](https://github.com/gram-js/gramjs), сборка в `vendor/telegram-built` при `npm install` (см. ниже) |
 | i18n | i18next, react-i18next |
 | Persistence | IndexedDB via `idb` |
 | Tests | Vitest, jsdom, `@testing-library/react` |
@@ -32,6 +32,24 @@ A static, browser-only Telegram client built on [GramJS](https://gram.js.org/) (
 
 - Node.js 20+
 - Telegram API credentials from [my.telegram.org](https://my.telegram.org)
+
+### Clone
+
+GramJS is vendored as a **git submodule** (`vendor/gramjs`). On `npm install`, **`preinstall`** runs `scripts/prepare-vendor-telegram.mjs`: installs devDependencies inside the submodule, runs `tsc`, and copies the emit into `vendor/telegram-built` (gitignored), which is what the `telegram` dependency points at. The first install can take a few minutes.
+
+To force a rebuild after changing the submodule commit:
+
+```bash
+npm run rebuild:telegram
+```
+
+Clone with submodules (or init them after clone):
+
+```bash
+git clone --recurse-submodules https://github.com/<you>/telegramito.git
+# or, if you already cloned without submodules:
+git submodule update --init --recursive
+```
 
 ### Install
 
@@ -67,6 +85,14 @@ npm run build
 ```
 
 The output is a single HTML file in `dist/`.
+
+### After changing GramJS (`vendor/gramjs`)
+
+1. `npm run rebuild:telegram`
+2. `npm run build` and `npm test`
+3. Manual smoke: forum topic with a **poll** and a small **message id gap** in history
+
+Details: [.artefacts/GRAMJS.md](.artefacts/GRAMJS.md).
 
 ## Project structure
 

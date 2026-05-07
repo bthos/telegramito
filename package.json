@@ -1,12 +1,13 @@
 {
   "name": "telegramito",
   "private": true,
-  "version": "0.8.0",
+  "version": "0.9.0",
   "license": "MIT",
   "type": "module",
   "scripts": {
     "preinstall": "node scripts/prepare-vendor-telegram.mjs",
     "rebuild:telegram": "node scripts/prepare-vendor-telegram.mjs --force",
+    "build:telegram": "npm run rebuild:telegram && npm run build",
     "dev": "vite",
     "prebuild": "node scripts/generate-pwa-icons.mjs",
     "build": "node scripts/check-telegram-layer.mjs && tsc -b && vite build",

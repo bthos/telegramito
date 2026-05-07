@@ -48,15 +48,29 @@ try {
   process.exit(1)
 }
 
+/** HEAD alone is not enough: local patches to vendor/gramjs do not move HEAD, but dist must rebuild. */
+function isGramJsWorktreeClean() {
+  try {
+    return execSync("git status --porcelain", { cwd: gramjsDir, encoding: "utf8" }).trim() === ""
+  } catch {
+    return false
+  }
+}
+
 if (
   !force
   && fs.existsSync(stampPath)
   && fs.existsSync(path.join(outDir, "index.js"))
 ) {
   const prev = fs.readFileSync(stampPath, "utf8").trim()
-  if (prev === head) {
-    console.log("prepare-vendor-telegram: skip (vendor/gramjs HEAD unchanged)")
+  if (prev === head && isGramJsWorktreeClean()) {
+    console.log("prepare-vendor-telegram: skip (vendor/gramjs HEAD unchanged, worktree clean)")
     process.exit(0)
+  }
+  if (prev === head && !isGramJsWorktreeClean()) {
+    console.log(
+      "prepare-vendor-telegram: vendor/gramjs has local changes; rebuilding (HEAD matches stamp)",
+    )
   }
 }
 
@@ -88,10 +102,10 @@ copyFile(
   path.join(gramjsDir, "gramjs", "tl", "static", "schema.tl"),
   path.join(staticDst, "schema.tl"),
 )
-copyFile(
-  path.join(gramjsDir, "gramjs", "tl", "api.d.ts"),
-  path.join(distDir, "tl", "api.d.ts"),
-)
+// Regenerate `tl/apiTl.js` (and `tl/api.d.ts`) from `static/api.tl` so runtime TL matches schema edits.
+run("node dist/tl/generateModule.js", gramjsDir)
+copyFile(path.join(distDir, "tl", "apiTl.js"), path.join(gramjsDir, "gramjs", "tl", "apiTl.js"))
+copyFile(path.join(distDir, "tl", "api.d.ts"), path.join(gramjsDir, "gramjs", "tl", "api.d.ts"))
 copyFile(
   path.join(gramjsDir, "gramjs", "define.d.ts"),
   path.join(distDir, "define.d.ts"),
