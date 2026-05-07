@@ -26,7 +26,7 @@ import { useChatScroll } from "../hooks/useChatScroll"
 import { requestChatAccessForDialog } from "../parental/requestAccess"
 import { formatMessageDateSeparator, formatMessageTime, getLocalDayKey, getStickyDateTsForRow } from "../util/timeFormat"
 import {
-  findSepRowIndexForDayKey,
+  findFirstMessageRowIndexForDayKey,
   getLoadedDayKeyBounds,
   getLoadedDayKeys,
 } from "../util/chatHistoryJump"
@@ -200,7 +200,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   const [searchResultIndex, setSearchResultIndex] = useState(0)
   const [highlightedMessageId, setHighlightedMessageId] = useState<number | null>(null)
   const messageScrollTopBeforeSearchRef = useRef(0)
-  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const highlightTimerRef = useRef<number | null>(null)
   const pendingScrollToMessageIdRef = useRef<number | null>(null)
 
   const [isPanelOpen, setIsPanelOpen] = useState(false)
@@ -431,18 +431,34 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
 
   const jumpToDayKey = useCallback(
     (dayKey: string) => {
-      const idx = findSepRowIndexForDayKey(datedList, dayKey)
-      if (idx == null) {
+      const rowIdx = findFirstMessageRowIndexForDayKey(datedList, dayKey)
+      if (rowIdx == null) {
         return
       }
-      if (datedList.length > VIRTUAL_MSG_THRESHOLD) {
-        virtualListRef.current?.scrollToRowIndex(idx, { align: "start", behavior: "smooth" })
-      } else {
-        const root = scrollRef.current
-        const node = root?.querySelector(
-          `[data-chat-day-key="${CSS.escape(dayKey)}"]`
-        ) as HTMLElement | null
+      const row = datedList[rowIdx]
+      const anchorId =
+        row.kind === "msg" && row.message.id != null ? String(row.message.id) : null
+      const root = scrollRef.current
+      const alignToDay = () => {
+        const node = anchorId
+          ? (root?.querySelector(
+              `[data-chat-message-id="${CSS.escape(anchorId)}"]`,
+            ) as HTMLElement | null)
+          : (root?.querySelector(
+              `[data-chat-day-key="${CSS.escape(dayKey)}"]`,
+            ) as HTMLElement | null)
         node?.scrollIntoView({ block: "start", behavior: "smooth" })
+      }
+      if (datedList.length > VIRTUAL_MSG_THRESHOLD) {
+        // TanStack Virtual's offsets are for .msg-list--virtual only, but scrollRef is the
+        // whole thread scroller (sticky date pill, load-older hint, …). scrollToIndex alone
+        // often lands short so the target row never mounts — then nothing appears to scroll.
+        virtualListRef.current?.scrollToRowIndex(rowIdx, { align: "start", behavior: "auto" })
+        requestAnimationFrame(() => {
+          requestAnimationFrame(alignToDay)
+        })
+      } else {
+        alignToDay()
       }
     },
     [datedList]
@@ -879,24 +895,36 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           title={client && dialog.entity ? t("chat.messageClickHint") : undefined}
           onClick={(e) => { onMessageBubbleReactions(e, m) }}
         >
+          {settings.showMessageIds ? (
+            <div className="msg-debug-id-row" translate="no">
+              <span className="msg-debug-id">{t("chat.messageIdLabel", { id: String(m.id) })}</span>
+            </div>
+          ) : null}
           <MessageReplyView reply={m.replyTo} client={client} />
-          <MessageMediaView
-            message={m}
-            client={client}
-            noPreview={noPreview}
-            filterGifs={filterGifs}
-            t={t}
-            pollVoter={
-              client && dialog.entity
-                ? {
-                    entity: dialog.entity,
-                    onVoted: () => {
-                      void refreshMessagesById([m.id!])
-                    },
-                  }
-                : undefined
-            }
-          />
+          <div className="msg-media-thumb">
+            <MessageMediaView
+              message={m}
+              client={client}
+              noPreview={noPreview}
+              filterGifs={filterGifs}
+              t={t}
+              viewerContext={{
+                peerTitle: name,
+                sentAtLabel: formatMessageTime(m.date, i18n.language),
+                caption: typeof m.message === "string" ? m.message.trim() : "",
+              }}
+              pollVoter={
+                client && dialog.entity
+                  ? {
+                      entity: dialog.entity,
+                      onVoted: () => {
+                        void refreshMessagesById([m.id!])
+                      },
+                    }
+                  : undefined
+              }
+            />
+          </div>
           <p className="msg-text">
             <MessageTextContent message={m} client={client} noPreview={noPreview} t={t} />
           </p>
@@ -940,7 +968,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         ) : bubble
       if (asVirtual) {
         return (
-          <div className={gutterClass}>
+          <div className={gutterClass} data-chat-message-id={String(m.id)}>
             {bubbleWithAttribution}
           </div>
         )
@@ -949,6 +977,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         <li
           className={gutterClass}
           data-chat-row-index={rowIndex}
+          data-chat-message-id={String(m.id)}
         >
           {bubbleWithAttribution}
         </li>
@@ -969,6 +998,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       isBroadcastChannel,
       highlightedMessageId,
       t,
+      settings.showMessageIds,
     ]
   )
 

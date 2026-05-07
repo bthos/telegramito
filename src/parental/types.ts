@@ -27,6 +27,8 @@ export type ParentalSettings = {
   pinSalt: string | null
   locale: AppLocale | null
   logLevel: AppLogLevel
+  /** When true, each message bubble shows its Telegram `message.id` (for bug reports). */
+  showMessageIds: boolean
 }
 
 export function defaultParentalSettings(): ParentalSettings {
@@ -43,6 +45,7 @@ export function defaultParentalSettings(): ParentalSettings {
     pinSalt: null,
     locale: null,
     logLevel: "warn",
+    showMessageIds: false,
   }
 }
 
@@ -64,6 +67,8 @@ export function normalizeParentalSettings(
         : d.allowOutgoingMedia,
     nightMode: { ...d.nightMode, ...s.nightMode },
     logLevel: isAppLogLevel(s.logLevel) ? s.logLevel : d.logLevel,
+    showMessageIds:
+      typeof s.showMessageIds === "boolean" ? s.showMessageIds : d.showMessageIds,
   }
 }
 

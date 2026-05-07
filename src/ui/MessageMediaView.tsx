@@ -2,12 +2,14 @@ import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
-import { getMessageDocument, getDocumentFileName, formatDocumentSize, safeFileDownloadName } from "../telegram/documentFile"
+import { getMessageDocument, getDocumentFileName, formatDocumentSize } from "../telegram/documentFile"
+import { getMessageMediaTypeLabel } from "../telegram/dialogPreview"
 import {
   isAnimatedDoc,
   isCustomEmojiDoc,
   isStickerDoc,
   isTgsShapedDoc,
+  isRoundVideoDoc,
   isVideoDoc,
 } from "../telegram/documentMediaKind"
 import { getMessageMediaPollFromMessage } from "../telegram/messagePollMedia"
@@ -22,9 +24,20 @@ import {
   shouldRenderPaidBundleBlock,
 } from "../telegram/messageMediaUnwrap"
 import { MessageMediaStatic } from "./MessageMediaStatic"
-import { ImageLightbox } from "./ImageLightbox"
+import { PhotoMediaViewer } from "./PhotoMediaViewer"
+import { VideoFullViewer } from "./VideoFullViewer"
+import { getVideoDurationSeconds, formatVideoDuration } from "../telegram/documentVideoMeta"
+import { getAudioDurationSeconds } from "../telegram/documentAudioMeta"
 import { MediaPlaceholder, resolveMediaPlaceholderType } from "./MediaPlaceholder"
 import { TgProgressIndeterminate } from "./TgProgressIndeterminate"
+import { VoiceMessageInline } from "./VoiceMessageInline"
+import { AudioTrackInline } from "./AudioTrackInline"
+import { DocumentAttachmentInline } from "./DocumentAttachmentInline"
+import { StickerInline } from "./StickerInline"
+
+import type { MediaViewerContext } from "./mediaViewerContext"
+
+export type { MediaViewerContext } from "./mediaViewerContext"
 
 function messageWithReplacedMedia(
   base: Api.Message,
@@ -273,6 +286,7 @@ function PaidBundlePreviewRow({
       role="status"
       aria-busy="true"
       aria-label={te("chat.paidBundleLockedPreviewAria")}
+      data-media-state="loading"
       data-has-ar={hasAspect ? "1" : undefined}
       style={
         hasAspect
@@ -299,8 +313,91 @@ function mediaLoadingIsCompact(type: ReturnType<typeof resolveMediaPlaceholderTy
   return type === "audio" || type === "voice"
 }
 
+function VideoInlinePlayer({
+  src,
+  loop,
+  autoPlay,
+  muted,
+  playLabel,
+  round,
+  durationLabel,
+  expandLabel,
+  onExpand,
+  showGifTag,
+}: {
+  src: string
+  loop: boolean
+  autoPlay: boolean
+  muted: boolean
+  playLabel: string
+  round?: boolean
+  durationLabel?: string | null
+  expandLabel: string
+  onExpand: () => void
+  /** GIF badge (animated video). */
+  showGifTag?: boolean
+}) {
+  const ref = useRef<HTMLVideoElement>(null)
+  const [started, setStarted] = useState(autoPlay)
+  const wrapClass = round ? "msg-video-wrap msg-video-wrap--round" : "msg-video-wrap"
+  return (
+    <div className={wrapClass} data-media-state="preview">
+      <video
+        ref={ref}
+        className={round ? "msg-video msg-video--round" : "msg-video"}
+        src={src}
+        loop={loop}
+        muted={muted}
+        playsInline
+        autoPlay={autoPlay}
+        controls={autoPlay ? false : started}
+        onPlay={() => {
+          setStarted(true)
+        }}
+        onPause={() => {
+          setStarted(false)
+        }}
+      />
+      {showGifTag ? <span className="msg-gif-tag">GIF</span> : null}
+      {durationLabel ? (
+        <span className="msg-video-thumb__duration">{durationLabel}</span>
+      ) : null}
+      <button
+        type="button"
+        className="msg-video-thumb__expand"
+        aria-label={expandLabel}
+        onClick={(e) => {
+          e.stopPropagation()
+          onExpand()
+        }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+          <path
+            fill="currentColor"
+            d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"
+          />
+        </svg>
+      </button>
+      {!autoPlay && !started ? (
+        <button
+          type="button"
+          className="msg-video-play ds-glyph ds-glyph--lg"
+          aria-label={playLabel}
+          onClick={() => {
+            void ref.current?.play()
+          }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
+            <path fill="currentColor" d="M8 5v14l11-7z" />
+          </svg>
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
 export function MessageMediaView({
-  message, client, noPreview, filterGifs, t, pollVoter,
+  message, client, noPreview, filterGifs, t, pollVoter, viewerContext,
 }: {
   message: Api.Message
   client: TelegramClient | null
@@ -308,6 +405,7 @@ export function MessageMediaView({
   filterGifs: boolean
   t: MessageMediaTranslateFn
   pollVoter?: { entity: unknown; onVoted: () => void }
+  viewerContext?: MediaViewerContext | null
 }) {
   const { t: te } = useTranslation()
   const paidBundleSlots = useMemo(() => {
@@ -353,12 +451,15 @@ export function MessageMediaView({
   const wpT = useWpPreview(resolved, client, noPreview)
   const s = useBlob(blobSourceMessage, client, filterGifs)
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [videoFullOpen, setVideoFullOpen] = useState(false)
   const errLabel = te("error")
 
   const imagePreviewUrl = s.k === "i" ? s.u : null
+  const videoPreviewUrl = s.k === "v" ? s.u : null
   useEffect(() => {
     setLightboxOpen(false)
-  }, [message.id, imagePreviewUrl])
+    setVideoFullOpen(false)
+  }, [message.id, imagePreviewUrl, videoPreviewUrl])
 
   if (renderPaidAsBundle && paidBundleSlots) {
     return (
@@ -387,6 +488,7 @@ export function MessageMediaView({
                   filterGifs={filterGifs}
                   t={t}
                   pollVoter={pollVoter}
+                  viewerContext={viewerContext}
                 />
               ),
         )}
@@ -411,13 +513,14 @@ export function MessageMediaView({
               filterGifs={filterGifs}
               t={t}
               pollVoter={pollVoter}
+              viewerContext={viewerContext}
             />
           </div>
         )
       : null
     if (client && pollVoter) {
       return (
-        <>
+        <div className="msg-poll-with-media" data-media-state="preview">
           <MessagePollView
             media={pollMedia}
             t={t}
@@ -427,18 +530,18 @@ export function MessageMediaView({
             onVoted={pollVoter.onVoted}
           />
           {attachedBlock}
-        </>
+        </div>
       )
     }
     return (
-      <>
+      <div className="msg-poll-with-media" data-media-state="preview">
         <PollReadonly media={pollMedia} t={t} client={client} />
         {attachedBlock}
-      </>
+      </div>
     )
   }
   if (resolved.media?.className === "MessageMediaWebPage" && !noPreview) {
-    return <WebPageView m={resolved} no={noPreview} t={t} thumb={wpT} />
+    return <WebPageView m={resolved} no={noPreview} t={t} thumb={wpT} viewerContext={viewerContext} />
   }
   if (isNonBlobVisualMedia(resolved.media)) {
     return <MessageMediaStatic m={resolved} t={t} />
@@ -456,9 +559,20 @@ export function MessageMediaView({
             ? "msg-media msg-media--loading ds-media-loading ds-media-loading--compact"
             : "msg-media msg-media--loading ds-media-loading"
         }
+        data-media-state="loading"
       >
         <MediaPlaceholder type={placeholderType} shimmer />
         <TgProgressIndeterminate />
+        {!compact ? (
+          <div className="media-loading-foot" role="status">
+            <span className="media-loading-foot__hint">{te("chat.mediaDownloadProgress")}</span>
+            {viewerContext?.sentAtLabel ? (
+              <span className="media-loading-foot__time">{viewerContext.sentAtLabel}</span>
+            ) : (
+              <span className="media-loading-foot__time" aria-hidden />
+            )}
+          </div>
+        ) : null}
       </div>
     )
   }
@@ -466,8 +580,19 @@ export function MessageMediaView({
     return <div className="msg-media msg-media--err" role="status" aria-label={errLabel} />
   }
   if (s.k === "i") {
+    const d = getMessageDocument(resolved)
+    if (d && isStickerDoc(d)) {
+      return (
+        <div className="msg-media msg-media--sticker" data-media-state="preview">
+          <StickerInline url={s.u} doc={d} />
+        </div>
+      )
+    }
+    const peerTitle = viewerContext?.peerTitle ?? te("chat.mediaViewerPeerFallback")
+    const sentAt = viewerContext?.sentAtLabel ?? ""
+    const caption = viewerContext?.caption ?? ""
     return (
-      <div className="msg-media msg-media--photo">
+      <div className="msg-media msg-media--photo" data-media-state="preview">
         <button
           type="button"
           className="msg-img-link"
@@ -480,74 +605,109 @@ export function MessageMediaView({
           <img className="msg-img" src={s.u} alt="" draggable={false} />
         </button>
         {lightboxOpen ? (
-          <ImageLightbox
+          <PhotoMediaViewer
             url={s.u}
             onClose={() => {
               setLightboxOpen(false)
             }}
             labelClose={te("chat.imageViewerClose")}
             labelBackdrop={te("chat.imageViewerBackdrop")}
+            peerTitle={peerTitle}
+            sentAtLabel={sentAt}
+            caption={caption}
           />
         ) : null}
       </div>
     )
   }
   if (s.k === "v") {
+    const d = getMessageDocument(resolved)
+    const round = d ? isRoundVideoDoc(d) : false
+    const gifStyle = s.loop
+    const durSec = getVideoDurationSeconds(d)
+    const durationLabel = durSec != null ? formatVideoDuration(durSec) : null
+    const peerTitle = viewerContext?.peerTitle ?? te("chat.mediaViewerPeerFallback")
+    const sentAt = viewerContext?.sentAtLabel ?? ""
+    const wrapClass = [
+      "msg-media msg-media--video",
+      gifStyle ? "msg-media--gif" : "",
+      round ? "msg-media--round-video" : "",
+    ].filter(Boolean).join(" ")
     return (
-      <div className="msg-media msg-media--video">
-        <video
-          className="msg-video"
+      <div className={wrapClass} data-media-state="preview">
+        <VideoInlinePlayer
           src={s.u}
-          controls
           loop={s.loop}
-          autoPlay={s.loop}
+          autoPlay={gifStyle}
           muted
-          playsInline
+          playLabel={te("chat.playVideo")}
+          round={round}
+          durationLabel={durationLabel}
+          expandLabel={te("chat.expandVideo")}
+          onExpand={() => setVideoFullOpen(true)}
+          showGifTag={gifStyle}
         />
+        {videoFullOpen ? (
+          <VideoFullViewer
+            src={s.u}
+            loop={s.loop}
+            onClose={() => setVideoFullOpen(false)}
+            ariaLabel={te("chat.videoViewerDialog")}
+            labelClose={te("chat.imageViewerClose")}
+            title={peerTitle}
+            sentAtLabel={sentAt}
+            labelPlay={te("chat.videoPlay")}
+            labelPause={te("chat.videoPause")}
+            durationSec={durSec}
+            variant={round ? "round" : "rect"}
+          />
+        ) : null}
       </div>
     )
   }
   if (s.k === "au") {
+    const d = getMessageDocument(resolved)
+    const dur = getAudioDurationSeconds(d)
+    if (s.voice) {
+      return (
+        <div className="msg-media msg-media--audio msg-media--voice" data-media-state="preview">
+          <VoiceMessageInline src={s.u} durationSec={dur} viewerContext={viewerContext} />
+        </div>
+      )
+    }
     return (
-      <div
-        className={
-          s.voice
-            ? "msg-media msg-media--audio msg-media--voice"
-            : "msg-media msg-media--audio"
-        }
-      >
-        <audio
-          className="msg-audio"
-          src={s.u}
-          controls
-          preload="metadata"
-          aria-label={s.voice ? te("chat.previewVoice") : te("chat.previewAudio")}
-        />
+      <div className="msg-media msg-media--audio" data-media-state="preview">
+        {d ? <AudioTrackInline src={s.u} doc={d} viewerContext={viewerContext} /> : (
+          <audio
+            className="msg-audio"
+            src={s.u}
+            controls
+            preload="metadata"
+            aria-label={te("chat.previewAudio")}
+          />
+        )}
       </div>
     )
   }
   if (s.k === "at") {
-    const dName = safeFileDownloadName(s.name)
-    const aLabel = [s.name, s.sizeStr].filter(Boolean).join(" — ")
+    const d = getMessageDocument(resolved)
     return (
-      <a
-        className="msg-attachment"
-        href={s.u}
-        download={dName}
-        target="_blank"
-        rel="noopener noreferrer"
-        title={te("chat.fileSaveHint")}
-        aria-label={aLabel || dName}
-      >
-        <span className="msg-attachment__icon" aria-hidden />
-        <span className="msg-attachment__body">
-          <span className="msg-attachment__name">{s.name}</span>
-          {s.sizeStr ? (
-            <span className="msg-attachment__size">{s.sizeStr}</span>
-          ) : null}
-        </span>
-      </a>
+      <DocumentAttachmentInline url={s.u} name={s.name} sizeStr={s.sizeStr} doc={d} />
     )
+  }
+  if (s.k === "z") {
+    const med = resolved.media
+    if (
+      med
+      && med.className !== "MessageMediaEmpty"
+      && !(med.className === "MessageMediaWebPage" && !noPreview)
+    ) {
+      return (
+        <div className="msg-media msg-media--card" role="status">
+          <span className="msg-media-card__muted">{getMessageMediaTypeLabel(message, t)}</span>
+        </div>
+      )
+    }
   }
   return null
 }

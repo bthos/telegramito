@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 .env
+vendor/telegram-built
 !.env.example
 dist
 dist-ssr
@@ -57,7 +58,7 @@ CLAUDE.md
 .artefacts/.agentic-kit.files
 #
 # Optional — ignore all of .artefacts/ except PIPELINE.md + PROJECT.md (uncomment all 4 lines):
-# .artefacts/**
+.artefacts/
 # !.artefacts/
 # !.artefacts/PIPELINE.md
 # !.artefacts/PROJECT.md

@@ -53,7 +53,7 @@ async function fetchPeerPhotoUrl(
       urlCache.set(peerId, null)
       return null
     }
-    const blob = new Blob([raw], { type: "image/jpeg" })
+    const blob = new Blob([new Uint8Array(raw)], { type: "image/jpeg" })
     const url = URL.createObjectURL(blob)
     urlCache.set(peerId, url)
     registerRevokeOnUnload()

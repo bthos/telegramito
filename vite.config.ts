@@ -1,3 +1,4 @@
+import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { defineConfig } from "vitest/config"
@@ -62,6 +63,30 @@ export default defineConfig({
       },
     }),
     viteSingleFile({ removeViteModuleLoader: true }),
+    /**
+     * `file://` opens cannot reliably fetch a sibling `manifest.webmanifest` (Chrome
+     * often reports `net::ERR_FAILED`). Inline the built manifest as a data URL.
+     */
+    {
+      name: "telegramito-inline-webmanifest",
+      closeBundle() {
+        const manifestPath = path.join(projectRoot, "dist", "manifest.webmanifest")
+        const indexPath = path.join(projectRoot, "dist", "index.html")
+        if (!fs.existsSync(manifestPath) || !fs.existsSync(indexPath)) {
+          return
+        }
+        const manifest = fs.readFileSync(manifestPath, "utf8")
+        const dataUrl = `data:application/manifest+json;charset=utf-8,${encodeURIComponent(manifest)}`
+        let html = fs.readFileSync(indexPath, "utf8")
+        const next = html.replace(
+          /(<link rel="manifest" href=")([^"]+)(")/,
+          `$1${dataUrl}$3`,
+        )
+        if (next !== html) {
+          fs.writeFileSync(indexPath, next)
+        }
+      },
+    },
   ],
   resolve: {
     /** One physical copy of GramJS — avoids two `tlobjects` maps (e.g. `telegram` vs `telegram/tl/...`). */

@@ -1,0 +1,210 @@
+/**
+ * Message media & loading chrome (spec: .artefacts/features/2026-05-07-design-system-media).
+ * Telegram-style indeterminate progress + shared media glyphs.
+ */
+
+/* ── Inline media loading (preview + skeleton + ring) ───────── */
+.ds-media-loading {
+  position: relative;
+  display: block;
+  /* Must not use width:fit-content: children use width:100%+aspect-ratio and collapse to 0 — only the spinner shows */
+  width: 100%;
+  max-width: min(100%, 20rem);
+  box-sizing: border-box;
+  min-height: 2.5rem;
+}
+
+.ds-media-loading .media-placeholder {
+  width: 100%;
+}
+
+.ds-media-loading--compact {
+  width: auto;
+  max-width: min(100%, 20rem);
+  min-height: 0;
+}
+
+.ds-media-loading--compact .tg-progress {
+  width: 36px;
+  height: 36px;
+}
+
+.ds-media-loading--compact .tg-progress__svg {
+  width: 36px;
+  height: 36px;
+}
+
+/* ── Telegram-style radial progress (indeterminate spin) ──────── */
+.tg-progress {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 2;
+}
+
+.tg-progress:not(.tg-progress--cancelable) {
+  pointer-events: none;
+}
+
+.msg-bubble--in .tg-progress {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="light"] .msg-bubble--in .tg-progress {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+html[data-theme="light"] .msg-bubble--in .tg-progress__track {
+  stroke: rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="light"] .msg-bubble--in .tg-progress__bar {
+  stroke: var(--ds-chat-accent, #3390ec);
+}
+
+.tg-progress__svg {
+  width: 50px;
+  height: 50px;
+}
+
+.tg-progress__track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 2.5;
+}
+
+.tg-progress__bar {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 26 120;
+}
+
+.tg-progress--indeterminate .tg-progress__svg {
+  animation: tg-progress-rot 0.85s linear infinite;
+}
+
+.tg-progress__x {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.tg-progress__x::before,
+.tg-progress__x::after {
+  content: "";
+  position: absolute;
+  inset: 6px 0;
+  background: #fff;
+  border-radius: 1px;
+}
+
+.tg-progress__x::before {
+  transform: rotate(45deg);
+}
+
+.tg-progress__x::after {
+  transform: rotate(-45deg);
+}
+
+html[data-theme="light"] .msg-bubble--in .tg-progress__x::before,
+html[data-theme="light"] .msg-bubble--in .tg-progress__x::after {
+  background: var(--ds-color-fg-2);
+}
+
+.tg-progress__cancel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  z-index: 3;
+}
+
+.tg-progress__cancel:focus-visible {
+  outline: 2px solid var(--ds-on-overlay, #fff);
+  outline-offset: 2px;
+}
+
+.tg-progress--cancelable {
+  pointer-events: auto;
+}
+
+.tg-progress--cancelable.tg-progress--indeterminate .tg-progress__svg {
+  pointer-events: none;
+}
+
+@keyframes tg-progress-rot {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-progress--indeterminate .tg-progress__svg {
+    animation: none;
+  }
+}
+
+/* ── Circular media control (play / file / mic) ───────────────── */
+.ds-glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ds-chat-accent, var(--ds-color-primary));
+  color: #fff;
+  flex: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.ds-glyph:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.ds-glyph--lg {
+  width: 48px;
+  height: 48px;
+}
+
+.ds-glyph--sm {
+  width: 32px;
+  height: 32px;
+}
+
+.ds-glyph--outline {
+  background: transparent;
+  color: var(--ds-chat-accent, var(--ds-color-primary));
+  border: 1.5px solid var(--ds-chat-accent, var(--ds-color-primary));
+}
+
+.ds-glyph:focus-visible {
+  outline: 2px solid var(--ds-chat-accent, var(--acc));
+  outline-offset: 2px;
+}

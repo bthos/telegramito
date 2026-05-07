@@ -3,6 +3,12 @@ import type { ReactNode } from "react"
 import { mapsUrlFromGeoPoint } from "../telegram/messageMediaUnwrap"
 import { asTwe } from "../telegram/twe"
 import type { MessageMediaTranslateFn } from "./messageMediaI18n"
+import {
+  ExpandableContactCard,
+  ExpandableGeoCard,
+  ExpandableGeoLiveCard,
+  ExpandableVenueCard,
+} from "./staticLocationViews"
 
 function formatMoney(
   totalAmount: number,
@@ -14,6 +20,17 @@ function formatMoney(
     return t("chat.invoiceAmountStars", { n: totalAmount })
   }
   return t("chat.invoiceAmountFiat", { n: (totalAmount / 100).toFixed(2), cur: c })
+}
+
+function contactInitials(displayName: string): string {
+  const parts = displayName.trim().split(/\s+/).filter(Boolean)
+  if (parts.length >= 2) {
+    const a = parts[0]!.charAt(0)
+    const b = parts[parts.length - 1]!.charAt(0)
+    return `${a}${b}`.toUpperCase()
+  }
+  const one = parts[0] ?? displayName
+  return one.slice(0, 2).toUpperCase() || "?"
 }
 
 function peerLabel(peer: Api.TypePeer | undefined): string {
@@ -51,65 +68,31 @@ export function MessageMediaStatic({
   if (cn === "MessageMediaGeo") {
     const g = (med as Api.MessageMediaGeo).geo
     const href = g ? mapsUrlFromGeoPoint(g) : null
-    return (
-      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewLocation")}>
-        {href ? (
-          <a className="msg-media-card__link" href={href} target="_blank" rel="noopener noreferrer">
-            {t("chat.mediaOpenInMaps")}
-          </a>
-        ) : (
-          <span className="msg-media-card__muted">{t("chat.mediaLocationNoCoords")}</span>
-        )}
-      </div>
-    )
+    return <ExpandableGeoCard href={href} t={t} />
   }
   if (cn === "MessageMediaVenue") {
     const v = med as Api.MessageMediaVenue
     const g = v.geo
     const href = g ? mapsUrlFromGeoPoint(g) : null
-    return (
-      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewLocation")}>
-        {v.title ? <div className="msg-media-card__title">{v.title}</div> : null}
-        {v.address ? <div className="msg-media-card__line">{v.address}</div> : null}
-        {href ? (
-          <a className="msg-media-card__link" href={href} target="_blank" rel="noopener noreferrer">
-            {t("chat.mediaOpenInMaps")}
-          </a>
-        ) : null}
-      </div>
-    )
+    return <ExpandableVenueCard v={v} href={href} t={t} />
   }
   if (cn === "MessageMediaGeoLive") {
     const gl = med as Api.MessageMediaGeoLive
     const g = gl.geo
     const href = g ? mapsUrlFromGeoPoint(g) : null
-    return (
-      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewLocationLive")}>
-        {href ? (
-          <a className="msg-media-card__link" href={href} target="_blank" rel="noopener noreferrer">
-            {t("chat.mediaOpenLiveInMaps")}
-          </a>
-        ) : (
-          <span className="msg-media-card__muted">{t("chat.mediaLocationNoCoords")}</span>
-        )}
-        {gl.period != null ? (
-          <div className="msg-media-card__line">{t("chat.mediaLivePeriod", { s: String(gl.period) })}</div>
-        ) : null}
-      </div>
-    )
+    return <ExpandableGeoLiveCard gl={gl} href={href} t={t} />
   }
   if (cn === "MessageMediaContact") {
     const c = med as Api.MessageMediaContact
     const name = [c.firstName, c.lastName].filter(Boolean).join(" ") || t("chat.previewContact")
+    const initials = contactInitials(name)
     return (
-      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewContact")}>
-        <div className="msg-media-card__title">{name}</div>
-        {c.phoneNumber ? (
-          <a className="msg-media-card__link" href={`tel:${c.phoneNumber.replace(/[^\d+]/g, "")}`}>
-            {c.phoneNumber}
-          </a>
-        ) : null}
-      </div>
+      <ExpandableContactCard
+        c={c}
+        displayName={name}
+        initials={initials}
+        t={t}
+      />
     )
   }
   if (cn === "MessageMediaGame") {
@@ -117,7 +100,7 @@ export function MessageMediaStatic({
     if (gm && gm.className === "Game") {
       const g0 = gm as Api.Game
       return (
-        <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewGame")}>
+        <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewGame")}>
           {g0.title ? <div className="msg-media-card__title">{g0.title}</div> : null}
           {g0.description
             ? <p className="msg-media-card__line msg-media-card__line--pre">{g0.description}</p>
@@ -125,7 +108,7 @@ export function MessageMediaStatic({
         </div>
       )
     }
-    return <div className="msg-media msg-media--card">{t("chat.previewGame")}</div>
+    return <div data-media-state="preview" className="msg-media msg-media--card">{t("chat.previewGame")}</div>
   }
   if (cn === "MessageMediaInvoice") {
     const inv = med as Api.MessageMediaInvoice
@@ -136,7 +119,7 @@ export function MessageMediaStatic({
     )
     const botParam = inv.startParam
     return (
-      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewInvoice")}>
+      <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewInvoice")}>
         <div className="msg-media-card__title">{inv.title || t("chat.previewInvoice")}</div>
         {inv.description ? <p className="msg-media-card__line msg-media-card__line--pre">{inv.description}</p> : null}
         <div className="msg-media-card__line msg-media-card__strong">{amount}</div>
@@ -158,6 +141,7 @@ export function MessageMediaStatic({
     const tonWin = ton != null ? Number(ton.tonAmount) : NaN
     return (
       <div
+        data-media-state="preview"
         className="msg-media msg-media--card msg-media--dice"
         role="img"
         aria-label={t("chat.previewDice")}
@@ -177,7 +161,7 @@ export function MessageMediaStatic({
   if (cn === "MessageMediaStory") {
     const s = med as Api.MessageMediaStory
     return (
-      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewStory")}>
+      <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewStory")}>
         <div className="msg-media-card__line">
           {t("chat.storyFrom", { peer: peerLabel(s.peer) })}
           {s.id != null ? ` #${s.id}` : ""}
@@ -195,7 +179,7 @@ export function MessageMediaStatic({
       = gGive?.prizeDescription
         ?? (g as { prizeDescription?: string }).prizeDescription
     return (
-      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewGiveaway")}>
+      <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewGiveaway")}>
         {desc ? <div className="msg-media-card__title">{desc}</div> : <div className="msg-media-card__title">{t("chat.previewGiveaway")}</div>}
         {gGive != null && typeof gGive.quantity === "number" ? (
           <div className="msg-media-card__line">
@@ -214,7 +198,7 @@ export function MessageMediaStatic({
       const title = asTwe(L.title).text.trim() || t("chat.previewTodo")
       const items = (L.list ?? []).filter((x): x is Api.TodoItem => x.className === "TodoItem")
       return (
-        <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewTodo")}>
+        <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewTodo")}>
           <div className="msg-media-card__title">{title}</div>
           {L.othersCanAppend || L.othersCanComplete
             ? (
@@ -241,7 +225,7 @@ export function MessageMediaStatic({
       )
     }
     return (
-      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewTodo")}>
+      <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewTodo")}>
         <span className="msg-media-card__muted">{t("chat.previewTodo")}</span>
       </div>
     )
@@ -249,7 +233,7 @@ export function MessageMediaStatic({
   if (cn === "MessageMediaVideoStream") {
     const vs = med as Api.MessageMediaVideoStream
     return (
-      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewVideoStream")}>
+      <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewVideoStream")}>
         <div className="msg-media-card__title">{t("chat.previewVideoStream")}</div>
         {vs.rtmpStream
           ? <p className="msg-media-card__line">{t("chat.videoStreamRtmp")}</p>
@@ -266,7 +250,7 @@ export function MessageMediaStatic({
       ? t("chat.invoiceAmountStars", { n: starsN })
       : null
     return (
-      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewPaidMedia")}>
+      <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewPaidMedia")}>
         <div className="msg-media-card__title">{t("chat.previewPaidMedia")}</div>
         {starsLabel ? <div className="msg-media-card__line msg-media-card__strong">{starsLabel}</div> : null}
         <p className="msg-media-card__muted msg-media-card__hint">{t("chat.paidBundlePlaceholder")}</p>
@@ -275,7 +259,7 @@ export function MessageMediaStatic({
   }
   if (cn === "MessageMediaEmpty") {
     return (
-      <div className="msg-media msg-media--card" role="status">
+      <div data-media-state="preview" className="msg-media msg-media--card" role="status">
         <span className="msg-media-card__muted">{t("chat.mediaEmpty")}</span>
       </div>
     )
@@ -283,6 +267,7 @@ export function MessageMediaStatic({
   if (cn === "MessageMediaUnsupported") {
     return (
       <div
+        data-media-state="preview"
         className="msg-media msg-media--card msg-media--unsupported"
         role="status"
         data-testid="MessageMediaUnsupported"

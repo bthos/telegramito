@@ -82,6 +82,16 @@ describe("resolveMediaPlaceholderType", () => {
     expect(resolveMediaPlaceholderType(msg, d)).toBe("video")
   })
 
+  // Branch 2c: video via filename when Telegram omits mime / attributes
+  it("returns 'video' for a document with .mp4 filename", () => {
+    const d = makeDoc({
+      mimeType: "application/octet-stream",
+      attributes: [makeAttr("DocumentAttributeFilename", { fileName: "clip.mp4" })],
+    })
+    const msg = makeMsg()
+    expect(resolveMediaPlaceholderType(msg, d)).toBe("video")
+  })
+
   // Branch 3: photo via image mime
   it("returns 'photo' for a document with image/* mime", () => {
     const d = makeDoc({ mimeType: "image/jpeg" })

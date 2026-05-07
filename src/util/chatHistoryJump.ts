@@ -14,6 +14,25 @@ export function findSepRowIndexForDayKey(
   return null
 }
 
+/**
+ * Row index of the **first message** on `dayKey` (the item right after that day's separator).
+ * Falls back to the separator row if there is no following message (should not happen for normal lists).
+ */
+export function findFirstMessageRowIndexForDayKey(
+  datedList: readonly ChatDatedItem[],
+  dayKey: string,
+): number | null {
+  const sepI = findSepRowIndexForDayKey(datedList, dayKey)
+  if (sepI == null) {
+    return null
+  }
+  const j = sepI + 1
+  if (j < datedList.length && datedList[j].kind === "msg") {
+    return j
+  }
+  return sepI
+}
+
 /** Every local day (`YYYY-MM-DD`) that has at least one message in the currently loaded history. */
 export function getLoadedDayKeys(datedList: readonly ChatDatedItem[]): Set<string> {
   const s = new Set<string>()

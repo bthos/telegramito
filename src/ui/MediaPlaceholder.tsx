@@ -1,5 +1,6 @@
 import { Api } from "telegram"
 import { useTranslation } from "react-i18next"
+import { getDocumentFileName } from "../telegram/documentFile"
 import {
   isCustomEmojiDoc,
   isStickerDoc,
@@ -18,6 +19,8 @@ interface MediaPlaceholderProps {
   type: MediaPlaceholderType
   width?: number | string
   height?: number | string
+  /** Shimmer skeleton (DS-07). Default true. */
+  shimmer?: boolean
 }
 
 /**
@@ -26,6 +29,7 @@ interface MediaPlaceholderProps {
  * Decision tree order (must match test expectations):
  *   1. sticker / custom-emoji
  *   2. video (via DocumentAttributeVideo or video/* mime)
+ *   2b. video via filename .mp4/.webm/.mov/.m4v when mime is vague
  *   3. image/* mime → photo
  *   4. audio with voice=true → voice
  *   5. audio (non-voice) → audio
@@ -46,6 +50,11 @@ export function resolveMediaPlaceholderType(
     // Branch 2: video
     const mimeLower = d.mimeType?.toLowerCase() ?? ""
     if (isVideoDoc(d) || mimeLower.startsWith("video/")) {
+      return "video"
+    }
+
+    const fn = getDocumentFileName(d)?.toLowerCase() ?? ""
+    if (/\.(mp4|webm|mov|m4v)$/.test(fn)) {
       return "video"
     }
 
@@ -80,9 +89,9 @@ export function resolveMediaPlaceholderType(
  *
  * Variants: photo, video, sticker, audio, voice, attachment.
  * All carry `role="status"`, `aria-busy="true"`, and a translated aria-label.
- * The `media-placeholder` CSS class applies a no-flash appear delay.
+ * Optional `placeholder--shimmer` via `shimmer` (default true).
  */
-export function MediaPlaceholder({ type, width, height }: MediaPlaceholderProps) {
+export function MediaPlaceholder({ type, width, height, shimmer = true }: MediaPlaceholderProps) {
   const { t } = useTranslation()
   const label = t("chat.mediaLoading")
 
@@ -90,10 +99,12 @@ export function MediaPlaceholder({ type, width, height }: MediaPlaceholderProps)
   if (width != null) style.width = typeof width === "number" ? `${width}px` : width
   if (height != null) style.height = typeof height === "number" ? `${height}px` : height
 
+  const shimmerClass = shimmer ? " placeholder--shimmer" : ""
+
   if (type === "sticker") {
     return (
       <div
-        className="media-placeholder media-placeholder--sticker"
+        className={`media-placeholder media-placeholder--sticker${shimmerClass}`}
         role="status"
         aria-label={label}
         aria-busy="true"
@@ -102,10 +113,24 @@ export function MediaPlaceholder({ type, width, height }: MediaPlaceholderProps)
     )
   }
 
-  if (type === "video" || type === "photo") {
+  if (type === "video") {
     return (
       <div
-        className="media-placeholder media-placeholder--visual"
+        className={`media-placeholder media-placeholder--visual media-placeholder--video${shimmerClass}`}
+        role="status"
+        aria-label={label}
+        aria-busy="true"
+        style={style}
+      >
+        <span className="media-placeholder__video-play-hint" aria-hidden="true" />
+      </div>
+    )
+  }
+
+  if (type === "photo") {
+    return (
+      <div
+        className={`media-placeholder media-placeholder--visual${shimmerClass}`}
         role="status"
         aria-label={label}
         aria-busy="true"
@@ -117,7 +142,7 @@ export function MediaPlaceholder({ type, width, height }: MediaPlaceholderProps)
   if (type === "audio" || type === "voice") {
     return (
       <div
-        className="media-placeholder media-placeholder--audio"
+        className={`media-placeholder media-placeholder--audio${shimmerClass}`}
         role="status"
         aria-label={label}
         aria-busy="true"
@@ -132,7 +157,7 @@ export function MediaPlaceholder({ type, width, height }: MediaPlaceholderProps)
   // type === "attachment"
   return (
     <div
-      className="media-placeholder media-placeholder--attachment"
+      className={`media-placeholder media-placeholder--attachment${shimmerClass}`}
       role="status"
       aria-label={label}
       aria-busy="true"

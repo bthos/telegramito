@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import type { ChatDatedItem } from "../ui/ChatMessagesVirtualList"
 import {
+  findFirstMessageRowIndexForDayKey,
   findSepRowIndexForDayKey,
   getLoadedDayKeyBounds,
   getLoadedDayKeys,
@@ -36,6 +37,18 @@ describe("chatHistoryJump", () => {
       { kind: "sep", dayKey: "2026-03-01", ts: 0 },
     ] as unknown as ChatDatedItem[]
     expect(findSepRowIndexForDayKey(list, "2025-01-01")).toBeNull()
+  })
+
+  it("findFirstMessageRowIndexForDayKey points at first message after sep", () => {
+    const list = [
+      { kind: "sep", dayKey: "2026-03-01", ts: 0 },
+      { kind: "msg", message: { id: 10 } },
+      { kind: "msg", message: { id: 11 } },
+      { kind: "sep", dayKey: "2026-04-03", ts: 0 },
+      { kind: "msg", message: { id: 20 } },
+    ] as unknown as ChatDatedItem[]
+    expect(findFirstMessageRowIndexForDayKey(list, "2026-03-01")).toBe(1)
+    expect(findFirstMessageRowIndexForDayKey(list, "2026-04-03")).toBe(4)
   })
 
   it("getLoadedDayKeyBounds returns min and max day keys", () => {

@@ -22,6 +22,26 @@ describe("getMessageDocument", () => {
     const m = { className: "Message" as const, id: 1, document: null, media: null } as unknown as Api.Message
     expect(getMessageDocument(m)).toBeNull()
   })
+  it("MessageMediaPhoto: prefers embedded video Document even when photo preview exists", () => {
+    const preview = { className: "Photo" as const }
+    const vid = {
+      className: "Document" as const,
+      id: 99,
+      attributes: [],
+      mimeType: "video/mp4",
+    }
+    const m = {
+      className: "Message" as const,
+      id: 1,
+      document: null,
+      media: {
+        className: "MessageMediaPhoto" as const,
+        photo: preview,
+        video: vid,
+      },
+    } as unknown as Api.Message
+    expect(getMessageDocument(m)).toBe(vid)
+  })
 })
 
 describe("formatDocumentSize", () => {

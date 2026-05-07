@@ -16,6 +16,16 @@ export function isVideoDoc(d: Api.Document): boolean {
   return d.attributes?.some((a) => a.className === "DocumentAttributeVideo") ?? false
 }
 
+/** Video note / round message (documentAttributeVideo.roundMessage). */
+export function isRoundVideoDoc(d: Api.Document): boolean {
+  return (
+    d.attributes?.some((a) => {
+      if (a.className !== "DocumentAttributeVideo") return false
+      return Boolean((a as Api.DocumentAttributeVideo).roundMessage)
+    }) ?? false
+  )
+}
+
 export function isTgsShapedDoc(d: Api.Document): boolean {
   const m = d.mimeType?.toLowerCase() ?? ""
   if (m === "application/x-tgsticker" || m === "image/webm") {

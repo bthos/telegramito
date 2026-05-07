@@ -198,6 +198,14 @@ export function SettingsView({ canEdit, onRequestPin }: Props) {
             }}
             label={t("parental.allowOutgoingMedia")}
           />
+          <Switch
+            idSuffix="msgids"
+            checked={settings.showMessageIds}
+            onChange={(v) => {
+              void setSettings({ ...settings, showMessageIds: v })
+            }}
+            label={t("parental.showMessageIds")}
+          />
         </div>
       </section>
 

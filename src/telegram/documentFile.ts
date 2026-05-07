@@ -21,8 +21,9 @@ export function getMessageDocument(m: Api.Message): Api.Document | null {
   }
   if (m.media?.className === "MessageMediaPhoto") {
     const mp = m.media as Api.MessageMediaPhoto
-    if (!mp.photo && mp.video && isApiDocument(mp.video)) {
-      return mp.video
+    /** Prefer embedded video document when present (layer ≥ photo-in-video); may coexist with `photo` preview. */
+    if (mp.video && isApiDocument(mp.video)) {
+      return mp.video as Api.Document
     }
   }
   return null

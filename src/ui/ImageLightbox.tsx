@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react"
+import { useRef } from "react"
 import { createPortal } from "react-dom"
+import { useBodyScrollLockAndEscape } from "../hooks/useBodyScrollLockAndEscape"
 import { useFocusTrap } from "../hooks/useFocusTrap"
 
 type Props = {
@@ -15,21 +16,7 @@ type Props = {
 export function ImageLightbox({ url, onClose, labelClose, labelBackdrop }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   useFocusTrap(containerRef, true)
-
-  useEffect(() => {
-    const prev = document.body.style.overflow
-    document.body.style.overflow = "hidden"
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose()
-      }
-    }
-    document.addEventListener("keydown", onKey)
-    return () => {
-      document.body.style.overflow = prev
-      document.removeEventListener("keydown", onKey)
-    }
-  }, [onClose])
+  useBodyScrollLockAndEscape(onClose)
 
   const node = (
     <div

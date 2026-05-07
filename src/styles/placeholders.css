@@ -9,6 +9,12 @@
   animation: placeholder-appear 0ms step-end var(--placeholder-delay) forwards;
 }
 
+/* Inline media fetch: show skeleton immediately under tg-progress (avoid “generic ring only”) */
+.msg-media--loading .media-placeholder {
+  opacity: 1;
+  animation: none;
+}
+
 /* ── Media placeholder variants ─────────────────────── */
 .media-placeholder {
   background: var(--placeholder-bg);
@@ -19,6 +25,26 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   border-radius: var(--ds-radius-lg);
+}
+
+/* Video fetch: same frame as photo but with a small play affordance (design-system-media preview state) */
+.media-placeholder--video {
+  position: relative;
+}
+
+.media-placeholder__video-play-hint {
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.4rem;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0.38rem 0 0.38rem 0.62rem;
+  border-color: transparent transparent transparent rgba(255, 255, 255, 0.82);
+  opacity: 0.9;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+  z-index: 1;
 }
 
 .media-placeholder--sticker {

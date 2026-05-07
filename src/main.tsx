@@ -6,6 +6,7 @@ import "./util-polyfill"
 import { installDisconnectNoiseSuppression } from "./telegram/suppressDisconnectNoise"
 
 installDisconnectNoiseSuppression()
+
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import "./i18n/config"
