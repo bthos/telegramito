@@ -205,6 +205,9 @@ export function isNonBlobVisualMedia(
     || cn === "MessageMediaStory"
     || cn === "MessageMediaGiveaway"
     || cn === "MessageMediaGiveawayResults"
+    || cn === "MessageMediaPaidMedia"
+    || cn === "MessageMediaToDo"
+    || cn === "MessageMediaVideoStream"
   ) {
     return true
   }

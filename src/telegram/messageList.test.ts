@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { Api } from "telegram"
-import { minMessageId, uniqueMessagesSort } from "./messageList"
+import { minMessageId, toMessageList, uniqueMessagesSort } from "./messageList"
 
 function msg(id: number, date: number): Api.Message {
   return { className: "Message", id, date } as Api.Message
@@ -18,5 +18,23 @@ describe("minMessageId", () => {
     const list = uniqueMessagesSort([msg(5, 3000), msg(20, 1000)])
     expect(list[0].id).toBe(20)
     expect(minMessageId(list)).toBe(5)
+  })
+})
+
+describe("toMessageList", () => {
+  it("applies repairMessageAfterGramJs to each Message", () => {
+    const doc = { className: "Document", id: 7, mimeType: "text/plain" } as unknown as Api.Document
+    const raw = [
+      {
+        className: "Message",
+        id: 1,
+        date: 1,
+        document: doc,
+        media: { className: "MessageMediaEmpty" },
+      },
+    ]
+    const out = toMessageList(raw)
+    expect(out).toHaveLength(1)
+    expect(out[0]?.media?.className).toBe("MessageMediaDocument")
   })
 })

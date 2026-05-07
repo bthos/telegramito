@@ -1,6 +1,14 @@
 import { Api } from "telegram"
+import { repairMessageAfterGramJs } from "./messageMediaGramRepair"
 
 export const CHAT_PAGE_SIZE = 50
+
+/**
+ * Forum topic history uses {@link Api.messages.Search} with `topMsgId`.
+ * Telegram allows up to ~100 results per request; a larger page reduces gaps
+ * when merging paginated slices (official clients often use 100 here).
+ */
+export const FORUM_THREAD_PAGE_SIZE = 100
 
 /**
  * Smallest message id in a batch. For channel/supergroup history, ids are
@@ -66,9 +74,8 @@ export function uniqueMessagesSort(msgs: Api.Message[]): Api.Message[] {
 
 export function toMessageList(r: unknown): Api.Message[] {
   const arr = (Array.isArray(r) ? r : Array.from(r as Iterable<Api.TypeMessage>)) as Api.TypeMessage[]
-  return uniqueMessagesSort(
-    arr.filter((x): x is Api.Message => x != null && x.className === "Message")
-  )
+  const kept = arr.filter((x): x is Api.Message => x != null && x.className === "Message")
+  return uniqueMessagesSort(kept.map(repairMessageAfterGramJs))
 }
 
 /**

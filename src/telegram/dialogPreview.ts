@@ -127,6 +127,12 @@ export function getMessageMediaTypeLabel(m: Api.Message, t: Tr): string {
   if (cn === "MessageMediaGiveaway" || cn === "MessageMediaGiveawayResults") {
     return t("chat.previewGiveaway")
   }
+  if (cn === "MessageMediaToDo") {
+    return t("chat.previewTodo")
+  }
+  if (cn === "MessageMediaVideoStream") {
+    return t("chat.previewVideoStream")
+  }
   if (cn === "MessageMediaUnsupported") {
     return t("chat.previewUnsupported")
   }

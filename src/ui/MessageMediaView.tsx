@@ -24,6 +24,18 @@ import {
 import { MessageMediaStatic } from "./MessageMediaStatic"
 import { ImageLightbox } from "./ImageLightbox"
 import { MediaPlaceholder, resolveMediaPlaceholderType } from "./MediaPlaceholder"
+import { TgProgressIndeterminate } from "./TgProgressIndeterminate"
+
+function messageWithReplacedMedia(
+  base: Api.Message,
+  media: Api.TypeMessageMedia,
+): Api.Message {
+  return Object.assign(
+    Object.create(Object.getPrototypeOf(base)),
+    base,
+    { media },
+  ) as Api.Message
+}
 
 type MediaBlobState =
   | { k: "i"; u: string }
@@ -283,6 +295,10 @@ function PaidBundlePreviewRow({
   )
 }
 
+function mediaLoadingIsCompact(type: ReturnType<typeof resolveMediaPlaceholderType>): boolean {
+  return type === "audio" || type === "voice"
+}
+
 export function MessageMediaView({
   message, client, noPreview, filterGifs, t, pollVoter,
 }: {
@@ -378,21 +394,48 @@ export function MessageMediaView({
     )
   }
 
-  const pollMedia = getMessageMediaPollFromMessage(message)
+  const pollMedia = getMessageMediaPollFromMessage(resolved)
   if (pollMedia) {
+    const attached = pollMedia.attachedMedia
+    const attachedBlock = attached != null
+      ? (
+          <div
+            className="msg-poll-attached"
+            role="group"
+            aria-label={te("chat.pollAttachedMediaAria")}
+          >
+            <MessageMediaView
+              message={messageWithReplacedMedia(message, attached)}
+              client={client}
+              noPreview={noPreview}
+              filterGifs={filterGifs}
+              t={t}
+              pollVoter={pollVoter}
+            />
+          </div>
+        )
+      : null
     if (client && pollVoter) {
       return (
-        <MessagePollView
-          media={pollMedia}
-          t={t}
-          client={client}
-          messageId={message.id!}
-          entity={pollVoter.entity}
-          onVoted={pollVoter.onVoted}
-        />
+        <>
+          <MessagePollView
+            media={pollMedia}
+            t={t}
+            client={client}
+            messageId={message.id!}
+            entity={pollVoter.entity}
+            onVoted={pollVoter.onVoted}
+          />
+          {attachedBlock}
+        </>
       )
     }
-    return <PollReadonly media={pollMedia} t={t} client={client} />
+    return (
+      <>
+        <PollReadonly media={pollMedia} t={t} client={client} />
+        {attachedBlock}
+      </>
+    )
   }
   if (resolved.media?.className === "MessageMediaWebPage" && !noPreview) {
     return <WebPageView m={resolved} no={noPreview} t={t} thumb={wpT} />
@@ -400,27 +443,24 @@ export function MessageMediaView({
   if (isNonBlobVisualMedia(resolved.media)) {
     return <MessageMediaStatic m={resolved} t={t} />
   }
-  if (
-    message.media?.className === "MessageMediaPaidMedia"
-    && resolved.media === message.media
-  ) {
-    return (
-      <div
-        className="msg-media msg-media--card placeholder--shimmer"
-        role="status"
-        aria-label={te("chat.mediaLoading")}
-        aria-busy="true"
-      >
-        <span className="msg-media-card__muted">{t("chat.paidBundlePlaceholder")}</span>
-      </div>
-    )
-  }
   if (s.k === "f") {
     return <div className="msg-media msg-media--filtered" role="status">{t("chat.filteredGif")}</div>
   }
   if (s.k === "d") {
     const placeholderType = resolveMediaPlaceholderType(resolved, getMessageDocument(resolved))
-    return <MediaPlaceholder type={placeholderType} />
+    const compact = mediaLoadingIsCompact(placeholderType)
+    return (
+      <div
+        className={
+          compact
+            ? "msg-media msg-media--loading ds-media-loading ds-media-loading--compact"
+            : "msg-media msg-media--loading ds-media-loading"
+        }
+      >
+        <MediaPlaceholder type={placeholderType} shimmer />
+        <TgProgressIndeterminate />
+      </div>
+    )
   }
   if (s.k === "e") {
     return <div className="msg-media msg-media--err" role="status" aria-label={errLabel} />

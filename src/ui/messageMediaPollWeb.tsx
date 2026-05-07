@@ -7,6 +7,7 @@ import {
   pollOptionCount,
   pollOptionPct,
   pollUserHasVoted,
+  pollUiAnswers,
   shouldShowPollResultBreakdown,
 } from "../telegram/pollResultsUtils"
 import { asTwe } from "../telegram/twe"
@@ -73,7 +74,10 @@ export function PollReadonly({
   }
   const pollP = p as Api.Poll
   const { text: q, entities: qE } = asTwe(pollP.question)
-  const res = media.results.className === "PollResults" ? (media.results as Api.PollResults) : null
+  const res =
+    media.results?.className === "PollResults"
+      ? (media.results as Api.PollResults)
+      : null
   const closed = Boolean(pollP.closed)
   const tot = res?.totalVoters ?? 0
   const hasVoted = res ? pollUserHasVoted(pollP, res) : false
@@ -89,12 +93,12 @@ export function PollReadonly({
         ? <p className="msg-poll-hint" role="note">{t("chat.pollResultsAfterVote")}</p>
         : null}
       <ol className="msg-poll-options">
-        {pollP.answers.map((a, i) => {
-          const { text, entities } = asTwe((a as Api.PollAnswer).text)
+        {pollUiAnswers(pollP).map((a, i) => {
+          const { text, entities } = asTwe(a.text)
           const n = pollOptionCount(res, a.option)
           const pct = pollOptionPct(n, tot)
           const o = res?.results?.find(
-            (r) => isSameOptionBytes(r.option as PollOptionBytes, (a as Api.PollAnswer).option as PollOptionBytes)
+            (r) => isSameOptionBytes(r.option as PollOptionBytes, a.option as PollOptionBytes)
           )
           const ok = Boolean(pollP.quiz && o && o.className === "PollAnswerVoters" && o.correct)
           return (

@@ -10,6 +10,7 @@ import {
   pollOptionPct,
   type PollOptionBytes,
   pollUserHasVoted,
+  pollUiAnswers,
   shouldShowPollResultBreakdown,
 } from "../telegram/pollResultsUtils"
 import { sendPollVote } from "../telegram/reactionsAndPolls"
@@ -59,12 +60,12 @@ function PollMultiInteractive({
         className="msg-poll-options msg-poll-options--ctrl"
         aria-describedby={`${qId}-mode`}
       >
-        {pollP.answers.map((a, i) => {
-          const { text, entities } = asTwe((a as Api.PollAnswer).text)
+        {pollUiAnswers(pollP).map((a, i) => {
+          const { text, entities } = asTwe(a.text)
           const n = pollOptionCount(res, a.option)
           const pct = pollOptionPct(n, tot)
           const row = res?.results?.find(
-            (r) => isSameOptionBytes(r.option as PollOptionBytes, (a as Api.PollAnswer).option as PollOptionBytes)
+            (r) => isSameOptionBytes(r.option as PollOptionBytes, a.option as PollOptionBytes)
           )
           const ok = Boolean(pollP.quiz && row && row.className === "PollAnswerVoters" && row.correct)
           const optB = a.option
@@ -145,7 +146,7 @@ function PollMultiInteractive({
           )
         })}
       </ol>
-      {!closed && pollP.answers.length > 0
+      {!closed && pollUiAnswers(pollP).length > 0
         ? (
             <div className="msg-poll-multi-actions">
               <Button
@@ -153,13 +154,13 @@ function PollMultiInteractive({
                 size="sm"
                 disabled={busy || multiSel.size === 0}
                 onClick={() => {
-                  const chosenBytes = pollP.answers
+                  const chosenBytes = pollUiAnswers(pollP)
                     .filter(
                       (a) => multiSel.has(
-                        (a as Api.PollAnswer).option.toString()
+                        a.option.toString()
                       )
                     )
-                    .map((a) => (a as Api.PollAnswer).option)
+                    .map((a) => a.option)
                   void vote(chosenBytes)
                 }}
               >
@@ -196,7 +197,10 @@ export function MessagePollView({
   const reactId = useId()
   const qId = `poll-q-${messageId}-${reactId.replace(/:/g, "")}`
   const { text: q, entities: qE } = asTwe(pollP?.question ?? "")
-  const res = media.results.className === "PollResults" ? (media.results as Api.PollResults) : null
+  const res =
+    media.results?.className === "PollResults"
+      ? (media.results as Api.PollResults)
+      : null
   const closed = Boolean(pollP?.closed)
   const multi = Boolean(pollP?.multipleChoice)
   const resultRow = (a: Api.PollAnswer) => res?.results?.find(
@@ -291,11 +295,11 @@ export function MessagePollView({
                 className="msg-poll-options msg-poll-options--ctrl"
                 aria-describedby={`${qId}-mode`}
               >
-                {pollP.answers.map((a, i) => {
-                  const { text, entities } = asTwe((a as Api.PollAnswer).text)
+                {pollUiAnswers(pollP).map((a, i) => {
+                  const { text, entities } = asTwe(a.text)
                   const n = pollOptionCount(res, a.option)
                   const pct = pollOptionPct(n, tot)
-                  const row = resultRow(a as Api.PollAnswer)
+                  const row = resultRow(a)
                   const ok = Boolean(pollP.quiz && row && row.className === "PollAnswerVoters" && row.correct)
                   const chosen = isPollOptionChosenRow(row)
                   const optB = a.option

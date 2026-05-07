@@ -23,6 +23,9 @@ export function pollUserHasVoted(
     return false
   }
   for (const a of pollP.answers) {
+    if (a.className !== "PollAnswer") {
+      continue
+    }
     const row = res.results.find(
       (r) => isSameOptionBytes(r.option as PollOptionBytes, (a as Api.PollAnswer).option as PollOptionBytes)
     )
@@ -78,6 +81,9 @@ export function multiChosenOptionKeysFromResults(
     return s
   }
   for (const a of pollP.answers) {
+    if (a.className !== "PollAnswer") {
+      continue
+    }
     const row = res.results.find(
       (r) => isSameOptionBytes(r.option as PollOptionBytes, (a as Api.PollAnswer).option as PollOptionBytes)
     )
@@ -88,15 +94,22 @@ export function multiChosenOptionKeysFromResults(
   return s
 }
 
+/** Options the user can vote on (excludes {@link Api.InputPollAnswer} rows from newer TL). */
+export function pollUiAnswers(poll: Api.Poll): Api.PollAnswer[] {
+  return poll.answers.filter((a): a is Api.PollAnswer => a.className === "PollAnswer")
+}
+
 /** Stable key so a multi-choice poll subtree remounts when server results change. */
 export function pollMultiResyncKey(
   pollP: Api.Poll,
   res: Api.PollResults | null
 ): string {
   const chosen = multiChosenOptionKeysFromResults(pollP, res)
-  const parts = pollP.answers.map((a) => {
-    const k = (a as Api.PollAnswer).option.toString()
-    return `${k}:${chosen.has(k) ? "1" : "0"}`
-  })
+  const parts = pollP.answers
+    .filter((a): a is Api.PollAnswer => a.className === "PollAnswer")
+    .map((a) => {
+      const k = a.option.toString()
+      return `${k}:${chosen.has(k) ? "1" : "0"}`
+    })
   return `${res?.totalVoters ?? 0}|${parts.join(";")}`
 }

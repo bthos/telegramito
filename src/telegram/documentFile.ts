@@ -19,6 +19,12 @@ export function getMessageDocument(m: Api.Message): Api.Document | null {
       return raw
     }
   }
+  if (m.media?.className === "MessageMediaPhoto") {
+    const mp = m.media as Api.MessageMediaPhoto
+    if (!mp.photo && mp.video && isApiDocument(mp.video)) {
+      return mp.video
+    }
+  }
   return null
 }
 

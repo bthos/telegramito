@@ -5,15 +5,20 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "preinstall": "node scripts/prepare-vendor-telegram.mjs",
+    "rebuild:telegram": "node scripts/prepare-vendor-telegram.mjs --force",
     "dev": "vite",
     "prebuild": "node scripts/generate-pwa-icons.mjs",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/check-telegram-layer.mjs && tsc -b && vite build",
+    "check:telegram-layer": "node scripts/check-telegram-layer.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.24",
+    "big-integer": "^1.6.52",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.1",
     "events": "^3.3.0",
@@ -25,7 +30,7 @@
     "react-dom": "^19.2.5",
     "react-i18next": "^17.0.4",
     "stream-browserify": "^3.0.0",
-    "telegram": "^2.26.22",
+    "telegram": "file:./vendor/telegram-built",
     "unicode-emoji-json": "^0.9.0",
     "util": "^0.12.5",
     "vm-browserify": "^1.1.2"
@@ -50,6 +55,7 @@
     "vite": "^8.0.10",
     "vite-plugin-pwa": "^1.2.0",
     "vite-plugin-singlefile": "^2.3.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.5",
+    "patch-package": "^8.0.1"
   }
 }

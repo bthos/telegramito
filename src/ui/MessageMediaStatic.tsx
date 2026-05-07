@@ -1,6 +1,7 @@
 import { Api } from "telegram"
 import type { ReactNode } from "react"
 import { mapsUrlFromGeoPoint } from "../telegram/messageMediaUnwrap"
+import { asTwe } from "../telegram/twe"
 import type { MessageMediaTranslateFn } from "./messageMediaI18n"
 
 function formatMoney(
@@ -32,7 +33,7 @@ function peerLabel(peer: Api.TypePeer | undefined): string {
 }
 
 /**
- * Renders non-blob message media: geo, contact, game, invoice, dice, story, giveaway, empty, unsupported.
+ * Renders non-blob message media: geo, contact, game, invoice, dice (incl. TON outcomes), story, giveaway, paid (Stars), todo list, live stream, empty, unsupported.
  * Pass `m` = {@link import("../telegram/messageMediaUnwrap").resolveMessageMediaForDisplay} result.
  */
 export function MessageMediaStatic({
@@ -148,6 +149,13 @@ export function MessageMediaStatic({
   if (cn === "MessageMediaDice") {
     const d = med as Api.MessageMediaDice
     const val = d.value
+    const go = d.gameOutcome
+    const ton =
+      go != null && go.className === "messages.EmojiGameOutcome"
+        ? (go as Api.messages.EmojiGameOutcome)
+        : null
+    const tonStake = ton != null ? Number(ton.stakeTonAmount) : NaN
+    const tonWin = ton != null ? Number(ton.tonAmount) : NaN
     return (
       <div
         className="msg-media msg-media--card msg-media--dice"
@@ -158,6 +166,11 @@ export function MessageMediaStatic({
         {typeof val === "number" && val > 0
           ? <span className="msg-media-dice-value">{t("chat.diceValue", { n: val })}</span>
           : <span className="msg-media-card__muted">{t("chat.diceRolling")}</span>}
+        {ton != null && Number.isFinite(tonStake) && Number.isFinite(tonWin) ? (
+          <p className="msg-media-card__line msg-media-card__muted">
+            {t("chat.diceTonOutcome", { stake: String(tonStake), win: String(tonWin) })}
+          </p>
+        ) : null}
       </div>
     )
   }
@@ -193,6 +206,73 @@ export function MessageMediaStatic({
       </div>
     )
   }
+  if (cn === "MessageMediaToDo") {
+    const td = med as Api.MessageMediaToDo
+    const list = td.todo
+    if (list && list.className === "TodoList") {
+      const L = list as Api.TodoList
+      const title = asTwe(L.title).text.trim() || t("chat.previewTodo")
+      const items = (L.list ?? []).filter((x): x is Api.TodoItem => x.className === "TodoItem")
+      return (
+        <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewTodo")}>
+          <div className="msg-media-card__title">{title}</div>
+          {L.othersCanAppend || L.othersCanComplete
+            ? (
+                <p className="msg-media-card__muted msg-media-card__hint">
+                  {t("chat.todoListFlags", {
+                    append: L.othersCanAppend ? t("chat.todoOthersAppend") : "—",
+                    complete: L.othersCanComplete ? t("chat.todoOthersComplete") : "—",
+                  })}
+                </p>
+              )
+            : null}
+          {items.length > 0
+            ? (
+                <ol className="msg-media-card__todo">
+                  {items.map((it) => (
+                    <li key={it.id} className="msg-media-card__line">
+                      {asTwe(it.title).text || `#${it.id}`}
+                    </li>
+                  ))}
+                </ol>
+              )
+            : null}
+        </div>
+      )
+    }
+    return (
+      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewTodo")}>
+        <span className="msg-media-card__muted">{t("chat.previewTodo")}</span>
+      </div>
+    )
+  }
+  if (cn === "MessageMediaVideoStream") {
+    const vs = med as Api.MessageMediaVideoStream
+    return (
+      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewVideoStream")}>
+        <div className="msg-media-card__title">{t("chat.previewVideoStream")}</div>
+        {vs.rtmpStream
+          ? <p className="msg-media-card__line">{t("chat.videoStreamRtmp")}</p>
+          : null}
+        <p className="msg-media-card__muted msg-media-card__hint">{t("chat.videoStreamHint")}</p>
+      </div>
+    )
+  }
+  if (cn === "MessageMediaPaidMedia") {
+    const pm = med as Api.MessageMediaPaidMedia
+    const raw = pm.starsAmount
+    const starsN = typeof raw === "bigint" ? Number(raw) : Number(raw)
+    const starsLabel = Number.isFinite(starsN) && starsN > 0
+      ? t("chat.invoiceAmountStars", { n: starsN })
+      : null
+    return (
+      <div className="msg-media msg-media--card" role="group" aria-label={t("chat.previewPaidMedia")}>
+        <div className="msg-media-card__title">{t("chat.previewPaidMedia")}</div>
+        {starsLabel ? <div className="msg-media-card__line msg-media-card__strong">{starsLabel}</div> : null}
+        <p className="msg-media-card__muted msg-media-card__hint">{t("chat.paidBundlePlaceholder")}</p>
+      </div>
+    )
+  }
   if (cn === "MessageMediaEmpty") {
     return (
       <div className="msg-media msg-media--card" role="status">
@@ -202,8 +282,13 @@ export function MessageMediaStatic({
   }
   if (cn === "MessageMediaUnsupported") {
     return (
-      <div className="msg-media msg-media--card" role="status">
+      <div
+        className="msg-media msg-media--card msg-media--unsupported"
+        role="status"
+        data-testid="MessageMediaUnsupported"
+      >
         <span className="msg-media-card__muted">{t("chat.mediaUnsupported")}</span>
+        <p className="msg-media-card__muted msg-media-card__hint">{t("chat.mediaUnsupportedHint")}</p>
       </div>
     )
   }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
+import { repairMessageAfterGramJs } from "../telegram/messageMediaGramRepair"
 
 type PeerEntity = Api.User | Api.Chat | Api.Channel
 
@@ -65,7 +66,7 @@ export function usePeerRecentMedia(
         if (cancelled) return
         const msgs = (Array.isArray(raw) ? raw : []).filter(
           (m): m is Api.Message => m != null && (m as Api.Message).className === "Message",
-        )
+        ).map(repairMessageAfterGramJs)
         mediaCache.set(key, msgs)
         setItems(msgs)
       } catch (e) {

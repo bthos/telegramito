@@ -239,7 +239,9 @@ describe("messageMediaUnwrap", () => {
       "MessageMediaVenue", "MessageMediaGeoLive",
       "MessageMediaContact", "MessageMediaGame", "MessageMediaInvoice",
       "MessageMediaDice", "MessageMediaStory", "MessageMediaGiveaway",
-      "MessageMediaGiveawayResults", "MessageMediaUnsupported", "MessageMediaEmpty",
+      "MessageMediaGiveawayResults", "MessageMediaPaidMedia",
+      "MessageMediaToDo", "MessageMediaVideoStream",
+      "MessageMediaUnsupported", "MessageMediaEmpty",
     ]
     for (const cn of cards) {
       expect(

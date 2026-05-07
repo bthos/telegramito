@@ -1,5 +1,8 @@
 import { Api } from "telegram"
-import { innerMediaFromExtendedMediaSlot } from "./messageMediaUnwrap"
+import {
+  innerMediaFromExtendedMediaSlot,
+  resolveMessageMediaForDisplay,
+} from "./messageMediaUnwrap"
 
 function pollMediaFromExtendedSlot(
   em: Api.TypeMessageExtendedMedia | undefined | null,
@@ -12,9 +15,14 @@ function pollMediaFromExtendedSlot(
  * Poll payload may be top-level {@link Api.MessageMediaPoll} or nested inside
  * {@link Api.MessageMediaPaidMedia} → {@link Api.MessageExtendedMedia} (Stars),
  * or {@link Api.MessageMediaInvoice} → {@link Api.MessageExtendedMedia} (bots / extended media).
+ *
+ * We first run {@link resolveMessageMediaForDisplay} so chains like
+ * `MessageMediaInvoice` → `MessageMediaPaidMedia` → `MessageMediaPoll` (common for
+ * channel / bot posts) are not missed by a single-level scan.
  */
 export function getMessageMediaPollFromMessage(m: Api.Message): Api.MessageMediaPoll | null {
-  const med = m.media
+  const resolved = resolveMessageMediaForDisplay(m)
+  const med = resolved.media
   if (!med) {
     return null
   }

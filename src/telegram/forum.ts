@@ -4,6 +4,16 @@ import type { TelegramClient } from "telegram"
 import type { Entity } from "telegram/define"
 import { getInputChannel, getPeerId } from "telegram/Utils"
 import { compareMessagesChronological } from "./messageList"
+import { repairMessageAfterGramJs } from "./messageMediaGramRepair"
+
+/** Forum thread id from {@link Api.MessageReplyHeader#replyToTopId}, if present. */
+export function getForumReplyToTopId(message: Api.Message): number | undefined {
+  const rt = message.replyTo
+  if (rt == null || rt.className !== "MessageReplyHeader") {
+    return undefined
+  }
+  return (rt as Api.MessageReplyHeader).replyToTopId
+}
 
 /** Forum supergroup: topics enabled and not the “as single chat” layout. */
 export function isForumWithSubchats(
@@ -20,7 +30,7 @@ export function isForumWithSubchats(
 }
 
 /**
- * Fetches all forum topic pages (Telegram returns up to 100 per `channels.getForumTopics`
+ * Fetches all forum topic pages (Telegram returns up to ~100 per `messages.getForumTopics`
  * call). A single page made the sum of `ForumTopic.unreadCount` in the UI look "wrong"
  * compared to {@link Dialog#unreadCount} when a forum has many topics or unreads in topics
  * beyond the first page.
@@ -34,6 +44,7 @@ export async function listForumTopics(
   if (ch instanceof Api.InputChannelEmpty) {
     return []
   }
+  const peer = await client.getInputEntity(entity)
   const out: Api.ForumTopic[] = []
   const seen = new Set<number>()
   let offsetDate = 0
@@ -42,8 +53,8 @@ export async function listForumTopics(
   const MAX_PAGES = 200
   for (let page = 0; page < MAX_PAGES; page += 1) {
     const res = await client.invoke(
-      new Api.channels.GetForumTopics({
-        channel: ch,
+      new Api.messages.GetForumTopics({
+        peer,
         offsetDate,
         offsetId,
         offsetTopic,
@@ -85,7 +96,11 @@ export async function listForumTopics(
  * Message history for one forum thread (subchat). Plain `getMessages` is not
  * enough when topics are shown as tabs in Telegram; use `messages.search`
  * with `topMsgId` = forum topic id.
+ *
+ * **Sparse ids:** search results may omit some message ids between neighbours; the client
+ * reconciles small holes with `getMessages({ ids })` (see `messageHistoryReconcile.ts`).
  * @param olderThanId  If set, returns messages *older* than this id (pagination toward history).
+ * @param limit  Telegram allows up to ~100 per request; callers typically use {@link import("./messageList").FORUM_THREAD_PAGE_SIZE}.
  */
 export async function getForumThreadMessages(
   client: TelegramClient,
@@ -144,9 +159,10 @@ export async function getForumThreadMessages(
     } catch {
       /* still show raw */
     }
-    out.push(msg)
+    out.push(repairMessageAfterGramJs(msg))
   }
-  return out.sort(compareMessagesChronological)
+  const sorted = out.sort(compareMessagesChronological)
+  return sorted
 }
 
 /**
