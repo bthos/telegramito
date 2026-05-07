@@ -1,7 +1,12 @@
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 import { defineConfig } from "vitest/config"
 import react from "@vitejs/plugin-react"
 import { VitePWA } from "vite-plugin-pwa"
 import { viteSingleFile } from "vite-plugin-singlefile"
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url))
+const telegramRoot = path.resolve(projectRoot, "vendor", "telegram-built")
 
 // https://vite.dev/config/
 // Single-file build inlines JS/CSS so `dist/index.html` can be opened via file://
@@ -59,7 +64,10 @@ export default defineConfig({
     viteSingleFile({ removeViteModuleLoader: true }),
   ],
   resolve: {
+    /** One physical copy of GramJS — avoids two `tlobjects` maps (e.g. `telegram` vs `telegram/tl/...`). */
+    dedupe: ["telegram"],
     alias: {
+      telegram: telegramRoot,
       buffer: "buffer",
       // Vite/rolldown sometimes resolves `node:*` built-ins in deps; map to the same
       // browser polyfills as bare `util` / `crypto` / etc.
@@ -93,6 +101,11 @@ export default defineConfig({
     global: "globalThis",
   },
   optimizeDeps: {
+    /**
+     * Do not pre-bundle `telegram` (GramJS): `include: ["telegram"]` produced a second
+     * module graph so `BinaryReader` saw an empty `tlobjects` while Node `require()` was fine.
+     */
+    exclude: ["telegram"],
     include: [
       "buffer",
       "util",
@@ -102,7 +115,6 @@ export default defineConfig({
       "stream-browserify",
       "vm-browserify",
       "process",
-      "telegram",
     ],
   },
   test: {
