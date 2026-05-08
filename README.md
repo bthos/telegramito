@@ -1,4 +1,4 @@
-# telegramito
+# Telegramito
 
 A static, browser-only Telegram client built on [GramJS](https://gram.js.org/) (MTProto). No first-party backend — the session and all settings live on the device.
 
