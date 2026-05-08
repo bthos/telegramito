@@ -3,4 +3,4 @@
 	url = https://github.com/bthos/agentic-kit
 [submodule "vendor/gramjs"]
 	path = vendor/gramjs
-	url = https://github.com/gram-js/gramjs.git
+	url = https://github.com/bthos/gramjs.git

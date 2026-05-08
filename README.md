@@ -21,7 +21,7 @@ A static, browser-only Telegram client built on [GramJS](https://gram.js.org/) (
 |---|---|
 | UI | React 19, TypeScript |
 | Bundler | Vite 8, `vite-plugin-pwa`, `vite-plugin-singlefile` |
-| Telegram | GramJS — исходники в git submodule [`vendor/gramjs`](https://github.com/gram-js/gramjs), сборка в `vendor/telegram-built` при `npm install` (см. ниже) |
+| Telegram | GramJS — исходники в git submodule [`vendor/gramjs`](https://github.com/bthos/gramjs), сборка в `vendor/telegram-built` при `npm install` (см. ниже) |
 | i18n | i18next, react-i18next |
 | Persistence | IndexedDB via `idb` |
 | Tests | Vitest, jsdom, `@testing-library/react` |
