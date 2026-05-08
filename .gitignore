@@ -22,9 +22,10 @@ public/pwa*
 .codemie/
 .claude/
 .cursor/
-.github/
+# Ignore local .github noise but keep workflows trackable (`.github/` alone blocks negation).
+.github/*
 !.github/workflows/
-!.github/workflows/*
+!.github/workflows/**
 .vscode/
 !.vscode/extensions.json
 .idea/
