@@ -2,7 +2,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ComponentType,
   type SVGProps,
@@ -62,8 +61,6 @@ export function MainShell() {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
   const { settings, setSettings, parentUnlocked, setParentUnlocked } = useParentalSettings()
-  const settingsRef = useRef(settings)
-  settingsRef.current = settings
   const { dialogs, refreshDialogs, logOut, lastMessageTick, client, hasMoreDialogs, dialogsLoadingMore, loadMoreDialogs } = useTelegram()
   const [tab, setTab] = useState<Tab>("chats")
   const [selected, setSelected] = useState<Dialog | null>(null)
@@ -85,15 +82,21 @@ export function MainShell() {
 
   useEffect(() => {
     if (settings.appMode === "parent") {
-      setParentUnlocked(true)
+      queueMicrotask(() => {
+        setParentUnlocked(true)
+      })
     } else {
-      setParentUnlocked(false)
+      queueMicrotask(() => {
+        setParentUnlocked(false)
+      })
     }
   }, [settings.appMode, setParentUnlocked])
 
   useEffect(() => {
     if (settings.appMode === "child" && (tab === "requests" || tab === "settings")) {
-      setTab("chats")
+      queueMicrotask(() => {
+        setTab("chats")
+      })
     }
   }, [settings.appMode, tab])
 
@@ -136,7 +139,9 @@ export function MainShell() {
     }
     const { key } = getPeerInfo(selected)
     if (deniedPeerIds.has(key)) {
-      setSelected(null)
+      queueMicrotask(() => {
+        setSelected(null)
+      })
     }
   }, [deniedPeerIds, selected, settings.appMode])
 
@@ -152,7 +157,7 @@ export function MainShell() {
       return
     }
     if (appMode === "child") {
-      void setSettings({ ...settingsRef.current, appMode: "child" })
+      void setSettings((prev) => ({ ...prev, appMode: "child" }))
       return
     }
     if (settings.appMode === "child" && settings.pinHash) {
@@ -160,7 +165,7 @@ export function MainShell() {
       setShowPin(true)
       return
     }
-    void setSettings({ ...settingsRef.current, appMode: "parent" })
+    void setSettings((prev) => ({ ...prev, appMode: "parent" }))
   }
 
   const closePin = () => {
@@ -176,7 +181,9 @@ export function MainShell() {
     if (!nightHidden || settings.appMode !== "child") {
       return
     }
-    setSelected((s) => (s != null ? null : s))
+    queueMicrotask(() => {
+      setSelected((s) => (s != null ? null : s))
+    })
   }, [nightHidden, settings.appMode])
   return (
     <div
@@ -424,7 +431,7 @@ export function MainShell() {
           setParentUnlocked(true)
           if (modePinToParent) {
             setModePinToParent(false)
-            void setSettings({ ...settingsRef.current, appMode: "parent" })
+            void setSettings((prev) => ({ ...prev, appMode: "parent" }))
           }
         }}
       />

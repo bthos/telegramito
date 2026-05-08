@@ -4,21 +4,9 @@ import { Raw } from "telegram/events"
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import type { Dialog } from "telegram/tl/custom/dialog"
+import { telegramEntityDisplayName } from "../util/telegramEntityDisplayName"
 
 const TYPER_TIMEOUT_MS = 5_000
-
-function extractName(entity: unknown): string {
-  if (entity == null || typeof entity !== "object") return ""
-  const e = entity as Record<string, unknown>
-  if (typeof e.firstName === "string" || typeof e.lastName === "string") {
-    return [e.firstName, e.lastName]
-      .filter((p): p is string => typeof p === "string" && p.trim() !== "")
-      .join(" ")
-  }
-  if (typeof e.title === "string" && e.title.trim() !== "") return e.title.trim()
-  if (typeof e.username === "string" && e.username.trim() !== "") return e.username.trim()
-  return ""
-}
 
 function idsEqual(a: unknown, b: unknown): boolean {
   try {
@@ -61,7 +49,9 @@ export function useTypingIndicators(
     for (const t of timersRef.current.values()) clearTimeout(t)
     timersRef.current.clear()
     typerNamesRef.current.clear()
-    setTypers([])
+    queueMicrotask(() => {
+      setTypers([])
+    })
   }, [entity])
 
   useEffect(() => {
@@ -88,7 +78,7 @@ export function useTypingIndicators(
       if (!typerNamesRef.current.has(key)) {
         try {
           const resolved = await client!.getEntity(peerUser)
-          typerNamesRef.current.set(key, extractName(resolved) || key)
+          typerNamesRef.current.set(key, telegramEntityDisplayName(resolved) || key)
         } catch {
           typerNamesRef.current.set(key, key)
         }
@@ -101,8 +91,7 @@ export function useTypingIndicators(
       types: [Api.UpdateUserTyping, Api.UpdateChatUserTyping],
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handler = (update: any) => {
+    const handler = (update: Api.UpdateUserTyping | Api.UpdateChatUserTyping) => {
       const isCancel = update.action?.className === "SendMessageCancelAction"
 
       if (update.className === "UpdateUserTyping") {

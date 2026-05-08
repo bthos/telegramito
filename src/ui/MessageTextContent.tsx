@@ -85,7 +85,9 @@ function CustomEmojiImage({
   const idStr = String(documentId)
   useEffect(() => {
     let cancelled = false
-    setShowFallback(false)
+    queueMicrotask(() => {
+      if (!cancelled) setShowFallback(false)
+    })
     void (async () => {
       for (let attempt = 0; attempt < 4; attempt++) {
         if (cancelled) {

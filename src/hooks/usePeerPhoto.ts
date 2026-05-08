@@ -91,12 +91,16 @@ export function usePeerPhoto(
 
   useEffect(() => {
     if (!peerId || !client) {
-      setPhotoUrl(null)
+      queueMicrotask(() => {
+        setPhotoUrl(null)
+      })
       return
     }
 
     if (urlCache.has(peerId)) {
-      setPhotoUrl(urlCache.get(peerId) ?? null)
+      queueMicrotask(() => {
+        setPhotoUrl(urlCache.get(peerId) ?? null)
+      })
       return
     }
 

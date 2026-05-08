@@ -77,7 +77,7 @@ export default defineConfig({
         }
         const manifest = fs.readFileSync(manifestPath, "utf8")
         const dataUrl = `data:application/manifest+json;charset=utf-8,${encodeURIComponent(manifest)}`
-        let html = fs.readFileSync(indexPath, "utf8")
+        const html = fs.readFileSync(indexPath, "utf8")
         const next = html.replace(
           /(<link rel="manifest" href=")([^"]+)(")/,
           `$1${dataUrl}$3`,

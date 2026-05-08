@@ -55,10 +55,13 @@ export function MessageReactionRepliersPop({
   const idB = useId()
   const titleId = `rep-who-h-${idB}`
 
-  const myR =
-    messageReactions?.className === "MessageReactions"
-      ? myReactionsList((messageReactions as Api.MessageReactions).recentReactions)
-      : []
+  const myR = useMemo(
+    () =>
+      messageReactions?.className === "MessageReactions"
+        ? myReactionsList((messageReactions as Api.MessageReactions).recentReactions)
+        : [],
+    [messageReactions],
+  )
   const iHaveThis = myR.some((r) => reactionsEqual(r, targetReaction))
 
   const canRemove = useMemo(
@@ -107,12 +110,16 @@ export function MessageReactionRepliersPop({
 
   useEffect(() => {
     if (!open) {
-      setRows([])
-      setNextOff(undefined)
-      setErr(false)
+      queueMicrotask(() => {
+        setRows([])
+        setNextOff(undefined)
+        setErr(false)
+      })
       return
     }
-    void loadPage()
+    queueMicrotask(() => {
+      void loadPage()
+    })
   }, [open, loadPage])
 
   const removeMine = useCallback(async () => {

@@ -2,13 +2,13 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react"
 import {
-  effectiveTheme,
   type ThemePreference,
   readThemePreference,
   writeThemePreference,
@@ -30,35 +30,41 @@ function applyToDocument(resolved: "light" | "dark") {
   d.style.colorScheme = resolved
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }): React.ReactNode {
-  const [theme, setThemeState] = useState<ThemePreference>(() => readThemePreference())
-  const [eff, setEff] = useState<"light" | "dark">(() => effectiveTheme(readThemePreference()))
-
-  const recompute = useCallback((p: ThemePreference) => {
-    const r = effectiveTheme(p)
-    setEff(r)
-    applyToDocument(r)
-  }, [])
-
-  useEffect(() => {
-    recompute(theme)
-  }, [theme, recompute])
-
-  useEffect(() => {
+/** Subscribes only while {@link theme} is `"system"` so explicit light/dark does not re-render on OS changes. */
+function useSystemPrefersDark(theme: ThemePreference): boolean {
+  const subscribe = useCallback((onStoreChange: () => void) => {
     if (theme !== "system") {
-      return
+      return () => {}
     }
     const mq = matchMedia("(prefers-color-scheme: dark)")
-    const onChange = () => {
-      const r = effectiveTheme("system")
-      setEff(r)
-      applyToDocument(r)
-    }
-    mq.addEventListener("change", onChange)
-    return () => {
-      mq.removeEventListener("change", onChange)
-    }
+    mq.addEventListener("change", onStoreChange)
+    return () => mq.removeEventListener("change", onStoreChange)
   }, [theme])
+
+  const getSnapshot = useCallback(() => {
+    if (theme !== "system") {
+      return false
+    }
+    return matchMedia("(prefers-color-scheme: dark)").matches
+  }, [theme])
+
+  return useSyncExternalStore(subscribe, getSnapshot, () => false)
+}
+
+export function ThemeProvider({ children }: { children: ReactNode }): React.ReactNode {
+  const [theme, setThemeState] = useState<ThemePreference>(() => readThemePreference())
+  const systemDark = useSystemPrefersDark(theme)
+
+  const eff = useMemo((): "light" | "dark" => {
+    if (theme === "system") {
+      return systemDark ? "dark" : "light"
+    }
+    return theme
+  }, [theme, systemDark])
+
+  useLayoutEffect(() => {
+    applyToDocument(eff)
+  }, [eff])
 
   const setTheme = useCallback((p: ThemePreference) => {
     setThemeState(p)

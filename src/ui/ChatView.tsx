@@ -206,7 +206,9 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   const [isPanelOpen, setIsPanelOpen] = useState(false)
 
   useEffect(() => {
-    setIsPanelOpen(false)
+    queueMicrotask(() => {
+      setIsPanelOpen(false)
+    })
   }, [key])
 
   useEffect(() => {
@@ -258,15 +260,19 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   )
 
   useEffect(() => {
-    setSearchMode(false)
-    setSearchQuery("")
-    setSearchResultIndex(0)
     pendingScrollToMessageIdRef.current = null
+    queueMicrotask(() => {
+      setSearchMode(false)
+      setSearchQuery("")
+      setSearchResultIndex(0)
+    })
   }, [convKey, setSearchQuery])
 
   useEffect(() => {
     clearAttachments()
-    setAttachPickErr(null)
+    queueMicrotask(() => {
+      setAttachPickErr(null)
+    })
   }, [convKey, clearAttachments])
 
   // listForViewLength for the unread-seek effect inside useChatMessages.
@@ -304,8 +310,9 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     return list.filter((m) => isInboundUnreadForThread(m, readMax))
   }, [dialog, isForum, list, messagesUnreadOnly, topicId, topics])
 
-  // Keep the ref in sync each render so useChatMessages sees the latest value on next effect run.
-  listForViewLengthRef.current = listForView.length
+  useLayoutEffect(() => {
+    listForViewLengthRef.current = listForView.length
+  }, [listForView])
 
   const showUnreadMessagesEmpty =
     messagesUnreadOnly &&
@@ -329,8 +336,10 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   const [headerActionsHost, setHeaderActionsHost] = useState<HTMLElement | null>(null)
   const [headerCenterHost, setHeaderCenterHost] = useState<HTMLElement | null>(null)
   useLayoutEffect(() => {
-    setHeaderActionsHost(document.getElementById(THREAD_HEADER_ACTIONS_ID))
-    setHeaderCenterHost(document.getElementById(THREAD_HEADER_CENTER_ID))
+    queueMicrotask(() => {
+      setHeaderActionsHost(document.getElementById(THREAD_HEADER_ACTIONS_ID))
+      setHeaderCenterHost(document.getElementById(THREAD_HEADER_CENTER_ID))
+    })
   }, [key])
 
   const clusterRoleByMessageId = useMemo(() => {
@@ -364,7 +373,9 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   })
 
   useEffect(() => {
-    setMessagesUnreadOnly(false)
+    queueMicrotask(() => {
+      setMessagesUnreadOnly(false)
+    })
   }, [key])
 
   useEffect(() => {
@@ -471,7 +482,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     }
     setSearchMode(true)
     setIsPanelOpen(false)
-  }, [])
+  }, [setSearchMode, setIsPanelOpen])
 
   const closeSearchMode = useCallback(() => {
     setSearchMode(false)
@@ -483,7 +494,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         el.scrollTop = messageScrollTopBeforeSearchRef.current
       }
     }, 0)
-  }, [setSearchQuery])
+  }, [setSearchQuery, setSearchMode, setSearchResultIndex])
 
   const navigateSearchResult = useCallback((dir: "up" | "down") => {
     setSearchResultIndex((i) => {
@@ -496,15 +507,17 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       }
       return Math.max(0, i - 1)
     })
-  }, [searchResults.length])
+  }, [searchResults.length, setSearchResultIndex])
 
   useEffect(() => {
-    setSearchResultIndex((i) => {
-      const n = searchResults.length
-      if (n === 0) {
-        return 0
-      }
-      return Math.min(i, n - 1)
+    queueMicrotask(() => {
+      setSearchResultIndex((i) => {
+        const n = searchResults.length
+        if (n === 0) {
+          return 0
+        }
+        return Math.min(i, n - 1)
+      })
     })
   }, [searchResults.length])
 
@@ -532,7 +545,13 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         appLog.warn("jumpToMessageFromSearch failed", { id })
       }
     },
-    [closeSearchMode, refreshMessagesById],
+    [
+      closeSearchMode,
+      refreshMessagesById,
+      setMessagesUnreadOnly,
+      setIsPanelOpen,
+      setHighlightedMessageId,
+    ],
   )
 
   useLayoutEffect(() => {
@@ -562,7 +581,9 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   }, [datedList])
 
   useEffect(() => {
-    setJumpCalOpen(false)
+    queueMicrotask(() => {
+      setJumpCalOpen(false)
+    })
   }, [convKey])
 
   useEffect(() => {
@@ -776,7 +797,9 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       return
     }
     if (!list.some((m) => m.id === reactionTarget.id)) {
-      setReactionTarget(null)
+      queueMicrotask(() => {
+        setReactionTarget(null)
+      })
     }
   }, [list, reactionTarget])
 
@@ -998,6 +1021,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       isBroadcastChannel,
       highlightedMessageId,
       t,
+      name,
       settings.showMessageIds,
     ]
   )

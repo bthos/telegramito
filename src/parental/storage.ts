@@ -75,6 +75,30 @@ async function setKey(key: string, value: unknown): Promise<void> {
   await db.put(STORE, value, key)
 }
 
+function upsertRequestByTarget(
+  cur: PendingRequest[],
+  targetId: string,
+  title: string,
+  status: PendingRequest["status"],
+): void {
+  const i = cur.findIndex((r) => r.targetId === targetId)
+  if (i >= 0) {
+    cur[i] = { ...cur[i]!, status, title }
+    return
+  }
+  if (status === "approved") {
+    return
+  }
+  cur.push({
+    id: randomId(),
+    createdAt: Date.now(),
+    kind: "chat",
+    targetId,
+    title,
+    status,
+  })
+}
+
 export async function getParentalSettings(): Promise<ParentalSettings> {
   const s = await getKey<ParentalSettings | undefined>(
     KEYS.parental,
@@ -159,38 +183,12 @@ export async function setPeerAccessState(
     al.delete(targetId)
   }
   const cur = await getPendingRequests()
-  const i = cur.findIndex((r) => r.targetId === targetId)
   if (state === "allowed") {
-    if (i >= 0) {
-      const row = { ...cur[i]!, status: "approved" as const, title }
-      cur[i] = row
-    }
+    upsertRequestByTarget(cur, targetId, title, "approved")
   } else if (state === "pending") {
-    if (i >= 0) {
-      cur[i] = { ...cur[i]!, status: "pending" as const, title }
-    } else {
-      cur.push({
-        id: randomId(),
-        createdAt: Date.now(),
-        kind: "chat",
-        targetId,
-        title,
-        status: "pending",
-      })
-    }
+    upsertRequestByTarget(cur, targetId, title, "pending")
   } else {
-    if (i >= 0) {
-      cur[i] = { ...cur[i]!, status: "denied" as const, title }
-    } else {
-      cur.push({
-        id: randomId(),
-        createdAt: Date.now(),
-        kind: "chat",
-        targetId,
-        title,
-        status: "denied",
-      })
-    }
+    upsertRequestByTarget(cur, targetId, title, "denied")
   }
   await setPendingRequests(cur)
   const next: ParentalSettings = { ...s, allowlistIds: [...al] }

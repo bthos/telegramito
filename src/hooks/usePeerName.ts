@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import type { Api } from "telegram"
 import type { TelegramClient } from "telegram"
+import { telegramEntityDisplayName } from "../util/telegramEntityDisplayName"
 
 /** Module-level cache: peerKey → display name. Session-scoped, never evicted. */
 const nameCache = new Map<string, string>()
@@ -20,26 +21,6 @@ function peerKey(peerId: Api.TypePeer | undefined): string {
   }
   if (peerId.className === "PeerChat") {
     return `h:${String((peerId as Api.PeerChat).chatId)}`
-  }
-  return ""
-}
-
-function extractName(entity: unknown): string {
-  if (entity == null || typeof entity !== "object") return ""
-  const e = entity as Record<string, unknown>
-  // User: prefer firstName + lastName
-  if (typeof e.firstName === "string" || typeof e.lastName === "string") {
-    const parts = [e.firstName, e.lastName]
-      .filter((p): p is string => typeof p === "string" && p.trim() !== "")
-    return parts.join(" ")
-  }
-  // Channel / Chat: title
-  if (typeof e.title === "string" && e.title.trim() !== "") {
-    return e.title.trim()
-  }
-  // Fallback: username
-  if (typeof e.username === "string" && e.username.trim() !== "") {
-    return e.username.trim()
   }
   return ""
 }
@@ -69,7 +50,9 @@ export function usePeerName(
     // Cache hit — update state synchronously, no fetch needed.
     const cached = nameCache.get(key)
     if (cached !== undefined) {
-      setName(cached)
+      queueMicrotask(() => {
+        setName(cached)
+      })
       return
     }
 
@@ -78,7 +61,7 @@ export function usePeerName(
       try {
         const entity = await client.getEntity(peerId!)
         if (cancelled) return
-        const resolved = extractName(entity)
+        const resolved = telegramEntityDisplayName(entity)
         nameCache.set(key, resolved)
         setName(resolved)
       } catch {
@@ -89,7 +72,7 @@ export function usePeerName(
     return () => {
       cancelled = true
     }
-  }, [key, client]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, client, peerId])
 
   return name
 }

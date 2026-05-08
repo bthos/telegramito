@@ -48,40 +48,44 @@ export function usePeerRecentMedia(
 
     const cached = mediaCache.get(key)
     if (cached !== undefined) {
-      setItems(cached)
-      setLoading(false)
+      queueMicrotask(() => {
+        setItems(cached)
+        setLoading(false)
+      })
       return
     }
 
     let cancelled = false
-    setLoading(true)
-    setError(null)
-
-    void (async () => {
-      try {
-        const raw = await client.getMessages(entity as never, {
-          filter: new Api.InputMessagesFilterPhotoVideo(),
-          limit: 6,
-        })
-        if (cancelled) return
-        const msgs = (Array.isArray(raw) ? raw : []).filter(
-          (m): m is Api.Message => m != null && (m as Api.Message).className === "Message",
-        ).map(repairMessageAfterGramJs)
-        mediaCache.set(key, msgs)
-        setItems(msgs)
-      } catch (e) {
-        if (cancelled) return
-        setError(e instanceof Error ? e.message : "Failed to load media")
-        setItems([])
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
+    queueMicrotask(() => {
+      if (cancelled) return
+      setLoading(true)
+      setError(null)
+      void (async () => {
+        try {
+          const raw = await client.getMessages(entity as never, {
+            filter: new Api.InputMessagesFilterPhotoVideo(),
+            limit: 6,
+          })
+          if (cancelled) return
+          const msgs = (Array.isArray(raw) ? raw : []).filter(
+            (m): m is Api.Message => m != null && (m as Api.Message).className === "Message",
+          ).map(repairMessageAfterGramJs)
+          mediaCache.set(key, msgs)
+          setItems(msgs)
+        } catch (e) {
+          if (cancelled) return
+          setError(e instanceof Error ? e.message : "Failed to load media")
+          setItems([])
+        } finally {
+          if (!cancelled) setLoading(false)
+        }
+      })()
+    })
 
     return () => {
       cancelled = true
     }
-  }, [key, client]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, client, entity])
 
   return { items, loading, error }
 }

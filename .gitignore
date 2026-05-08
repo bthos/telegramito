@@ -44,20 +44,6 @@ CLAUDE.md
 # `agentic-kit/teardown.sh` to remove the whole block. Edits inside this block
 # are overwritten on init.
 #
-# --- Runtime / ephemeral (pipeline scratch; usually not committed) ---
-.artefacts/memory/
-.artefacts/features/
-.artefacts/archive/
-.artefacts/proposed-patches/
-.artefacts/SESSION-STATE.md
-.artefacts/MEMORY.md
-.artefacts/PROJECT_PROFILE.md
-#
-# --- Per-machine kit bookkeeping (usually not committed) ---
-.artefacts/.agentic-kit.cfg
-.artefacts/.agentic-kit.files
-#
-# Optional — ignore all of .artefacts/ except PIPELINE.md + PROJECT.md (uncomment all 4 lines):
 .artefacts/
 # !.artefacts/
 # !.artefacts/PIPELINE.md

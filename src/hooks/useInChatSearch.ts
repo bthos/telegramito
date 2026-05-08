@@ -48,15 +48,19 @@ export function useInChatSearch({
 
     const q = query.trim()
     if (!client || entity == null || disabled) {
-      setResults([])
-      setLoading(false)
-      setError(null)
+      queueMicrotask(() => {
+        setResults([])
+        setLoading(false)
+        setError(null)
+      })
       return
     }
     if (q.length < 2) {
-      setResults([])
-      setLoading(false)
-      setError(null)
+      queueMicrotask(() => {
+        setResults([])
+        setLoading(false)
+        setError(null)
+      })
       return
     }
 

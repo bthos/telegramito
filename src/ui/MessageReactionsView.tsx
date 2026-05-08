@@ -48,7 +48,9 @@ function ReactionEmojiFromTelegramSet({
   useEffect(() => {
     let a = true
     if (!entry || entry.className !== "AvailableReaction") {
-      setUrl(null)
+      queueMicrotask(() => {
+        if (a) setUrl(null)
+      })
       return () => {
         a = false
       }
@@ -107,7 +109,9 @@ export function MessageReactionsView({
 
   useEffect(() => {
     if (!client) {
-      setAvailableByReaction(null)
+      queueMicrotask(() => {
+        setAvailableByReaction(null)
+      })
       return
     }
     let a = true

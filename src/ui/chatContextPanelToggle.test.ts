@@ -11,7 +11,7 @@ function togglePanel(current: boolean): boolean {
   return !current
 }
 
-function resetPanelForChatSwitch(_prev: boolean): boolean {
+function resetPanelForChatSwitch(): boolean {
   return false
 }
 
@@ -33,11 +33,11 @@ describe("chatContextPanel — toggle", () => {
 
 describe("chatContextPanel — reset on chat switch", () => {
   it("resets to false when panel was open", () => {
-    expect(resetPanelForChatSwitch(true)).toBe(false)
+    expect(resetPanelForChatSwitch()).toBe(false)
   })
 
   it("stays false when panel was already closed", () => {
-    expect(resetPanelForChatSwitch(false)).toBe(false)
+    expect(resetPanelForChatSwitch()).toBe(false)
   })
 })
 

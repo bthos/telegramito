@@ -19,7 +19,9 @@ import { setAppLogLevel } from "../util/appLogger"
 
 type ParentalContextValue = {
   settings: ParentalSettings
-  setSettings: (s: ParentalSettings) => Promise<void>
+  setSettings: (
+    s: ParentalSettings | ((prev: ParentalSettings) => ParentalSettings),
+  ) => Promise<void>
   parentUnlocked: boolean
   setParentUnlocked: (v: boolean) => void
   reload: () => Promise<void>
@@ -51,15 +53,21 @@ export function ParentalProvider({ children }: { children: ReactNode }): React.R
   }, [load])
 
   const setSettings = useCallback(
-    async (s: ParentalSettings) => {
-      setSt(s)
-      await setParentalSettings(s)
-      setAppLogLevel(s.logLevel)
-      if (s.locale) {
-        changeAppLocale(s.locale)
+    async (
+      s: ParentalSettings | ((prev: ParentalSettings) => ParentalSettings),
+    ) => {
+      let next: ParentalSettings
+      setSt((prev) => {
+        next = typeof s === "function" ? s(prev) : s
+        return next
+      })
+      await setParentalSettings(next!)
+      setAppLogLevel(next!.logLevel)
+      if (next!.locale) {
+        changeAppLocale(next!.locale)
       }
     },
-    []
+    [],
   )
 
   const value = useMemo<ParentalContextValue>(

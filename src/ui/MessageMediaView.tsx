@@ -75,32 +75,34 @@ function useBlob(
       URL.revokeObjectURL(uref.current)
       uref.current = null
     }
-    if (!c) {
-      setS({ k: "z" })
-      return
-    }
-    if (
-      !media
-      || media.className === "MessageMediaEmpty"
-      || media.className === "MessageMediaWebPage"
-      || getMessageMediaPollFromMessage(m)
-    ) {
-      setS({ k: "z" })
-      return
-    }
-    if (d) {
-      if (isAnimatedDoc(d) && filterGifs) {
-        setS({ k: "f" })
-        return
-      }
-      if (d.mimeType?.toLowerCase().includes("gif") && filterGifs) {
-        setS({ k: "f" })
-        return
-      }
-    }
-    setS({ k: "d" })
     let on = true
-    void (async () => {
+    queueMicrotask(() => {
+      if (!on) return
+      if (!c) {
+        setS({ k: "z" })
+        return
+      }
+      if (
+        !media
+        || media.className === "MessageMediaEmpty"
+        || media.className === "MessageMediaWebPage"
+        || getMessageMediaPollFromMessage(m)
+      ) {
+        setS({ k: "z" })
+        return
+      }
+      if (d) {
+        if (isAnimatedDoc(d) && filterGifs) {
+          setS({ k: "f" })
+          return
+        }
+        if (d.mimeType?.toLowerCase().includes("gif") && filterGifs) {
+          setS({ k: "f" })
+          return
+        }
+      }
+      setS({ k: "d" })
+      void (async () => {
       const img = (buf: unknown, mt: string) => {
         const u = makeBlobUrl(buf, mt)
         if (on) {
@@ -257,7 +259,8 @@ function useBlob(
           setS({ k: "e" })
         }
       }
-    })()
+      })()
+    })
     return () => {
       on = false
       if (uref.current) {
@@ -457,8 +460,10 @@ export function MessageMediaView({
   const imagePreviewUrl = s.k === "i" ? s.u : null
   const videoPreviewUrl = s.k === "v" ? s.u : null
   useEffect(() => {
-    setLightboxOpen(false)
-    setVideoFullOpen(false)
+    queueMicrotask(() => {
+      setLightboxOpen(false)
+      setVideoFullOpen(false)
+    })
   }, [message.id, imagePreviewUrl, videoPreviewUrl])
 
   if (renderPaidAsBundle && paidBundleSlots) {

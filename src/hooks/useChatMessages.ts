@@ -75,7 +75,10 @@ export function useChatMessages(opts: {
   const historyReconcileAttemptedRef = useRef<Set<string>>(new Set())
   const mediaPlaceholderRefetchAttemptsRef = useRef<Map<number, number>>(new Map())
   const mediaPlaceholderRefetchInFlightRef = useRef(false)
-  listRef.current = list
+
+  useEffect(() => {
+    listRef.current = list
+  }, [list])
 
   const lastMessageTickRef = useRef(lastMessageTick)
   useEffect(() => {
@@ -271,9 +274,11 @@ export function useChatMessages(opts: {
     lastTickSyncedRef.current = null
     historyReconcileAttemptedRef.current.clear()
     mediaPlaceholderRefetchAttemptsRef.current.clear()
-    setList([])
-    setHasMoreOlder(true)
-    setLoadingOlder(false)
+    queueMicrotask(() => {
+      setList([])
+      setHasMoreOlder(true)
+      setLoadingOlder(false)
+    })
     void (async () => {
       try {
         if (!client || !dialog.entity) {
@@ -378,6 +383,7 @@ export function useChatMessages(opts: {
 
     unreadSeekOlderLoadsRef.current += 1
     void loadOlder()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- listForViewLengthRef.current omitted intentionally (stable ref)
   }, [
     messagesUnreadOnly,
     blocked,

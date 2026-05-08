@@ -71,16 +71,26 @@ export function JumpDateCalendarPop({
     m: initial.m,
   }))
 
+  const [todayKey, setTodayKey] = useState("")
+
   useEffect(() => {
     if (!open) {
       return
     }
     const p = parseDayKey(initialDayKey)
-    setVisible({ y: p.y, m: p.m })
+    queueMicrotask(() => {
+      setVisible({ y: p.y, m: p.m })
+    })
   }, [open, initialDayKey])
 
   useLayoutEffect(() => {
-    if (!open || !anchorRef.current) {
+    if (!open) {
+      return
+    }
+    queueMicrotask(() => {
+      setTodayKey(getLocalDayKey(Math.floor(Date.now() / 1000)))
+    })
+    if (!anchorRef.current) {
       return
     }
     const r = anchorRef.current.getBoundingClientRect()
@@ -103,11 +113,6 @@ export function JumpDateCalendarPop({
       document.removeEventListener("keydown", onKey)
     }
   }, [open, onDismiss])
-
-  const todayKey = useMemo(
-    () => getLocalDayKey(Math.floor(Date.now() / 1000)),
-    [open],
-  )
 
   const monthTitle = useMemo(() => {
     const d = new Date(visible.y, visible.m, 1, 12, 0, 0)

@@ -35,9 +35,11 @@ export function useChatScroll(opts: {
   const [stickyRowIndex, setStickyRowIndex] = useState(0)
 
   useEffect(() => {
-    setStickyRowIndex(0)
-    setScrollFabVisible(false)
     stickToEndRef.current = true
+    queueMicrotask(() => {
+      setStickyRowIndex(0)
+      setScrollFabVisible(false)
+    })
   }, [convKey])
 
   const syncStickyChatDateShortList = useCallback(() => {
@@ -145,7 +147,7 @@ export function useChatScroll(opts: {
     const prevHeight = el.scrollHeight
     notifyPrepend(prevTop, prevHeight)
     void loadOlder()
-  }, [datedList.length, hasMoreOlder, loadingOlder, loadOlder, syncStickyChatDateShortList, notifyPrepend, scrollRef])
+  }, [hasMoreOlder, loadingOlder, loadOlder, syncStickyChatDateShortList, notifyPrepend, scrollRef])
 
   return {
     scrollFabVisible,

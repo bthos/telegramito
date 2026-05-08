@@ -47,10 +47,12 @@ export function useForumTopics(
 
   useEffect(() => {
     if (!client || !entity || !isForum) {
-      setTopics([])
-      setTopicId(null)
-      setTopicsErr(null)
-      setTopicsLoading(false)
+      queueMicrotask(() => {
+        setTopics([])
+        setTopicId(null)
+        setTopicsErr(null)
+        setTopicsLoading(false)
+      })
       return
     }
     let cancelled = false

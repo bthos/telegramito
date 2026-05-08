@@ -149,7 +149,9 @@ export function MessageReactionPicker({
       return
     }
     let a = true
-    setLoadErr(false)
+    queueMicrotask(() => {
+      if (a) setLoadErr(false)
+    })
     void (async () => {
       try {
         const raw = await getAvailableReactionsForClient(client)

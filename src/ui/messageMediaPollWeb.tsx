@@ -71,7 +71,9 @@ export function useWpPreview(m: Api.Message, c: TelegramClient | null, no: boole
       URL.revokeObjectURL(last.current)
       last.current = null
     }
-    setU(null)
+    queueMicrotask(() => {
+      setU(null)
+    })
     if (no || !c) {
       return
     }
@@ -214,7 +216,7 @@ function WebIvModal({
   onClose: () => void
 }) {
   const { t } = useTranslation()
-  let host = ""
+  let host: string
   try {
     const raw = safeHref.startsWith("http") ? safeHref : `https://${safeHref.replace(/^\/\//, "")}`
     host = new URL(raw).hostname

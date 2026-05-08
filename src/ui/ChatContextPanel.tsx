@@ -86,7 +86,9 @@ function MediaThumbCell({
   useEffect(() => {
     if (!client) return
     let cancelled = false
-    setThumb(null)
+    queueMicrotask(() => {
+      if (!cancelled) setThumb(null)
+    })
 
     void (async () => {
       try {
@@ -182,9 +184,11 @@ export function ChatContextPanel({
 
   useEffect(() => {
     if (!isOpen || !client || !entity) {
-      setMuteUntil(null)
-      setActionErr(null)
-      setBlockConfirm(false)
+      queueMicrotask(() => {
+        setMuteUntil(null)
+        setActionErr(null)
+        setBlockConfirm(false)
+      })
       return
     }
     let cancelled = false

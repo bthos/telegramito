@@ -62,16 +62,22 @@ export function EmojiPickerPanel({
 
   useEffect(() => {
     if (!open) {
-      setSearchQuery("")
-      setRecent(loadRecentEmojis())
+      queueMicrotask(() => {
+        setSearchQuery("")
+        setRecent(loadRecentEmojis())
+      })
       return
     }
-    setRecent(loadRecentEmojis())
+    queueMicrotask(() => {
+      setRecent(loadRecentEmojis())
+    })
   }, [open])
 
   useLayoutEffect(() => {
     if (!open || isMobile) {
-      setDesktopBox(null)
+      queueMicrotask(() => {
+        setDesktopBox(null)
+      })
       return
     }
     const update = () => {

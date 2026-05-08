@@ -5,7 +5,7 @@ import type { TelegramClient } from "telegram"
 // Prevent loading the full GramJS library (~400MB) in the test worker.
 vi.mock("telegram/events", () => ({
   Raw: class MockRaw {
-    constructor(_opts: unknown) {}
+    constructor() {}
   },
 }))
 vi.mock("telegram", async () => ({
@@ -20,7 +20,7 @@ vi.mock("telegram", async () => ({
     },
     messages: {
       SetTyping: class {
-        constructor(_opts: unknown) {}
+        constructor() {}
       },
     },
     SendMessageTypingAction: class {},
@@ -58,7 +58,7 @@ function makeClient(opts: { meId?: bigint; resolvedName?: string; shouldThrow?: 
   let capturedHandler: ((update: unknown) => void) | null = null
 
   const client = {
-    addEventHandler: vi.fn((handler: (u: unknown) => void, _builder?: unknown) => {
+    addEventHandler: vi.fn((handler: (u: unknown) => void) => {
       capturedHandler = handler
     }),
     removeEventHandler: vi.fn(),

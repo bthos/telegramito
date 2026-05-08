@@ -54,7 +54,10 @@ export function RequestsView({ dialogs }: Props) {
     })
   }, [load, settings])
 
-  const allow = new Set(settings.allowlistIds)
+  const allow = useMemo(
+    () => new Set(settings.allowlistIds),
+    [settings.allowlistIds],
+  )
 
   const filteredDialogs = useMemo(() => {
     if (statusFilter === "all") {
