@@ -9,6 +9,17 @@ import {
   ExpandableGeoLiveCard,
   ExpandableVenueCard,
 } from "./staticLocationViews"
+import {
+  UxDiceCard,
+  UxGameCard,
+  UxGiveawayCard,
+  UxGiveawayResultsCard,
+  UxInvoiceCard,
+  UxPaidMediaCard,
+  UxStoryCard,
+  UxTodoCard,
+  UxUnsupportedCard,
+} from "./staticUxMediaCards"
 
 function formatMoney(
   totalAmount: number,
@@ -31,22 +42,6 @@ function contactInitials(displayName: string): string {
   }
   const one = parts[0] ?? displayName
   return one.slice(0, 2).toUpperCase() || "?"
-}
-
-function peerLabel(peer: Api.TypePeer | undefined): string {
-  if (!peer) {
-    return "?"
-  }
-  if (peer.className === "PeerUser") {
-    return `user:${(peer as Api.PeerUser).userId}`
-  }
-  if (peer.className === "PeerChannel") {
-    return `channel:${(peer as Api.PeerChannel).channelId}`
-  }
-  if (peer.className === "PeerChat") {
-    return `chat:${(peer as Api.PeerChat).chatId}`
-  }
-  return "?"
 }
 
 /**
@@ -98,15 +93,7 @@ export function MessageMediaStatic({
   if (cn === "MessageMediaGame") {
     const gm = (med as Api.MessageMediaGame).game
     if (gm && gm.className === "Game") {
-      const g0 = gm as Api.Game
-      return (
-        <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewGame")}>
-          {g0.title ? <div className="msg-media-card__title">{g0.title}</div> : null}
-          {g0.description
-            ? <p className="msg-media-card__line msg-media-card__line--pre">{g0.description}</p>
-            : null}
-        </div>
-      )
+      return <UxGameCard game={gm as Api.Game} t={t} />
     }
     return <div data-media-state="preview" className="msg-media msg-media--card">{t("chat.previewGame")}</div>
   }
@@ -117,17 +104,7 @@ export function MessageMediaStatic({
       String(inv.currency || ""),
       t
     )
-    const botParam = inv.startParam
-    return (
-      <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewInvoice")}>
-        <div className="msg-media-card__title">{inv.title || t("chat.previewInvoice")}</div>
-        {inv.description ? <p className="msg-media-card__line msg-media-card__line--pre">{inv.description}</p> : null}
-        <div className="msg-media-card__line msg-media-card__strong">{amount}</div>
-        {botParam
-          ? <p className="msg-media-card__muted">{t("chat.invoiceCompleteInTelegram")}</p>
-          : null}
-      </div>
-    )
+    return <UxInvoiceCard inv={inv} amountLabel={amount} t={t} />
   }
   if (cn === "MessageMediaDice") {
     const d = med as Api.MessageMediaDice
@@ -140,55 +117,24 @@ export function MessageMediaStatic({
     const tonStake = ton != null ? Number(ton.stakeTonAmount) : NaN
     const tonWin = ton != null ? Number(ton.tonAmount) : NaN
     return (
-      <div
-        data-media-state="preview"
-        className="msg-media msg-media--card msg-media--dice"
-        role="img"
-        aria-label={t("chat.previewDice")}
-      >
-        <span className="msg-media-dice-emoji" aria-hidden>{d.emoticon || "🎲"}</span>
-        {typeof val === "number" && val > 0
-          ? <span className="msg-media-dice-value">{t("chat.diceValue", { n: val })}</span>
-          : <span className="msg-media-card__muted">{t("chat.diceRolling")}</span>}
-        {ton != null && Number.isFinite(tonStake) && Number.isFinite(tonWin) ? (
-          <p className="msg-media-card__line msg-media-card__muted">
-            {t("chat.diceTonOutcome", { stake: String(tonStake), win: String(tonWin) })}
-          </p>
-        ) : null}
-      </div>
+      <UxDiceCard
+        emoticon={d.emoticon}
+        value={typeof val === "number" ? val : undefined}
+        tonStake={Number.isFinite(tonStake) ? tonStake : undefined}
+        tonWin={Number.isFinite(tonWin) ? tonWin : undefined}
+        t={t}
+      />
     )
   }
   if (cn === "MessageMediaStory") {
     const s = med as Api.MessageMediaStory
-    return (
-      <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewStory")}>
-        <div className="msg-media-card__line">
-          {t("chat.storyFrom", { peer: peerLabel(s.peer) })}
-          {s.id != null ? ` #${s.id}` : ""}
-        </div>
-        <a className="msg-media-card__link" href="https://t.me" target="_blank" rel="noopener noreferrer">
-          {t("chat.storyOpenInApp")}
-        </a>
-      </div>
-    )
+    return <UxStoryCard story={s} t={t} />
   }
-  if (cn === "MessageMediaGiveaway" || cn === "MessageMediaGiveawayResults") {
-    const g = med as Api.MessageMediaGiveaway & Api.MessageMediaGiveawayResults
-    const gGive = med.className === "MessageMediaGiveaway" ? (med as Api.MessageMediaGiveaway) : null
-    const desc
-      = gGive?.prizeDescription
-        ?? (g as { prizeDescription?: string }).prizeDescription
-    return (
-      <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewGiveaway")}>
-        {desc ? <div className="msg-media-card__title">{desc}</div> : <div className="msg-media-card__title">{t("chat.previewGiveaway")}</div>}
-        {gGive != null && typeof gGive.quantity === "number" ? (
-          <div className="msg-media-card__line">
-            {t("chat.giveawayWinners", { n: gGive.quantity })}
-          </div>
-        ) : null}
-        <p className="msg-media-card__muted">{t("chat.giveawayViewInTelegram")}</p>
-      </div>
-    )
+  if (cn === "MessageMediaGiveaway") {
+    return <UxGiveawayCard g={med as Api.MessageMediaGiveaway} t={t} />
+  }
+  if (cn === "MessageMediaGiveawayResults") {
+    return <UxGiveawayResultsCard g={med as Api.MessageMediaGiveawayResults} t={t} />
   }
   if (cn === "MessageMediaToDo") {
     const td = med as Api.MessageMediaToDo
@@ -197,31 +143,20 @@ export function MessageMediaStatic({
       const L = list as Api.TodoList
       const title = asTwe(L.title).text.trim() || t("chat.previewTodo")
       const items = (L.list ?? []).filter((x): x is Api.TodoItem => x.className === "TodoItem")
+      const completedIds = new Set<number>()
+      for (const c of td.completions ?? []) {
+        if (c.className === "TodoCompletion") {
+          completedIds.add((c as Api.TodoCompletion).id)
+        }
+      }
       return (
-        <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewTodo")}>
-          <div className="msg-media-card__title">{title}</div>
-          {L.othersCanAppend || L.othersCanComplete
-            ? (
-                <p className="msg-media-card__muted msg-media-card__hint">
-                  {t("chat.todoListFlags", {
-                    append: L.othersCanAppend ? t("chat.todoOthersAppend") : "—",
-                    complete: L.othersCanComplete ? t("chat.todoOthersComplete") : "—",
-                  })}
-                </p>
-              )
-            : null}
-          {items.length > 0
-            ? (
-                <ol className="msg-media-card__todo">
-                  {items.map((it) => (
-                    <li key={it.id} className="msg-media-card__line">
-                      {asTwe(it.title).text || `#${it.id}`}
-                    </li>
-                  ))}
-                </ol>
-              )
-            : null}
-        </div>
+        <UxTodoCard
+          title={title}
+          items={items}
+          completedIds={completedIds}
+          flags={{ append: Boolean(L.othersCanAppend), complete: Boolean(L.othersCanComplete) }}
+          t={t}
+        />
       )
     }
     return (
@@ -250,11 +185,10 @@ export function MessageMediaStatic({
       ? t("chat.invoiceAmountStars", { n: starsN })
       : null
     return (
-      <div data-media-state="preview" className="msg-media msg-media--card" role="group" aria-label={t("chat.previewPaidMedia")}>
-        <div className="msg-media-card__title">{t("chat.previewPaidMedia")}</div>
-        {starsLabel ? <div className="msg-media-card__line msg-media-card__strong">{starsLabel}</div> : null}
-        <p className="msg-media-card__muted msg-media-card__hint">{t("chat.paidBundlePlaceholder")}</p>
-      </div>
+      <UxPaidMediaCard
+        starsLabel={starsLabel}
+        t={t}
+      />
     )
   }
   if (cn === "MessageMediaEmpty") {
@@ -265,17 +199,7 @@ export function MessageMediaStatic({
     )
   }
   if (cn === "MessageMediaUnsupported") {
-    return (
-      <div
-        data-media-state="preview"
-        className="msg-media msg-media--card msg-media--unsupported"
-        role="status"
-        data-testid="MessageMediaUnsupported"
-      >
-        <span className="msg-media-card__muted">{t("chat.mediaUnsupported")}</span>
-        <p className="msg-media-card__muted msg-media-card__hint">{t("chat.mediaUnsupportedHint")}</p>
-      </div>
-    )
+    return <UxUnsupportedCard t={t} />
   }
   return null
 }

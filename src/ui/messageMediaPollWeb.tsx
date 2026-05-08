@@ -1,6 +1,6 @@
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { isSameOptionBytes } from "../telegram/pollOptions"
 import {
   type PollOptionBytes,
@@ -132,12 +132,26 @@ export function PollReadonly({
   const tot = res?.totalVoters ?? 0
   const hasVoted = res ? pollUserHasVoted(pollP, res) : false
   const showStats = res ? shouldShowPollResultBreakdown(res, hasVoted, closed) : false
+  const multi = Boolean(pollP.multipleChoice)
+  const mediaState = useMemo(
+    () => (closed && showStats ? "full" : "preview"),
+    [closed, showStats]
+  )
   return (
-    <div className="msg-poll">
-      <div className="msg-poll-question">
-        {renderMessageEntities(q, qE, client, t)}
-        {pollP.quiz ? <span> · {t("chat.pollQuiz")}</span> : null}
-        {pollP.closed ? <span> — {t("chat.pollClosed")}</span> : null}
+    <div className="msg-poll" data-media-state={mediaState}>
+      <div className="msg-poll-head">
+        <div className="msg-poll-question">
+          {pollP.quiz ? <span className="msg-poll-qbadge" aria-hidden>★</span> : null}
+          <span className="msg-poll-qtext">{renderMessageEntities(q, qE, client, t)}</span>
+        </div>
+        <p className="msg-poll-subtitle">
+          {[
+            pollP.quiz ? t("chat.pollQuiz") : null,
+            pollP.publicVoters ? t("chat.pollSubtitlePublic") : t("chat.pollSubtitleAnonymous"),
+            multi ? t("chat.pollSubtitleMultiple") : t("chat.pollSubtitleSingle"),
+            closed ? t("chat.pollClosedLong") : null,
+          ].filter(Boolean).join(" · ")}
+        </p>
       </div>
       {res?.min && !hasVoted && !closed
         ? <p className="msg-poll-hint" role="note">{t("chat.pollResultsAfterVote")}</p>
@@ -182,18 +196,25 @@ export function PollReadonly({
           )
         })}
       </ol>
-      {tot > 0
+      {!closed && tot > 0
         ? (
             <div className="msg-poll-total">
               {t("chat.pollTotal", { n: tot })}
             </div>
           )
         : null}
+      {closed && tot > 0
+        ? (
+            <div className="msg-poll-foot">
+              <span className="msg-poll-foot__badge">{t("chat.pollFinalResults")}</span>
+              <span className="msg-poll-foot__meta">{t("chat.pollTotal", { n: tot })}</span>
+            </div>
+          )
+        : null}
       {pollP.quiz && res?.solution
         ? (
-            <div className="msg-poll-sol">
-              {t("chat.pollAnswer")}
-              {" "}
+            <div className="msg-poll-explain">
+              <span className="msg-poll-explain__label">{t("chat.pollSolutionHeading")}</span>
               {res.solution}
             </div>
           )

@@ -1,6 +1,6 @@
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
-import { useCallback, useId, useMemo, useState, type Dispatch, type SetStateAction } from "react"
+import { useCallback, useEffect, useId, useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import { isSameOptionBytes } from "../telegram/pollOptions"
 import {
   isPollOptionChosenRow,
@@ -32,6 +32,7 @@ type PollMultiProps = {
   busy: boolean
   vote: (bytesList: readonly unknown[]) => void
   setVPop: Dispatch<SetStateAction<{ x: number; y: number; option: unknown } | null>>
+  onMultiPendingChange?: (n: number) => void
 }
 
 /**
@@ -50,10 +51,14 @@ function PollMultiInteractive({
   busy,
   vote,
   setVPop,
+  onMultiPendingChange,
 }: PollMultiProps) {
   const [multiSel, setMultiSel] = useState(
     () => multiChosenOptionKeysFromResults(pollP, res)
   )
+  useEffect(() => {
+    onMultiPendingChange?.(multiSel.size)
+  }, [multiSel, onMultiPendingChange])
   return (
     <>
       <ol
@@ -164,7 +169,9 @@ function PollMultiInteractive({
                   void vote(chosenBytes)
                 }}
               >
-                {t("chat.pollSubmitVote")}
+                {multiSel.size > 0
+                  ? t("chat.pollVoteWithCount", { n: multiSel.size })
+                  : t("chat.pollSubmitVote")}
               </Button>
             </div>
           )
@@ -239,12 +246,27 @@ export function MessagePollView({
   const groupRole = multi ? "group" : "radiogroup"
   const radioName = `poll-m${messageId}`
 
+  const [multiPending, setMultiPending] = useState(0)
+
+  const mediaState = useMemo(() => {
+    if (busy) {
+      return "loading"
+    }
+    if (!closed && multi && multiPending > 0) {
+      return "loading"
+    }
+    if (closed && showStats) {
+      return "full"
+    }
+    return "preview"
+  }, [busy, closed, multi, multiPending, showStats])
+
   if (!pollP) {
     return null
   }
 
   return (
-    <div className="msg-poll">
+    <div className="msg-poll" data-media-state={mediaState}>
       {vPop
         ? (
             <MessagePollVotersPop
@@ -261,10 +283,19 @@ export function MessagePollView({
           )
         : null}
       {err ? <p className="small err" role="status">{t("chat.pollVoteError")}</p> : null}
-      <div className="msg-poll-question" id={qId}>
-        {renderMessageEntities(q, qE, client, t)}
-        {pollP.quiz ? <span> · {t("chat.pollQuiz")}</span> : null}
-        {closed ? <span> — {t("chat.pollClosed")}</span> : null}
+      <div className="msg-poll-head">
+        <div className="msg-poll-question" id={qId}>
+          {pollP.quiz ? <span className="msg-poll-qbadge" aria-hidden>★</span> : null}
+          <span className="msg-poll-qtext">{renderMessageEntities(q, qE, client, t)}</span>
+        </div>
+        <p className="msg-poll-subtitle">
+          {[
+            pollP.quiz ? t("chat.pollQuiz") : null,
+            pollP.publicVoters ? t("chat.pollSubtitlePublic") : t("chat.pollSubtitleAnonymous"),
+            multi ? t("chat.pollSubtitleMultiple") : t("chat.pollSubtitleSingle"),
+            closed ? t("chat.pollClosedLong") : null,
+          ].filter(Boolean).join(" · ")}
+        </p>
       </div>
       {res?.min && !hasVoted && !closed
         ? <p className="msg-poll-hint" role="note">{t("chat.pollResultsAfterVote")}</p>
@@ -288,6 +319,7 @@ export function MessagePollView({
                 busy={busy}
                 vote={(bytes) => { void vote(bytes) }}
                 setVPop={setVPop}
+                onMultiPendingChange={setMultiPending}
               />
             )
           : (
@@ -374,18 +406,25 @@ export function MessagePollView({
               </ol>
             )}
       </div>
-      {tot > 0
+      {!closed && tot > 0
         ? (
             <div className="msg-poll-total">
               {t("chat.pollTotal", { n: tot })}
             </div>
           )
         : null}
+      {closed && tot > 0
+        ? (
+            <div className="msg-poll-foot">
+              <span className="msg-poll-foot__badge">{t("chat.pollFinalResults")}</span>
+              <span className="msg-poll-foot__meta">{t("chat.pollTotal", { n: tot })}</span>
+            </div>
+          )
+        : null}
       {pollP.quiz && res?.solution
         ? (
-            <div className="msg-poll-sol">
-              {t("chat.pollAnswer")}
-              {" "}
+            <div className="msg-poll-explain">
+              <span className="msg-poll-explain__label">{t("chat.pollSolutionHeading")}</span>
               {res.solution}
             </div>
           )
