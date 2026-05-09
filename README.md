@@ -1,5 +1,7 @@
 # Telegramito
 
+[![CI](https://github.com/bthos/telegramito/actions/workflows/ci.yml/badge.svg)](https://github.com/bthos/telegramito/actions/workflows/ci.yml)
+
 A static, browser-only Telegram client built on [GramJS](https://gram.js.org/) (MTProto). No first-party backend — the session and all settings live on the device.
 
 ## Features

@@ -1,9 +1,26 @@
+# MTProto layer check, lint, test, and on main — GitHub Pages deploy after verify passes.
+#
+# Pages one-time setup:
+# 1. Settings → Pages → Source: GitHub Actions
+# 2. Settings → Secrets and variables → Actions → add:
+#    - VITE_TELEGRAM_API_ID
+#    - VITE_TELEGRAM_API_HASH
+#    (same values as local `.env`; they are baked into the client bundle at build time.)
+
 name: CI
 
 on:
   push:
     branches: [main, master]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   verify:
@@ -28,3 +45,51 @@ jobs:
         run: npm run build
       - name: Test
         run: npm test
+
+  pages-build:
+    needs: verify
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Init submodules
+        run: git submodule update --init --recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_TELEGRAM_API_ID: ${{ secrets.VITE_TELEGRAM_API_ID }}
+          VITE_TELEGRAM_API_HASH: ${{ secrets.VITE_TELEGRAM_API_HASH }}
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  pages-deploy:
+    needs: pages-build
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
