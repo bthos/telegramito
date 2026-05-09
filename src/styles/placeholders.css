@@ -15,6 +15,12 @@
   animation: none;
 }
 
+/* Tap-to-load preview: same visible skeleton, no spinner */
+.msg-media--pending .media-placeholder {
+  opacity: 1;
+  animation: none;
+}
+
 /* ── Media placeholder variants ─────────────────────── */
 .media-placeholder {
   background: var(--placeholder-bg);

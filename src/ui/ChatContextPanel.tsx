@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { useTranslation } from "react-i18next"
@@ -70,7 +70,7 @@ function videoMimeForThumb(message: Api.Message): string {
   return "video/mp4"
 }
 
-/** Thumbnail cell: downloads media blob and renders <img> or <video> for photo/video messages. */
+/** Thumbnail cell: tap loads blob once, then renders <img> or <video>. */
 function MediaThumbCell({
   message,
   client,
@@ -78,22 +78,31 @@ function MediaThumbCell({
   message: Api.Message
   client: TelegramClient | null
 }) {
+  const { t } = useTranslation()
   const blobUrlRef = useRef<string | null>(null)
+  const inFlight = useRef(false)
+  const [phase, setPhase] = useState<"idle" | "loading" | "ready">("idle")
   const [thumb, setThumb] = useState<
     { url: string; kind: "photo" | "video" } | null
   >(null)
 
   useEffect(() => {
-    if (!client) return
-    let cancelled = false
-    queueMicrotask(() => {
-      if (!cancelled) setThumb(null)
-    })
+    inFlight.current = false
+    setPhase("idle")
+    setThumb(null)
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current)
+      blobUrlRef.current = null
+    }
+  }, [message, client])
 
+  const loadThumb = useCallback(() => {
+    if (!client || inFlight.current) return
+    inFlight.current = true
+    setPhase("loading")
     void (async () => {
       try {
         const buf = await client.downloadMedia(message as never, {})
-        if (cancelled) return
         if (buf) {
           const kind = mediaThumbKind(message)
           const mime = kind === "video" ? videoMimeForThumb(message) : "image/jpeg"
@@ -103,47 +112,49 @@ function MediaThumbCell({
           }
           blobUrlRef.current = nextUrl
           setThumb({ url: nextUrl, kind })
+          setPhase("ready")
+        } else {
+          setPhase("idle")
         }
       } catch {
-        // silently ignore thumbnail errors
+        setPhase("idle")
+      } finally {
+        inFlight.current = false
       }
     })()
+  }, [client, message])
 
-    return () => {
-      cancelled = true
-      if (blobUrlRef.current) {
-        URL.revokeObjectURL(blobUrlRef.current)
-        blobUrlRef.current = null
-      }
-    }
-  }, [message, client])
-
-  if (!thumb) {
+  if (phase === "ready" && thumb) {
     return (
-      <div
-        className="context-panel__media-cell context-panel__media-cell--loading"
-        aria-hidden="true"
-      />
+      <div className="context-panel__media-cell">
+        <a href={thumb.url} target="_blank" rel="noopener noreferrer" tabIndex={0}>
+          {thumb.kind === "video" ? (
+            <video
+              className="context-panel__media-thumb-video"
+              src={thumb.url}
+              muted
+              playsInline
+              preload="metadata"
+              aria-hidden
+            />
+          ) : (
+            <img src={thumb.url} alt="" loading="lazy" />
+          )}
+        </a>
+      </div>
     )
   }
 
   return (
-    <div className="context-panel__media-cell">
-      <a href={thumb.url} target="_blank" rel="noopener noreferrer" tabIndex={0}>
-        {thumb.kind === "video" ? (
-          <video
-            className="context-panel__media-thumb-video"
-            src={thumb.url}
-            muted
-            playsInline
-            preload="metadata"
-            aria-hidden
-          />
-        ) : (
-          <img src={thumb.url} alt="" loading="lazy" />
-        )}
-      </a>
-    </div>
+    <button
+      type="button"
+      className={`context-panel__media-cell context-panel__media-cell--tap${phase === "loading" ? " context-panel__media-cell--loading" : ""}`}
+      aria-label={t("chat.mediaTapToLoad")}
+      onClick={() => {
+        loadThumb()
+      }}
+      disabled={!client || phase === "loading"}
+    />
   )
 }
 

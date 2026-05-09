@@ -2271,6 +2271,26 @@ button.msg-img-link {
   background: rgba(0, 0, 0, 0.2);
 }
 
+button.msg-wp-thumb.msg-wp-thumb--tap {
+  display: block;
+  padding: 0;
+  margin: 0;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  align-self: flex-start;
+  background: var(--placeholder-bg, rgba(255, 255, 255, 0.08));
+}
+
+button.msg-wp-thumb.msg-wp-thumb--tap:focus-visible {
+  outline: 2px solid var(--ds-chat-accent, var(--ds-color-primary));
+  outline-offset: 2px;
+}
+
+.msg-wp-thumb.msg-wp-thumb--busy {
+  pointer-events: none;
+}
+
 .msg-bubble--in .msg-webpage {
   background: color-mix(in srgb, var(--ds-chat-accent) 7%, rgba(0, 0, 0, 0.1));
 }
@@ -3839,6 +3859,26 @@ button.msg-bubble-action:hover {
 .context-panel__empty { font-size: 0.88rem; color: var(--muted); margin: 0; }
 .context-panel__media-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
 .context-panel__media-cell { aspect-ratio: 1; overflow: hidden; background: var(--clr-surface-raised, var(--bg-raised)); }
+button.context-panel__media-cell {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+button.context-panel__media-cell:focus-visible {
+  outline: 2px solid var(--ds-chat-accent, var(--ds-color-primary));
+  outline-offset: 2px;
+}
+button.context-panel__media-cell:disabled {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+.context-panel__media-cell--tap:not(.context-panel__media-cell--loading) {
+  background: var(--placeholder-bg, rgba(255,255,255,0.07));
+}
 .context-panel__media-cell--loading {
   background: var(--placeholder-bg, rgba(255,255,255,0.07));
   animation: placeholder-shimmer 1.4s ease-in-out infinite;

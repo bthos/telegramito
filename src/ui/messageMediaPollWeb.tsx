@@ -1,6 +1,6 @@
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { isSameOptionBytes } from "../telegram/pollOptions"
 import {
   type PollOptionBytes,
@@ -63,50 +63,91 @@ function urlHintFromMessageBody(m: Api.Message): string {
   return ""
 }
 
-export function useWpPreview(m: Api.Message, c: TelegramClient | null, no: boolean) {
-  const [u, setU] = useState<string | null>(null)
-  const last = useRef<string | null>(null)
+export type WpThumbPhase = "none" | "idle" | "loading" | "ready"
+
+/**
+ * Webpage preview image: idle until {@link requestThumb} runs (tap-to-load), then loads a small thumb via MTProto.
+ */
+export function useWpPreview(
+  m: Api.Message,
+  c: TelegramClient | null,
+  no: boolean,
+): {
+  thumbUrl: string | null
+  thumbPhase: WpThumbPhase
+  requestThumb: () => void
+} {
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null)
+  const [phase, setPhase] = useState<WpThumbPhase>("none")
+  const blobRef = useRef<string | null>(null)
+  const fetchGen = useRef(0)
+
   useEffect(() => {
-    if (last.current) {
-      URL.revokeObjectURL(last.current)
-      last.current = null
+    fetchGen.current += 1
+    if (blobRef.current) {
+      URL.revokeObjectURL(blobRef.current)
+      blobRef.current = null
     }
     queueMicrotask(() => {
-      setU(null)
+      setThumbUrl(null)
     })
-    if (no || !c) {
-      return
-    }
-    if (m.media?.className !== "MessageMediaWebPage") {
-      return
-    }
-    const w = (m.media as Api.MessageMediaWebPage).webpage
-    if (!w || w.className !== "WebPage" || !(w as Api.WebPage).photo) {
-      return
-    }
-    let a = true
-    void c.downloadMedia(m, { thumb: 0 } as { thumb: number }).then((b) => {
-      if (!a || b == null) {
-        return
-      }
-      const o = makeBlobUrl(b, "image/jpeg")
-      if (a) {
-        if (last.current) {
-          URL.revokeObjectURL(last.current)
-        }
-        last.current = o
-        setU(o)
-      }
+
+    const wantsThumb =
+      !no
+      && c != null
+      && m.media?.className === "MessageMediaWebPage"
+      && (() => {
+        const wp = (m.media as Api.MessageMediaWebPage).webpage
+        return (
+          wp != null
+          && wp.className === "WebPage"
+          && Boolean((wp as Api.WebPage).photo)
+        )
+      })()
+
+    queueMicrotask(() => {
+      setPhase(wantsThumb ? "idle" : "none")
     })
+
     return () => {
-      a = false
-      if (last.current) {
-        URL.revokeObjectURL(last.current)
-        last.current = null
+      fetchGen.current += 1
+      if (blobRef.current) {
+        URL.revokeObjectURL(blobRef.current)
+        blobRef.current = null
       }
     }
-  }, [c, m, m.id, no, m.media])
-  return u
+  }, [c, no, m.id, m.media])
+
+  const requestThumb = useCallback(() => {
+    if (!c || no) return
+    if (m.media?.className !== "MessageMediaWebPage") return
+    const wp = (m.media as Api.MessageMediaWebPage).webpage
+    if (!wp || wp.className !== "WebPage" || !(wp as Api.WebPage).photo) return
+
+    const gen = fetchGen.current
+    setPhase("loading")
+    void c.downloadMedia(m, { thumb: 0 } as { thumb: number })
+      .then((b) => {
+        if (gen !== fetchGen.current) return
+        if (b == null) {
+          setPhase("none")
+          return
+        }
+        const o = makeBlobUrl(b, "image/jpeg")
+        if (blobRef.current) {
+          URL.revokeObjectURL(blobRef.current)
+        }
+        blobRef.current = o
+        setThumbUrl(o)
+        setPhase("ready")
+      })
+      .catch(() => {
+        if (gen !== fetchGen.current) return
+        setPhase("none")
+      })
+  }, [c, no, m])
+
+  return { thumbUrl, thumbPhase: phase, requestThumb }
 }
 
 export function PollReadonly({
@@ -277,12 +318,14 @@ function WebIvModal({
 }
 
 export function WebPageView({
-  m, no, t, thumb, viewerContext,
+  m, no, t, thumbUrl, thumbPhase, onThumbRequest, viewerContext,
 }: {
   m: Api.Message
   no: boolean
   t: MessageMediaTranslateFn
-  thumb: string | null
+  thumbUrl: string | null
+  thumbPhase: WpThumbPhase
+  onThumbRequest: () => void
   viewerContext?: MediaViewerContext | null
 }) {
   const [ivOpen, setIvOpen] = useState(false)
@@ -305,7 +348,7 @@ export function WebPageView({
     }
     const safe = safeWebHref(href)
     const hasTextMeta = Boolean(w.siteName || w.title || w.description)
-    const compact = Boolean(thumb)
+    const hasPhoto = Boolean(w.photo)
     const descrText = w.description && w.description.length > 300
       ? `${w.description.slice(0, 300)}…`
       : (w.description ?? "")
@@ -317,39 +360,66 @@ export function WebPageView({
         {!hasTextMeta ? <div className="msg-wp-title">{w.displayUrl || w.url}</div> : null}
       </>
     )
-    return (
-      <>
-        <div className="msg-webpage-stack" data-media-state="preview">
+    const showThumbSlot = hasPhoto && thumbPhase !== "none"
+    const stack = (
+      <div className="msg-webpage-stack" data-media-state="preview">
+        {showThumbSlot ? (
+          <div className="msg-webpage msg-webpage--compact">
+            {thumbPhase === "idle" ? (
+              <button
+                type="button"
+                className="msg-wp-thumb msg-wp-thumb--tap"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onThumbRequest()
+                }}
+                aria-label={te("chat.mediaTapToLoad")}
+              />
+            ) : thumbPhase === "loading" ? (
+              <div
+                className="msg-wp-thumb msg-wp-thumb--busy placeholder--shimmer"
+                aria-busy="true"
+                role="status"
+              />
+            ) : thumbUrl ? (
+              <img className="msg-wp-thumb" src={thumbUrl} alt="" />
+            ) : null}
+            <a
+              className="msg-webpage__col"
+              href={safe}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={t("chat.openLink")}
+            >
+              {inner}
+            </a>
+          </div>
+        ) : (
           <a
-            className={compact ? "msg-webpage msg-webpage--compact" : "msg-webpage"}
+            className="msg-webpage"
             href={safe}
             target="_blank"
             rel="noopener noreferrer"
             title={t("chat.openLink")}
           >
-            {compact ? (
-              <>
-                <img className="msg-wp-thumb" src={thumb!} alt="" />
-                <div className="msg-webpage__col">{inner}</div>
-              </>
-            ) : (
-              <>
-                {inner}
-                {thumb ? <img className="msg-wp-preview" src={thumb} alt="" /> : null}
-              </>
-            )}
+            {inner}
           </a>
-          <div className="msg-webpage-toolbar">
-            <button type="button" className="msg-webpage-iv" onClick={() => setIvOpen(true)}>
-              {te("chat.webIvOpen")}
-            </button>
-          </div>
+        )}
+        <div className="msg-webpage-toolbar">
+          <button type="button" className="msg-webpage-iv" onClick={() => setIvOpen(true)}>
+            {te("chat.webIvOpen")}
+          </button>
         </div>
+      </div>
+    )
+    return (
+      <>
+        {stack}
         {ivOpen ? (
           <WebIvModal
             w={w}
             caption={viewerContext?.caption ?? ""}
-            thumbUrl={thumb}
+            thumbUrl={thumbUrl}
             safeHref={safe}
             onClose={() => setIvOpen(false)}
           />

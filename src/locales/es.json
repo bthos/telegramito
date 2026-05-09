@@ -134,6 +134,8 @@
     "imageViewerClose": "Cerrar",
     "imageViewerBackdrop": "Cerrar imagen ampliada",
     "mediaDownloadProgress": "Descargando…",
+    "mediaTapToLoad": "Cargar contenido",
+    "mediaTapToLoadHint": "Toca para cargar",
     "expandVideo": "Abrir vídeo a pantalla completa",
     "videoViewerDialog": "Visor de vídeo",
     "videoPlay": "Reproducir",

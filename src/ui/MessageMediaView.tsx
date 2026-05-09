@@ -1,6 +1,6 @@
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 import { getMessageDocument, getDocumentFileName, formatDocumentSize } from "../telegram/documentFile"
 import { getMessageMediaTypeLabel } from "../telegram/dialogPreview"
@@ -56,19 +56,36 @@ type MediaBlobState =
   | { k: "au"; u: string; voice: boolean }
   | { k: "at"; u: string; name: string; sizeStr: string }
   | { k: "z" } /* no preview */
+  | { k: "w" } /* tap to fetch blob */
   | { k: "d" } /* load */
   | { k: "e" } /* err */
   | { k: "f" } /* filter */
 
+/** True when {@link useBlob} would run a document/photo download (not the async fall-through → z path). */
+function mediaNeedsBlobFetch(media: Api.TypeMessageMedia | undefined, d: Api.Document | null): boolean {
+  if (!media) return false
+  if (media.className === "MessageMediaPhoto") return true
+  return media.className === "MessageMediaDocument" && d != null
+}
+
 function useBlob(
   m: Api.Message,
   c: TelegramClient | null,
-  filterGifs: boolean
-) {
-  const [s, setS] = useState<MediaBlobState>({ k: "d" })
+  filterGifs: boolean,
+): [MediaBlobState, () => void] {
+  const [loadRequested, setLoadRequested] = useState(false)
+  const [s, setS] = useState<MediaBlobState>({ k: "w" })
   const uref = useRef<string | null>(null)
   const media = m.media
   const d = getMessageDocument(m)
+
+  useEffect(() => {
+    setLoadRequested(false)
+  }, [m.id])
+
+  const requestLoad = useCallback(() => {
+    setLoadRequested(true)
+  }, [])
 
   useEffect(() => {
     if (uref.current) {
@@ -100,6 +117,14 @@ function useBlob(
           setS({ k: "f" })
           return
         }
+      }
+      if (!mediaNeedsBlobFetch(media, d)) {
+        setS({ k: "z" })
+        return
+      }
+      if (!loadRequested) {
+        setS({ k: "w" })
+        return
       }
       setS({ k: "d" })
       void (async () => {
@@ -268,8 +293,8 @@ function useBlob(
         uref.current = null
       }
     }
-  }, [c, filterGifs, media, d, m])
-  return s
+  }, [c, filterGifs, media, d, m, loadRequested])
+  return [s, requestLoad]
 }
 
 function PaidBundlePreviewRow({
@@ -451,8 +476,8 @@ export function MessageMediaView({
     return resolveMessageMediaForDisplay(message)
   }, [message, paidBundleSlots, renderPaidAsBundle])
 
-  const wpT = useWpPreview(resolved, client, noPreview)
-  const s = useBlob(blobSourceMessage, client, filterGifs)
+  const wpPreview = useWpPreview(resolved, client, noPreview)
+  const [s, requestLoad] = useBlob(blobSourceMessage, client, filterGifs)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [videoFullOpen, setVideoFullOpen] = useState(false)
   const errLabel = te("error")
@@ -546,13 +571,60 @@ export function MessageMediaView({
     )
   }
   if (resolved.media?.className === "MessageMediaWebPage" && !noPreview) {
-    return <WebPageView m={resolved} no={noPreview} t={t} thumb={wpT} viewerContext={viewerContext} />
+    return (
+      <WebPageView
+        m={resolved}
+        no={noPreview}
+        t={t}
+        thumbUrl={wpPreview.thumbUrl}
+        thumbPhase={wpPreview.thumbPhase}
+        onThumbRequest={wpPreview.requestThumb}
+        viewerContext={viewerContext}
+      />
+    )
   }
   if (isNonBlobVisualMedia(resolved.media)) {
     return <MessageMediaStatic m={resolved} t={t} />
   }
   if (s.k === "f") {
     return <div className="msg-media msg-media--filtered" role="status">{t("chat.filteredGif")}</div>
+  }
+  if (s.k === "w") {
+    const placeholderType = resolveMediaPlaceholderType(resolved, getMessageDocument(resolved))
+    const compact = mediaLoadingIsCompact(placeholderType)
+    const tapLabel = te("chat.mediaTapToLoad")
+    return (
+      <div
+        className={
+          compact
+            ? "msg-media msg-media--pending ds-media-loading ds-media-loading--compact"
+            : "msg-media msg-media--pending ds-media-loading"
+        }
+        data-media-state="preview"
+      >
+        <button
+          type="button"
+          className="msg-media-pending-hit"
+          aria-label={tapLabel}
+          onClick={(e) => {
+            e.stopPropagation()
+            requestLoad()
+          }}
+        >
+          <MediaPlaceholder type={placeholderType} shimmer={false} />
+        </button>
+        {!compact ? (
+          <div className="media-loading-foot" role="status">
+            <span className="media-loading-foot__hint">{te("chat.mediaTapToLoadHint")}</span>
+            {viewerContext?.sentAtLabel ? (
+              <span className="media-loading-foot__time">{viewerContext.sentAtLabel}</span>
+            ) : (
+              <span className="media-loading-foot__time" aria-hidden />
+            )}
+          </div>
+        ) : null}
+      </div>
+    )
   }
   if (s.k === "d") {
     const placeholderType = resolveMediaPlaceholderType(resolved, getMessageDocument(resolved))

@@ -134,6 +134,8 @@
     "imageViewerClose": "Зачыніць",
     "imageViewerBackdrop": "Зачыніць павялічаную выяву",
     "mediaDownloadProgress": "Загрузка…",
+    "mediaTapToLoad": "Загрузіць медыя",
+    "mediaTapToLoadHint": "Націсніце, каб загрузіць",
     "expandVideo": "На ўвесь экран",
     "videoViewerDialog": "Відэапрайгравальнік",
     "videoPlay": "Прайграць",
