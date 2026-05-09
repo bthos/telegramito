@@ -5,6 +5,8 @@ import type { ChatDatedItem } from "../ui/ChatMessagesVirtualList"
 
 const VIRTUAL_MSG_THRESHOLD_FOR_SCROLL = 48
 
+type StickTailMarker = number | "empty" | null
+
 export function useChatScroll(opts: {
   scrollRef: RefObject<HTMLDivElement | null>
   datedList: readonly ChatDatedItem[]
@@ -24,6 +26,8 @@ export function useChatScroll(opts: {
   const { scrollRef, datedList, list, loadingOlder, hasMoreOlder, loadOlder, convKey } = opts
 
   const stickToEndRef = useRef(true)
+  /** `null` after thread switch: next layout should snap once real tail is known. */
+  const lastStickTailIdRef = useRef<StickTailMarker>(null)
   const pendingScrollFixRef = useRef<{
     type: "prepend"
     prevTop: number
@@ -36,6 +40,7 @@ export function useChatScroll(opts: {
 
   useEffect(() => {
     stickToEndRef.current = true
+    lastStickTailIdRef.current = null
     queueMicrotask(() => {
       setStickyRowIndex(0)
       setScrollFabVisible(false)
@@ -89,22 +94,39 @@ export function useChatScroll(opts: {
     if (p) {
       const h = el.scrollHeight
       el.scrollTop = p.prevTop + (h - p.prevHeight)
-      pendingScrollFixRef.current = null
+      // Older fetch: `loadingOlder` toggles before `list` updates (and the virtual list shows a
+      // top hint). Keep the baseline until the request finishes so both paints get one formula.
+      if (!loadingOlder) {
+        pendingScrollFixRef.current = null
+      }
       syncStickyChatDateShortList()
       return
     }
     if (stickToEndRef.current) {
-      const snap = () => {
-        el.scrollTop = el.scrollHeight
+      const tailMsg = list.length > 0 ? list[list.length - 1] : undefined
+      const tailMarker: StickTailMarker =
+        tailMsg && typeof tailMsg.id === "number" ? tailMsg.id : "empty"
+      const prevMarker = lastStickTailIdRef.current
+      const shouldSnapToEnd =
+        prevMarker === null ||
+        (typeof tailMarker === "number" &&
+          (prevMarker === "empty" ||
+            (typeof prevMarker === "number" && tailMarker !== prevMarker)))
+      lastStickTailIdRef.current = tailMarker
+      if (!shouldSnapToEnd) {
+        syncStickyChatDateShortList()
+        return
       }
-      snap()
+      el.scrollTop = el.scrollHeight
       requestAnimationFrame(() => {
-        snap()
-        requestAnimationFrame(snap)
+        const cur = scrollRef.current
+        if (cur === el) {
+          el.scrollTop = el.scrollHeight
+        }
       })
     }
     syncStickyChatDateShortList()
-  }, [list, syncStickyChatDateShortList, scrollRef])
+  }, [list, loadingOlder, syncStickyChatDateShortList, scrollRef])
 
   const scrollToLatestMessages = useCallback(() => {
     const el = scrollRef.current
@@ -112,6 +134,9 @@ export function useChatScroll(opts: {
       return
     }
     stickToEndRef.current = true
+    const tailMsg = list.length > 0 ? list[list.length - 1] : undefined
+    lastStickTailIdRef.current =
+      tailMsg && typeof tailMsg.id === "number" ? tailMsg.id : "empty"
     const snap = () => {
       el.scrollTop = el.scrollHeight
     }
@@ -121,7 +146,7 @@ export function useChatScroll(opts: {
       requestAnimationFrame(snap)
     })
     setScrollFabVisible(false)
-  }, [scrollRef])
+  }, [scrollRef, list])
 
   const onScroll = useCallback(() => {
     const el = scrollRef.current

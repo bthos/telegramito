@@ -15,10 +15,75 @@
   animation: none;
 }
 
-/* Tap-to-load preview: same visible skeleton, no spinner */
 .msg-media--pending .media-placeholder {
   opacity: 1;
   animation: none;
+}
+
+/* Tap-to-load preview: visible “preview column” — soft gradient (not flat skeleton / not shimmer) */
+.msg-media--pending .media-placeholder--pending.media-placeholder--visual {
+  background: var(--ds-media-preview-shade);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.msg-media--pending .media-placeholder--pending.media-placeholder--gif {
+  background:
+    radial-gradient(120% 90% at 30% 20%, #ffae3a 0%, #ff5e5b 35%, #b15bef 75%, #1b1f4d 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.msg-media--pending .media-placeholder--pending.media-placeholder--gif .media-placeholder__gif-splash,
+.msg-media--pending .media-placeholder--pending.media-placeholder--gif .media-placeholder__gif-streaks {
+  opacity: 1;
+}
+
+.msg-media--pending .media-placeholder--pending.media-placeholder--sticker {
+  background: var(--ds-media-preview-shade);
+}
+
+.msg-media--pending .media-placeholder--pending.media-placeholder--audio .media-placeholder__avatar,
+.msg-media--pending .media-placeholder--pending.media-placeholder--audio .media-placeholder__waveform {
+  background: color-mix(in srgb, var(--ds-chat-accent) 28%, var(--placeholder-bg));
+}
+
+.msg-media--pending .media-placeholder--pending.media-placeholder--attachment .media-placeholder__icon {
+  background: color-mix(in srgb, var(--ds-chat-accent) 32%, var(--placeholder-bg));
+}
+
+.msg-media--pending .media-placeholder--pending.media-placeholder--attachment .media-placeholder__text-line {
+  background: color-mix(in srgb, var(--ds-chat-accent) 22%, var(--placeholder-bg));
+}
+
+.media-placeholder__video-play-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.38);
+  border: 2px solid rgba(255, 255, 255, 0.88);
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.media-placeholder__video-play-center::after {
+  content: "";
+  position: absolute;
+  left: 54%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 8px 0 8px 13px;
+  border-color: transparent transparent transparent rgba(255, 255, 255, 0.95);
+}
+
+html[data-theme="light"] .msg-bubble--in .media-placeholder__video-play-center {
+  border-color: rgba(255, 255, 255, 0.95);
 }
 
 /* ── Media placeholder variants ─────────────────────── */
@@ -36,6 +101,47 @@
 /* Video fetch: same frame as photo but with a small play affordance (design-system-media preview state) */
 .media-placeholder--video {
   position: relative;
+}
+
+.media-placeholder--gif {
+  position: relative;
+}
+
+.media-placeholder__gif-splash {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 70% 80%, rgba(76, 217, 194, 0.55) 0 18%, transparent 22%),
+    radial-gradient(circle at 30% 75%, rgba(255, 255, 255, 0.32) 0 8%, transparent 12%),
+    radial-gradient(circle at 85% 30%, rgba(255, 217, 122, 0.65) 0 10%, transparent 16%);
+  pointer-events: none;
+}
+
+.media-placeholder__gif-streaks {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    115deg,
+    transparent 0 18px,
+    rgba(255, 255, 255, 0.16) 18px 20px
+  );
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.media-placeholder__gif-tag {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 2;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  pointer-events: none;
 }
 
 .media-placeholder__video-play-hint {

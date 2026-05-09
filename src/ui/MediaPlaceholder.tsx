@@ -2,6 +2,7 @@ import { Api } from "telegram"
 import { useTranslation } from "react-i18next"
 import { getDocumentFileName } from "../telegram/documentFile"
 import {
+  isAnimatedDoc,
   isCustomEmojiDoc,
   isStickerDoc,
   isVideoDoc,
@@ -10,6 +11,7 @@ import {
 export type MediaPlaceholderType =
   | "photo"
   | "video"
+  | "gif"
   | "audio"
   | "voice"
   | "attachment"
@@ -21,6 +23,10 @@ interface MediaPlaceholderProps {
   height?: number | string
   /** Shimmer skeleton (DS-07). Default true. */
   shimmer?: boolean
+  /**
+   * `pending` — tap-to-load shell inside a control; decorative only (matches UX preview column, not loading skeleton).
+   */
+  variant?: "default" | "pending"
 }
 
 /**
@@ -30,6 +36,7 @@ interface MediaPlaceholderProps {
  *   1. sticker / custom-emoji
  *   2. video (via DocumentAttributeVideo or video/* mime)
  *   2b. video via filename .mp4/.webm/.mov/.m4v when mime is vague
+ *   2c. animated (DocumentAttributeAnimated), non-video → gif (gif.html)
  *   3. image/* mime → photo
  *   4. audio with voice=true → voice
  *   5. audio (non-voice) → audio
@@ -56,6 +63,11 @@ export function resolveMediaPlaceholderType(
     const fn = getDocumentFileName(d)?.toLowerCase() ?? ""
     if (/\.(mp4|webm|mov|m4v)$/.test(fn)) {
       return "video"
+    }
+
+    // Branch 2c: animated image / GIF-as-image (not classified as video above)
+    if (isAnimatedDoc(d)) {
+      return "gif"
     }
 
     // Branch 3: photo via image mime
@@ -91,23 +103,31 @@ export function resolveMediaPlaceholderType(
  * All carry `role="status"`, `aria-busy="true"`, and a translated aria-label.
  * Optional `placeholder--shimmer` via `shimmer` (default true).
  */
-export function MediaPlaceholder({ type, width, height, shimmer = true }: MediaPlaceholderProps) {
+export function MediaPlaceholder({
+  type,
+  width,
+  height,
+  shimmer = true,
+  variant = "default",
+}: MediaPlaceholderProps) {
   const { t } = useTranslation()
   const label = t("chat.mediaLoading")
+  const pending = variant === "pending"
+  const shimmerClass = shimmer ? " placeholder--shimmer" : ""
+  const pendingClass = pending ? " media-placeholder--pending" : ""
+  const rootAttrs = pending
+    ? { role: "presentation" as const, "aria-hidden": true as const }
+    : { role: "status" as const, "aria-label": label, "aria-busy": true as const }
 
   const style: React.CSSProperties = {}
   if (width != null) style.width = typeof width === "number" ? `${width}px` : width
   if (height != null) style.height = typeof height === "number" ? `${height}px` : height
 
-  const shimmerClass = shimmer ? " placeholder--shimmer" : ""
-
   if (type === "sticker") {
     return (
       <div
-        className={`media-placeholder media-placeholder--sticker${shimmerClass}`}
-        role="status"
-        aria-label={label}
-        aria-busy="true"
+        className={`media-placeholder media-placeholder--sticker${pendingClass}${shimmerClass}`}
+        {...rootAttrs}
         style={style}
       />
     )
@@ -116,13 +136,28 @@ export function MediaPlaceholder({ type, width, height, shimmer = true }: MediaP
   if (type === "video") {
     return (
       <div
-        className={`media-placeholder media-placeholder--visual media-placeholder--video${shimmerClass}`}
-        role="status"
-        aria-label={label}
-        aria-busy="true"
+        className={`media-placeholder media-placeholder--visual media-placeholder--video${pendingClass}${shimmerClass}`}
+        {...rootAttrs}
         style={style}
       >
-        <span className="media-placeholder__video-play-hint" aria-hidden="true" />
+        {!pending ? <span className="media-placeholder__video-play-hint" aria-hidden="true" /> : null}
+        {pending ? <span className="media-placeholder__video-play-center" aria-hidden="true" /> : null}
+      </div>
+    )
+  }
+
+  if (type === "gif") {
+    return (
+      <div
+        className={`media-placeholder media-placeholder--visual media-placeholder--gif${pendingClass}${shimmerClass}`}
+        {...rootAttrs}
+        style={style}
+      >
+        <span className="media-placeholder__gif-splash" aria-hidden="true" />
+        <span className="media-placeholder__gif-streaks" aria-hidden="true" />
+        <span className="media-placeholder__gif-tag" aria-hidden="true">
+          GIF
+        </span>
       </div>
     )
   }
@@ -130,10 +165,8 @@ export function MediaPlaceholder({ type, width, height, shimmer = true }: MediaP
   if (type === "photo") {
     return (
       <div
-        className={`media-placeholder media-placeholder--visual${shimmerClass}`}
-        role="status"
-        aria-label={label}
-        aria-busy="true"
+        className={`media-placeholder media-placeholder--visual${pendingClass}${shimmerClass}`}
+        {...rootAttrs}
         style={style}
       />
     )
@@ -142,10 +175,8 @@ export function MediaPlaceholder({ type, width, height, shimmer = true }: MediaP
   if (type === "audio" || type === "voice") {
     return (
       <div
-        className={`media-placeholder media-placeholder--audio${shimmerClass}`}
-        role="status"
-        aria-label={label}
-        aria-busy="true"
+        className={`media-placeholder media-placeholder--audio${pendingClass}${shimmerClass}`}
+        {...rootAttrs}
         style={style}
       >
         <div className="media-placeholder__avatar" aria-hidden="true" />
@@ -157,10 +188,8 @@ export function MediaPlaceholder({ type, width, height, shimmer = true }: MediaP
   // type === "attachment"
   return (
     <div
-      className={`media-placeholder media-placeholder--attachment${shimmerClass}`}
-      role="status"
-      aria-label={label}
-      aria-busy="true"
+      className={`media-placeholder media-placeholder--attachment${pendingClass}${shimmerClass}`}
+      {...rootAttrs}
       style={style}
     >
       <div className="media-placeholder__icon" aria-hidden="true" />

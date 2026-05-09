@@ -3,7 +3,7 @@
  * Telegram-style indeterminate progress + shared media glyphs.
  */
 
-/* ── Inline media loading (preview + skeleton + ring) ───────── */
+/* ── Inline media: downloading (skeleton + ring) ─────────────── */
 .ds-media-loading {
   position: relative;
   display: block;
@@ -34,9 +34,24 @@
   height: 36px;
 }
 
-/* Tap-to-load: full-width hit target over skeleton (no .tg-progress child) */
-.msg-media--pending {
-  min-height: 3rem;
+/* ── Tap-to-load: UX “preview” column (mock `.artefacts/ux-analysis/preview/*.html`) ── */
+.ds-media-pending {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: min(100%, 20rem);
+  box-sizing: border-box;
+  min-height: 2.5rem;
+}
+
+.ds-media-pending .media-placeholder {
+  width: 100%;
+}
+
+.ds-media-pending--compact {
+  width: auto;
+  max-width: min(100%, 20rem);
+  min-height: 0;
 }
 
 .msg-media-pending-hit {
@@ -59,7 +74,11 @@
   outline-offset: 2px;
 }
 
-.ds-media-loading--compact.msg-media--pending {
+.ds-media-pending.msg-media--pending {
+  min-height: 3rem;
+}
+
+.ds-media-pending--compact.msg-media--pending {
   min-height: 0;
 }
 

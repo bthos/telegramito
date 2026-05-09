@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import type { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { telegramEntityDisplayName } from "../util/telegramEntityDisplayName"
+import { peerKeyFromPeer } from "../telegram/peerKey"
 
 /** Module-level cache: peerKey → display name. Session-scoped, never evicted. */
 const nameCache = new Map<string, string>()
@@ -9,20 +10,6 @@ const nameCache = new Map<string, string>()
 /** For tests only — clears the module-level cache between test cases. */
 export function _clearCacheForTest(): void {
   nameCache.clear()
-}
-
-function peerKey(peerId: Api.TypePeer | undefined): string {
-  if (peerId == null) return ""
-  if (peerId.className === "PeerUser") {
-    return `u:${String((peerId as Api.PeerUser).userId)}`
-  }
-  if (peerId.className === "PeerChannel") {
-    return `c:${String((peerId as Api.PeerChannel).channelId)}`
-  }
-  if (peerId.className === "PeerChat") {
-    return `h:${String((peerId as Api.PeerChat).chatId)}`
-  }
-  return ""
 }
 
 /**
@@ -37,7 +24,7 @@ export function usePeerName(
   peerId: Api.TypePeer | undefined,
   client: TelegramClient | null,
 ): string {
-  const key = peerKey(peerId)
+  const key = peerKeyFromPeer(peerId)
 
   const [name, setName] = useState<string>(() => {
     if (!key) return ""

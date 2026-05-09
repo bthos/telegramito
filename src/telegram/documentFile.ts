@@ -50,6 +50,12 @@ export function safeFileDownloadName(name: string): string {
   return t0.replace(/[\\/:*?"<>|]+/g, "_").slice(0, 200) || "file"
 }
 
+/** Uppercase extension badge (max 4 chars), e.g. `report.pdf` → `PDF`. */
+export function documentExtensionLabel(fileName: string): string {
+  const i = fileName.lastIndexOf(".")
+  return i >= 0 ? fileName.slice(i + 1).toUpperCase().slice(0, 4) : "FILE"
+}
+
 export function formatDocumentSize(size: unknown): string {
   if (size == null) return ""
   if (typeof size === "object" && size != null) {

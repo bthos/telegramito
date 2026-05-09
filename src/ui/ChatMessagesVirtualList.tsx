@@ -2,6 +2,7 @@ import { Api } from "telegram"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
@@ -9,6 +10,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react"
+import { peerKeyFromPeer } from "../telegram/peerKey"
 
 export type ChatDatedItem =
   | { kind: "sep"; dayKey: string; ts: number }
@@ -55,12 +57,23 @@ export const ChatMessagesVirtualList = forwardRef<
   },
   ref,
 ) {
+  const getItemKey = useCallback(
+    (index: number) => {
+      const row = datedList[index]
+      if (!row) return index
+      if (row.kind === "sep") return `sep-${row.dayKey}`
+      return `msg-${peerKeyFromPeer(row.message.peerId)}-${row.message.id}`
+    },
+    [datedList],
+  )
+
   const lastStickyReportRef = useRef<number>(-1)
 
   const rowVirtualizer = useVirtualizer({
     count: datedList.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: (index) => (datedList[index]?.kind === "sep" ? 38 : 58),
+    getItemKey,
     overscan: 8,
   })
 

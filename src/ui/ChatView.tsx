@@ -51,6 +51,7 @@ import {
   readOutboxMaxIdFromDialog,
 } from "../telegram/messageTickState"
 import { forwardMessageInCurrentChat } from "../telegram/forwardInChat"
+import { peerKeyFromPeer } from "../telegram/peerKey"
 import { ChatSearchBar } from "./ChatSearchBar"
 import { insertAtCursor } from "../util/insertAtCursor"
 import { useInChatSearch } from "../hooks/useInChatSearch"
@@ -1255,7 +1256,9 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
               </li>
             ) : null}
             {datedList.map((item, index) => {
-              const k = item.kind === "sep" ? `date-${item.dayKey}` : `msg-${item.message.id}`
+              const k = item.kind === "sep"
+                ? `date-${item.dayKey}`
+                : `msg-${peerKeyFromPeer(item.message.peerId)}-${item.message.id}`
               return (
                 <Fragment key={k}>
                   {renderDatedItem(item, "list", index)}

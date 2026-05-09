@@ -152,6 +152,13 @@
   --placeholder-bg:      rgba(255, 255, 255, 0.07);
   --placeholder-shimmer: rgba(255, 255, 255, 0.13);
   --placeholder-delay:   100ms;
+  /** Inline “preview” column (tap-to-load) — aligns with `.artefacts/ux-analysis/preview/*.html` */
+  --ds-media-preview-shade: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ds-chat-accent) 42%, var(--ds-color-elevated)) 0%,
+    color-mix(in srgb, var(--ds-color-primary) 26%, var(--ds-color-sink)) 45%,
+    color-mix(in srgb, #a855f7 24%, var(--ds-color-sink-deep)) 100%
+  );
 
   --compose-max-height: 120px;
 

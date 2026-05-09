@@ -1,16 +1,16 @@
 import type { ImgHTMLAttributes } from "react"
-import logoUrl from "../assets/brand-mark.svg?url"
+import { appIconUrl } from "../util/appIconUrl"
 
 type Props = Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "alt"> & {
   alt?: string
 }
 
-/** App mark: squircle + send (favicon + topbar). */
+/** App mark: same SVG as PWA / favicon (`public/favicon.svg`). */
 export function TelegramMark({ className, alt = "", title, ...rest }: Props) {
   return (
     <img
       className={className}
-      src={logoUrl}
+      src={appIconUrl()}
       alt={alt}
       title={title}
       decoding="async"

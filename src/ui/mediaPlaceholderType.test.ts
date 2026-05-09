@@ -2,8 +2,7 @@
  * Unit tests for resolveMediaPlaceholderType helper.
  *
  * The helper is a pure function that maps (resolved: Api.Message, d: Api.Document | null)
- * to a MediaPlaceholderType string.  We test all 7 branches defined in the tech-plan plus
- * the safe fallback, using minimal hand-crafted fakes — no GramJS runtime required.
+ * to a MediaPlaceholderType string.  We exercise the resolver branches with minimal fakes.
  *
  * The implementation lives in src/ui/MediaPlaceholder.tsx once Cmok builds it.
  * Bagnik gates on these tests passing after Cmok's build.
@@ -92,6 +91,16 @@ describe("resolveMediaPlaceholderType", () => {
     expect(resolveMediaPlaceholderType(msg, d)).toBe("video")
   })
 
+  // Branch 2d: animated GIF / animated image (gif.html) — not classified as video
+  it("returns 'gif' for animated image/webp (DocumentAttributeAnimated)", () => {
+    const d = makeDoc({
+      mimeType: "image/webp",
+      attributes: [makeAttr("DocumentAttributeAnimated")],
+    })
+    const msg = makeMsg()
+    expect(resolveMediaPlaceholderType(msg, d)).toBe("gif")
+  })
+
   // Branch 3: photo via image mime
   it("returns 'photo' for a document with image/* mime", () => {
     const d = makeDoc({ mimeType: "image/jpeg" })
@@ -162,6 +171,18 @@ describe("resolveMediaPlaceholderType", () => {
       attributes: [
         makeAttr("DocumentAttributeSticker"),
         makeAttr("DocumentAttributeVideo"),
+      ],
+    })
+    const msg = makeMsg()
+    expect(resolveMediaPlaceholderType(msg, d)).toBe("sticker")
+  })
+
+  it("returns 'sticker' (not gif) when animated webp is still a sticker pack asset", () => {
+    const d = makeDoc({
+      mimeType: "image/webp",
+      attributes: [
+        makeAttr("DocumentAttributeSticker"),
+        makeAttr("DocumentAttributeAnimated"),
       ],
     })
     const msg = makeMsg()

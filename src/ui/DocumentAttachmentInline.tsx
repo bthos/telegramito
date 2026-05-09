@@ -1,13 +1,8 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { safeFileDownloadName } from "../telegram/documentFile"
+import { safeFileDownloadName, documentExtensionLabel } from "../telegram/documentFile"
 import type { Api } from "telegram"
 import { ModalChrome } from "./ModalChrome"
-
-function extFromName(name: string): string {
-  const i = name.lastIndexOf(".")
-  return i >= 0 ? name.slice(i + 1).toUpperCase().slice(0, 4) : "FILE"
-}
 
 export function DocumentAttachmentInline({
   url,
@@ -23,7 +18,7 @@ export function DocumentAttachmentInline({
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const dName = safeFileDownloadName(name)
-  const ext = extFromName(name)
+  const ext = documentExtensionLabel(name)
   void _doc
   const sub = [sizeStr].filter(Boolean).join(" · ")
 

@@ -2,7 +2,7 @@ import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
-import { getMessageDocument, getDocumentFileName, formatDocumentSize } from "../telegram/documentFile"
+import { getMessageDocument, getDocumentFileName, formatDocumentSize, documentExtensionLabel } from "../telegram/documentFile"
 import { getMessageMediaTypeLabel } from "../telegram/dialogPreview"
 import {
   isAnimatedDoc,
@@ -34,6 +34,7 @@ import { VoiceMessageInline } from "./VoiceMessageInline"
 import { AudioTrackInline } from "./AudioTrackInline"
 import { DocumentAttachmentInline } from "./DocumentAttachmentInline"
 import { StickerInline } from "./StickerInline"
+import { peerKeyFromPeer } from "../telegram/peerKey"
 
 import type { MediaViewerContext } from "./mediaViewerContext"
 
@@ -73,18 +74,23 @@ function useBlob(
   c: TelegramClient | null,
   filterGifs: boolean,
 ): [MediaBlobState, () => void] {
-  const [loadRequested, setLoadRequested] = useState(false)
+  const loadRequestedRef = useRef(false)
+  const fetchGenRef = useRef(0)
+  const [loadNonce, setLoadNonce] = useState(0)
   const [s, setS] = useState<MediaBlobState>({ k: "w" })
   const uref = useRef<string | null>(null)
-  const media = m.media
-  const d = getMessageDocument(m)
+  const messageRef = useRef(m)
+  messageRef.current = m
+  const boundSigRef = useRef<string>("")
 
-  useEffect(() => {
-    setLoadRequested(false)
-  }, [m.id])
+  const dTop = getMessageDocument(m)
+  const docIdKey = dTop?.id != null ? String(dTop.id) : ""
+  const mediaCn = m.media?.className ?? ""
+  const peerKeyStr = peerKeyFromPeer(m.peerId)
 
   const requestLoad = useCallback(() => {
-    setLoadRequested(true)
+    loadRequestedRef.current = true
+    setLoadNonce((n) => n + 1)
   }, [])
 
   useEffect(() => {
@@ -93,8 +99,22 @@ function useBlob(
       uref.current = null
     }
     let on = true
+
+    const msg = messageRef.current
+    const mid = msg.id ?? -1
+    const sig = `${peerKeyFromPeer(msg.peerId)}:${mid}`
+    if (boundSigRef.current !== sig) {
+      boundSigRef.current = sig
+      loadRequestedRef.current = false
+      fetchGenRef.current += 1
+    }
+
     queueMicrotask(() => {
       if (!on) return
+      const m0 = messageRef.current
+      const media = m0.media
+      const d = getMessageDocument(m0)
+
       if (!c) {
         setS({ k: "z" })
         return
@@ -103,7 +123,7 @@ function useBlob(
         !media
         || media.className === "MessageMediaEmpty"
         || media.className === "MessageMediaWebPage"
-        || getMessageMediaPollFromMessage(m)
+        || getMessageMediaPollFromMessage(m0)
       ) {
         setS({ k: "z" })
         return
@@ -122,112 +142,109 @@ function useBlob(
         setS({ k: "z" })
         return
       }
-      if (!loadRequested) {
+      if (!loadRequestedRef.current) {
         setS({ k: "w" })
         return
       }
+
+      const gen = ++fetchGenRef.current
+      const alive = () => on && gen === fetchGenRef.current
+
       setS({ k: "d" })
       void (async () => {
-      const img = (buf: unknown, mt: string) => {
-        const u = makeBlobUrl(buf, mt)
-        if (on) {
+        const img = (buf: unknown, mt: string) => {
+          const u = makeBlobUrl(buf, mt)
+          if (!alive()) {
+            URL.revokeObjectURL(u)
+            return
+          }
           uref.current = u
           setS({ k: "i", u })
-        } else {
-          URL.revokeObjectURL(u)
         }
-      }
-      const vid = (buf: unknown, mt: string, loop: boolean) => {
-        const u = makeBlobUrl(buf, mt)
-        if (on) {
+        const vid = (buf: unknown, mt: string, loop: boolean) => {
+          const u = makeBlobUrl(buf, mt)
+          if (!alive()) {
+            URL.revokeObjectURL(u)
+            return
+          }
           uref.current = u
           setS({ k: "v", u, loop })
-        } else {
-          URL.revokeObjectURL(u)
         }
-      }
-      try {
-        if (d) {
-          if (isTgsShapedDoc(d) && isStickerDoc(d)) {
-            const b0 = await c.downloadMedia(m, { thumb: 0 } as { thumb: number })
-            const b = b0 ?? (await c.downloadMedia(m, {}))
-            if (on) {
+        try {
+          if (d) {
+            if (isTgsShapedDoc(d) && isStickerDoc(d)) {
+              const b0 = await c.downloadMedia(m0, { thumb: 0 } as { thumb: number })
+              const b = b0 ?? (await c.downloadMedia(m0, {}))
+              if (!alive()) return
               if (b) {
                 img(b, "image/webp")
               } else {
                 setS({ k: "z" })
               }
+              return
             }
-            return
-          }
-          if (isCustomEmojiDoc(d) || (isStickerDoc(d) && !isTgsShapedDoc(d))) {
-            const b2 = await c.downloadMedia(m, {})
-            if (on) {
+            if (isCustomEmojiDoc(d) || (isStickerDoc(d) && !isTgsShapedDoc(d))) {
+              const b2 = await c.downloadMedia(m0, {})
+              if (!alive()) return
               if (b2) {
                 img(b2, d.mimeType || "image/webp")
               } else {
                 setS({ k: "z" })
               }
+              return
             }
-            return
-          }
-          if (isAnimatedDoc(d) && d.mimeType?.startsWith("image/")) {
-            const b2 = await c.downloadMedia(m, {})
-            if (on) {
+            if (isAnimatedDoc(d) && d.mimeType?.startsWith("image/")) {
+              const b2 = await c.downloadMedia(m0, {})
+              if (!alive()) return
               if (b2) {
                 img(b2, d.mimeType || "image/webp")
               } else {
                 setS({ k: "e" })
               }
+              return
             }
-            return
-          }
-          if (isAnimatedDoc(d) && d.mimeType?.includes("video")) {
-            const b2 = await c.downloadMedia(m, {})
-            if (on) {
+            if (isAnimatedDoc(d) && d.mimeType?.includes("video")) {
+              const b2 = await c.downloadMedia(m0, {})
+              if (!alive()) return
               if (b2) {
                 vid(b2, d.mimeType || "video/mp4", true)
               } else {
                 setS({ k: "e" })
               }
+              return
             }
-            return
-          }
-          {
-            const mtLower = d.mimeType?.toLowerCase() ?? ""
-            const hasVideoMime = mtLower.startsWith("video/")
-            /** TL often omits or mislabels mime; trust DocumentAttributeVideo or a video/* mime. */
-            if (isVideoDoc(d) || (hasVideoMime && !isAnimatedDoc(d))) {
-              const b2 = await c.downloadMedia(m, {})
-              if (on) {
+            {
+              const mtLower = d.mimeType?.toLowerCase() ?? ""
+              const hasVideoMime = mtLower.startsWith("video/")
+              if (isVideoDoc(d) || (hasVideoMime && !isAnimatedDoc(d))) {
+                const b2 = await c.downloadMedia(m0, {})
+                if (!alive()) return
                 if (b2) {
                   const mt = hasVideoMime ? (d.mimeType || "video/mp4") : "video/mp4"
                   vid(b2, mt, false)
                 } else {
                   setS({ k: "e" })
                 }
+                return
               }
-              return
             }
-          }
-          if (d.mimeType?.startsWith("image/")) {
-            const b2 = await c.downloadMedia(m, {})
-            if (on) {
+            if (d.mimeType?.startsWith("image/")) {
+              const b2 = await c.downloadMedia(m0, {})
+              if (!alive()) return
               if (b2) {
                 img(b2, d.mimeType)
               } else {
                 setS({ k: "e" })
               }
+              return
             }
-            return
-          }
-          {
-            const audioA = d.attributes?.find(
-              (x) => x.className === "DocumentAttributeAudio"
-            ) as Api.DocumentAttributeAudio | undefined
-            if (audioA) {
-              const b2 = await c.downloadMedia(m, {})
-              if (on) {
+            {
+              const audioA = d.attributes?.find(
+                (x) => x.className === "DocumentAttributeAudio",
+              ) as Api.DocumentAttributeAudio | undefined
+              if (audioA) {
+                const b2 = await c.downloadMedia(m0, {})
+                if (!alive()) return
                 if (b2) {
                   const mt =
                     d.mimeType
@@ -235,21 +252,28 @@ function useBlob(
                       ? "audio/ogg"
                       : "audio/mpeg")
                   const u = makeBlobUrl(b2, mt)
+                  if (!alive()) {
+                    URL.revokeObjectURL(u)
+                    return
+                  }
                   uref.current = u
                   setS({ k: "au", u, voice: Boolean(audioA.voice) })
                 } else {
                   setS({ k: "e" })
                 }
+                return
               }
-              return
             }
-          }
-          {
-            const b2 = await c.downloadMedia(m, {})
-            if (on) {
+            {
+              const b2 = await c.downloadMedia(m0, {})
+              if (!alive()) return
               if (b2) {
                 const mt = d.mimeType || "application/octet-stream"
                 const u = makeBlobUrl(b2, mt)
+                if (!alive()) {
+                  URL.revokeObjectURL(u)
+                  return
+                }
                 uref.current = u
                 const n0 = getDocumentFileName(d) || "file"
                 setS({
@@ -264,36 +288,35 @@ function useBlob(
             }
             return
           }
-        }
-        if (media.className === "MessageMediaPhoto") {
-          const b2 = await c.downloadMedia(m, {})
-          if (on) {
+          if (media.className === "MessageMediaPhoto") {
+            const b2 = await c.downloadMedia(m0, {})
+            if (!alive()) return
             if (b2) {
               img(b2, "image/jpeg")
             } else {
               setS({ k: "e" })
             }
+            return
           }
-          return
+          if (alive()) {
+            setS({ k: "z" })
+          }
+        } catch {
+          if (alive()) {
+            setS({ k: "e" })
+          }
         }
-        if (on) {
-          setS({ k: "z" })
-        }
-      } catch {
-        if (on) {
-          setS({ k: "e" })
-        }
-      }
       })()
     })
     return () => {
       on = false
+      fetchGenRef.current += 1
       if (uref.current) {
         URL.revokeObjectURL(uref.current)
         uref.current = null
       }
     }
-  }, [c, filterGifs, media, d, m, loadRequested])
+  }, [c, filterGifs, m.id, loadNonce, mediaCn, docIdKey, peerKeyStr])
   return [s, requestLoad]
 }
 
@@ -333,6 +356,323 @@ function PaidBundlePreviewRow({
           {te("chat.paidBundleVideoDuration", { s: String(dur) })}
         </span>
       ) : null}
+    </div>
+  )
+}
+
+function documentAttachmentLabels(
+  resolved: Api.Message,
+): { name: string; sizeStr: string; ext: string } | null {
+  const d = getMessageDocument(resolved)
+  if (!d) return null
+  const name = getDocumentFileName(d) || "file"
+  const sizeStr = formatDocumentSize(d.size)
+  const ext = documentExtensionLabel(name)
+  return { name, sizeStr, ext }
+}
+
+function DocumentAttachmentDeferredRow({
+  name,
+  sizeStr,
+  ext,
+  onActivate,
+  ariaLabel,
+}: {
+  name: string
+  sizeStr: string
+  ext: string
+  onActivate: () => void
+  ariaLabel: string
+}) {
+  return (
+    <div className="msg-doc-row msg-doc-row--deferred" data-media-state="preview">
+      <button
+        type="button"
+        className="msg-doc-row__main"
+        onClick={(e) => {
+          e.stopPropagation()
+          onActivate()
+        }}
+        aria-label={ariaLabel}
+      >
+        <span
+          className={`msg-doc-row__icon ${ext === "PDF" ? "msg-doc-row__icon--pdf" : ""}`}
+          aria-hidden
+        >
+          {ext}
+        </span>
+        <span className="msg-doc-row__body">
+          <span className="msg-doc-row__title">{name}</span>
+          {sizeStr ? <span className="msg-doc-row__sub">{sizeStr}</span> : null}
+        </span>
+      </button>
+    </div>
+  )
+}
+
+function DocumentAttachmentLoadingRow({
+  name,
+  sizeStr,
+  hint,
+  timeLabel,
+}: {
+  name: string
+  sizeStr: string
+  hint: string
+  timeLabel: string | null
+}) {
+  return (
+    <div className="msg-media msg-media--doc-fetch" data-media-state="loading">
+      <div className="msg-doc-row msg-doc-row--loading">
+        <div className="msg-doc-row__loading-inner">
+          <div className="msg-doc-row__icon msg-doc-row__icon--busy">
+            <TgProgressIndeterminate />
+          </div>
+          <div className="msg-doc-row__body">
+            <div className="msg-doc-row__title">{name}</div>
+            {sizeStr ? <div className="msg-doc-row__sub">{sizeStr}</div> : null}
+          </div>
+        </div>
+      </div>
+      <div className="media-loading-foot" role="status">
+        <span className="media-loading-foot__hint">{hint}</span>
+        {timeLabel ? (
+          <span className="media-loading-foot__time">{timeLabel}</span>
+        ) : (
+          <span className="media-loading-foot__time" aria-hidden />
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Tap-to-load photo — `.artefacts/ux-analysis/preview/photo.html` (preview). */
+function PhotoDeferredPending({
+  onActivate,
+  tapLabel,
+  footHint,
+  sentAtLabel,
+}: {
+  onActivate: () => void
+  tapLabel: string
+  footHint: string
+  sentAtLabel: string | null
+}) {
+  return (
+    <div className="msg-photo-deferred" data-media-state="preview">
+      <button
+        type="button"
+        className="msg-photo-deferred__hit"
+        aria-label={tapLabel}
+        onClick={(e) => {
+          e.stopPropagation()
+          onActivate()
+        }}
+      >
+        <div className="msg-photo-deferred__canvas" aria-hidden>
+          <span className="msg-photo-deferred__sun" />
+          <span className="msg-photo-deferred__horizon" />
+          <span className="msg-photo-deferred__ridge" />
+        </div>
+      </button>
+      <div className="media-pending-foot" role="status">
+        <span className="media-pending-foot__hint">{footHint}</span>
+        {sentAtLabel ? (
+          <span className="media-pending-foot__time">{sentAtLabel}</span>
+        ) : (
+          <span className="media-pending-foot__time" aria-hidden />
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Photo download in progress — same mock (loading / uploading row). */
+function PhotoDeferredLoading({
+  hint,
+  timeLabel,
+}: {
+  hint: string
+  timeLabel: string | null
+}) {
+  return (
+    <div className="msg-media msg-media--photo-fetch" data-media-state="loading">
+      <div className="msg-photo-deferred__canvas msg-photo-deferred__canvas--busy" aria-hidden>
+        <span className="msg-photo-deferred__sun" />
+        <span className="msg-photo-deferred__horizon" />
+        <span className="msg-photo-deferred__ridge" />
+        <div className="msg-photo-deferred__progress">
+          <TgProgressIndeterminate />
+        </div>
+      </div>
+      <div className="media-loading-foot" role="status">
+        <span className="media-loading-foot__hint">{hint}</span>
+        {timeLabel ? (
+          <span className="media-loading-foot__time">{timeLabel}</span>
+        ) : (
+          <span className="media-loading-foot__time" aria-hidden />
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Tap-to-load animated GIF / animated image — `.artefacts/ux-analysis/preview/gif.html`. */
+function GifDeferredPending({
+  onActivate,
+  tapLabel,
+  footHint,
+  sentAtLabel,
+}: {
+  onActivate: () => void
+  tapLabel: string
+  footHint: string
+  sentAtLabel: string | null
+}) {
+  return (
+    <div className="msg-gif-deferred" data-media-state="preview">
+      <button
+        type="button"
+        className="msg-gif-deferred__hit"
+        aria-label={tapLabel}
+        onClick={(e) => {
+          e.stopPropagation()
+          onActivate()
+        }}
+      >
+        <div className="msg-gif-deferred__canvas" aria-hidden>
+          <span className="msg-gif-deferred__splash" />
+          <span className="msg-gif-deferred__streaks" />
+          <span className="msg-gif-deferred__tag">GIF</span>
+        </div>
+      </button>
+      <div className="media-pending-foot" role="status">
+        <span className="media-pending-foot__hint">{footHint}</span>
+        {sentAtLabel ? (
+          <span className="media-pending-foot__time">{sentAtLabel}</span>
+        ) : (
+          <span className="media-pending-foot__time" aria-hidden />
+        )}
+      </div>
+    </div>
+  )
+}
+
+function GifDeferredLoading({
+  hint,
+  timeLabel,
+}: {
+  hint: string
+  timeLabel: string | null
+}) {
+  return (
+    <div className="msg-media msg-media--gif-fetch" data-media-state="loading">
+      <div className="msg-gif-deferred__canvas msg-gif-deferred__canvas--busy" aria-hidden>
+        <span className="msg-gif-deferred__splash" />
+        <span className="msg-gif-deferred__streaks" />
+        <span className="msg-gif-deferred__tag">GIF</span>
+        <div className="msg-gif-deferred__progress">
+          <TgProgressIndeterminate />
+        </div>
+      </div>
+      <div className="media-loading-foot" role="status">
+        <span className="media-loading-foot__hint">{hint}</span>
+        {timeLabel ? (
+          <span className="media-loading-foot__time">{timeLabel}</span>
+        ) : (
+          <span className="media-loading-foot__time" aria-hidden />
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Tap-to-load / fetching video chrome — aligns with `.artefacts/ux-analysis/preview/video.html`. */
+function VideoDeferredPending({
+  resolved,
+  onActivate,
+  tapLabel,
+  footHint,
+  sentAtLabel,
+}: {
+  resolved: Api.Message
+  onActivate: () => void
+  tapLabel: string
+  footHint: string
+  sentAtLabel: string | null
+}) {
+  const d = getMessageDocument(resolved)
+  const round = d ? isRoundVideoDoc(d) : false
+  const durSec = getVideoDurationSeconds(d)
+  const durationLabel = durSec != null ? formatVideoDuration(durSec) : null
+  const frameClass = round
+    ? "msg-video-deferred__frame msg-video-deferred__frame--round"
+    : "msg-video-deferred__frame"
+  return (
+    <div
+      className={
+        round ? "msg-video-deferred msg-video-deferred--round" : "msg-video-deferred"
+      }
+      data-media-state="preview"
+    >
+      <button
+        type="button"
+        className="msg-video-deferred__hit"
+        aria-label={tapLabel}
+        onClick={(e) => {
+          e.stopPropagation()
+          onActivate()
+        }}
+      >
+        <div className={frameClass}>
+          <span className="msg-video-deferred__play ds-glyph ds-glyph--lg" aria-hidden />
+          {durationLabel ? (
+            <span className="msg-video-thumb__duration">{durationLabel}</span>
+          ) : null}
+        </div>
+      </button>
+      <div className="media-pending-foot" role="status">
+        <span className="media-pending-foot__hint">{footHint}</span>
+        {sentAtLabel ? (
+          <span className="media-pending-foot__time">{sentAtLabel}</span>
+        ) : (
+          <span className="media-pending-foot__time" aria-hidden />
+        )}
+      </div>
+    </div>
+  )
+}
+
+function VideoDeferredLoading({
+  hint,
+  timeLabel,
+  round = false,
+}: {
+  hint: string
+  timeLabel: string | null
+  round?: boolean
+}) {
+  const frameClass = round
+    ? "msg-video-deferred__frame msg-video-deferred__frame--busy msg-video-deferred__frame--round"
+    : "msg-video-deferred__frame msg-video-deferred__frame--busy"
+  return (
+    <div
+      className={
+        round ? "msg-media msg-media--video-fetch msg-media--video-fetch--round" : "msg-media msg-media--video-fetch"
+      }
+      data-media-state="loading"
+    >
+      <div className={frameClass}>
+        <TgProgressIndeterminate />
+      </div>
+      <div className="media-loading-foot" role="status">
+        <span className="media-loading-foot__hint">{hint}</span>
+        {timeLabel ? (
+          <span className="media-loading-foot__time">{timeLabel}</span>
+        ) : (
+          <span className="media-loading-foot__time" aria-hidden />
+        )}
+      </div>
     </div>
   )
 }
@@ -593,12 +933,57 @@ export function MessageMediaView({
     const placeholderType = resolveMediaPlaceholderType(resolved, getMessageDocument(resolved))
     const compact = mediaLoadingIsCompact(placeholderType)
     const tapLabel = te("chat.mediaTapToLoad")
+    if (placeholderType === "attachment") {
+      const docMeta = documentAttachmentLabels(resolved)
+      if (docMeta) {
+        return (
+          <DocumentAttachmentDeferredRow
+            name={docMeta.name}
+            sizeStr={docMeta.sizeStr}
+            ext={docMeta.ext}
+            ariaLabel={tapLabel}
+            onActivate={requestLoad}
+          />
+        )
+      }
+    }
+    if (placeholderType === "video") {
+      return (
+        <VideoDeferredPending
+          resolved={resolved}
+          onActivate={requestLoad}
+          tapLabel={tapLabel}
+          footHint={te("chat.mediaTapToLoadHint")}
+          sentAtLabel={viewerContext?.sentAtLabel ?? null}
+        />
+      )
+    }
+    if (placeholderType === "gif") {
+      return (
+        <GifDeferredPending
+          onActivate={requestLoad}
+          tapLabel={tapLabel}
+          footHint={te("chat.mediaTapToLoadHint")}
+          sentAtLabel={viewerContext?.sentAtLabel ?? null}
+        />
+      )
+    }
+    if (placeholderType === "photo") {
+      return (
+        <PhotoDeferredPending
+          onActivate={requestLoad}
+          tapLabel={tapLabel}
+          footHint={te("chat.mediaTapToLoadHint")}
+          sentAtLabel={viewerContext?.sentAtLabel ?? null}
+        />
+      )
+    }
     return (
       <div
         className={
           compact
-            ? "msg-media msg-media--pending ds-media-loading ds-media-loading--compact"
-            : "msg-media msg-media--pending ds-media-loading"
+            ? "msg-media msg-media--pending ds-media-pending ds-media-pending--compact"
+            : "msg-media msg-media--pending ds-media-pending"
         }
         data-media-state="preview"
       >
@@ -611,15 +996,15 @@ export function MessageMediaView({
             requestLoad()
           }}
         >
-          <MediaPlaceholder type={placeholderType} shimmer={false} />
+          <MediaPlaceholder type={placeholderType} shimmer={false} variant="pending" />
         </button>
         {!compact ? (
-          <div className="media-loading-foot" role="status">
-            <span className="media-loading-foot__hint">{te("chat.mediaTapToLoadHint")}</span>
+          <div className="media-pending-foot" role="status">
+            <span className="media-pending-foot__hint">{te("chat.mediaTapToLoadHint")}</span>
             {viewerContext?.sentAtLabel ? (
-              <span className="media-loading-foot__time">{viewerContext.sentAtLabel}</span>
+              <span className="media-pending-foot__time">{viewerContext.sentAtLabel}</span>
             ) : (
-              <span className="media-loading-foot__time" aria-hidden />
+              <span className="media-pending-foot__time" aria-hidden />
             )}
           </div>
         ) : null}
@@ -629,6 +1014,46 @@ export function MessageMediaView({
   if (s.k === "d") {
     const placeholderType = resolveMediaPlaceholderType(resolved, getMessageDocument(resolved))
     const compact = mediaLoadingIsCompact(placeholderType)
+    if (placeholderType === "attachment") {
+      const docMeta = documentAttachmentLabels(resolved)
+      if (docMeta) {
+        return (
+          <DocumentAttachmentLoadingRow
+            name={docMeta.name}
+            sizeStr={docMeta.sizeStr}
+            hint={te("chat.mediaDownloadProgress")}
+            timeLabel={viewerContext?.sentAtLabel ?? null}
+          />
+        )
+      }
+    }
+    if (placeholderType === "video") {
+      const dV = getMessageDocument(resolved)
+      const roundV = dV ? isRoundVideoDoc(dV) : false
+      return (
+        <VideoDeferredLoading
+          hint={te("chat.mediaDownloadProgress")}
+          timeLabel={viewerContext?.sentAtLabel ?? null}
+          round={roundV}
+        />
+      )
+    }
+    if (placeholderType === "gif") {
+      return (
+        <GifDeferredLoading
+          hint={te("chat.mediaDownloadProgress")}
+          timeLabel={viewerContext?.sentAtLabel ?? null}
+        />
+      )
+    }
+    if (placeholderType === "photo") {
+      return (
+        <PhotoDeferredLoading
+          hint={te("chat.mediaDownloadProgress")}
+          timeLabel={viewerContext?.sentAtLabel ?? null}
+        />
+      )
+    }
     return (
       <div
         className={

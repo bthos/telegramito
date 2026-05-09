@@ -15,13 +15,13 @@ import { ThemeProvider } from "./context/ThemeContext"
 import { TelegramProvider } from "./context/TelegramContext"
 import App from "./App"
 import "./index.css"
-import faviconUrl from "./assets/brand-mark.svg?url"
+import { appIconUrl } from "./util/appIconUrl"
 
 {
   const link = document.createElement("link")
   link.rel = "icon"
   link.type = "image/svg+xml"
-  link.href = faviconUrl
+  link.href = appIconUrl()
   document.head.appendChild(link)
 }
 
