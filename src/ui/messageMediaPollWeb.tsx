@@ -1,6 +1,6 @@
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { isSameOptionBytes } from "../telegram/pollOptions"
 import {
   type PollOptionBytes,
@@ -133,10 +133,7 @@ export function PollReadonly({
   const hasVoted = res ? pollUserHasVoted(pollP, res) : false
   const showStats = res ? shouldShowPollResultBreakdown(res, hasVoted, closed) : false
   const multi = Boolean(pollP.multipleChoice)
-  const mediaState = useMemo(
-    () => (closed && showStats ? "full" : "preview"),
-    [closed, showStats]
-  )
+  const mediaState = closed && showStats ? "full" : "preview"
   return (
     <div className="msg-poll" data-media-state={mediaState}>
       <div className="msg-poll-head">
