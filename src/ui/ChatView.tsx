@@ -11,7 +11,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react"
-import { createPortal } from "react-dom"
+import { createPortal, flushSync } from "react-dom"
 import { useTranslation } from "react-i18next"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import { useTelegram } from "../context/TelegramContext"
@@ -23,6 +23,7 @@ import { useForumTopics } from "../hooks/useForumTopics"
 import { useChatMessages } from "../hooks/useChatMessages"
 import { useReadReceipt } from "../hooks/useReadReceipt"
 import { useChatScroll } from "../hooks/useChatScroll"
+import { useViewportMessageSlice } from "../hooks/useViewportMessageSlice"
 import { requestChatAccessForDialog } from "../parental/requestAccess"
 import { formatMessageDateSeparator, formatMessageTime, getLocalDayKey, getStickyDateTsForRow } from "../util/timeFormat"
 import {
@@ -65,11 +66,7 @@ import { MessageMediaView } from "./MessageMediaView"
 import { MessageReactionPicker } from "./MessageReactionPicker"
 import { MessageReactionsView } from "./MessageReactionsView"
 import { MessageReplyView } from "./MessageReplyView"
-import {
-  ChatMessagesVirtualList,
-  type ChatDatedItem,
-  type ChatMessagesVirtualListHandle,
-} from "./ChatMessagesVirtualList"
+import type { ChatDatedItem } from "./chatDatedItem"
 import { MessageListSkeleton } from "./MessageListSkeleton"
 import { ChatInfoIcon, SearchInChatIcon } from "./ChatChromeIcons"
 import { ChatContextPanel } from "./ChatContextPanel"
@@ -91,7 +88,6 @@ type Props = {
 
 type ChatListItem = ChatDatedItem
 
-const VIRTUAL_MSG_THRESHOLD = 48
 const MAX_COMPOSE_HEIGHT = 120
 
 /** DOM mount for narrow layout chat title (see `MainShell` mobile header). */
@@ -148,7 +144,6 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   )
   const [draft, setDraft] = useState("")
   const scrollRef = useRef<HTMLDivElement | null>(null)
-  const virtualListRef = useRef<ChatMessagesVirtualListHandle | null>(null)
   const jumpDateButtonRef = useRef<HTMLButtonElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   /** Snapshot selection when textarea blurs (emoji picker, etc.). */
@@ -413,7 +408,6 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     scrollFabVisible,
     stickyRowIndex,
     onScroll,
-    onVirtualStickyRow,
     scrollToLatestMessages,
   } = useChatScroll({
     scrollRef,
@@ -424,6 +418,26 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     loadOlder,
     convKey,
   })
+
+  const {
+    sliceActive,
+    sliceStart,
+    sliceEnd,
+    topSpacerPx,
+    bottomSpacerPx,
+    onViewportSliceScroll,
+    expandToRowIndex,
+  } = useViewportMessageSlice({
+    scrollRef,
+    datedList,
+    convKey,
+    loadingOlder,
+  })
+
+  const handleMessageScroll = useCallback(() => {
+    onScroll()
+    onViewportSliceScroll()
+  }, [onScroll, onViewportSliceScroll])
 
   const stickyDateTs = useMemo(
     () => getStickyDateTsForRow(datedList, stickyRowIndex),
@@ -451,6 +465,9 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       const anchorId =
         row.kind === "msg" && row.message.id != null ? String(row.message.id) : null
       const root = scrollRef.current
+      flushSync(() => {
+        expandToRowIndex(rowIdx)
+      })
       const alignToDay = () => {
         const node = anchorId
           ? (root?.querySelector(
@@ -461,19 +478,9 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             ) as HTMLElement | null)
         node?.scrollIntoView({ block: "start", behavior: "smooth" })
       }
-      if (datedList.length > VIRTUAL_MSG_THRESHOLD) {
-        // TanStack Virtual's offsets are for .msg-list--virtual only, but scrollRef is the
-        // whole thread scroller (sticky date pill, load-older hint, …). scrollToIndex alone
-        // often lands short so the target row never mounts — then nothing appears to scroll.
-        virtualListRef.current?.scrollToRowIndex(rowIdx, { align: "start", behavior: "auto" })
-        requestAnimationFrame(() => {
-          requestAnimationFrame(alignToDay)
-        })
-      } else {
-        alignToDay()
-      }
+      alignToDay()
     },
-    [datedList]
+    [datedList, expandToRowIndex],
   )
 
   const openSearchMode = useCallback(() => {
@@ -566,20 +573,16 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     if (idx < 0) {
       return
     }
+    flushSync(() => {
+      expandToRowIndex(idx)
+    })
     pendingScrollToMessageIdRef.current = null
-    if (datedList.length > VIRTUAL_MSG_THRESHOLD) {
-      virtualListRef.current?.scrollToMessageId(id, datedList, {
-        align: "center",
-        behavior: "smooth",
-      })
-    } else {
-      const root = scrollRef.current
-      const node = root?.querySelector(
-        `[data-chat-row-index="${idx}"]`,
-      ) as HTMLElement | null
-      node?.scrollIntoView({ block: "center", behavior: "smooth" })
-    }
-  }, [datedList])
+    const root = scrollRef.current
+    const node = root?.querySelector(
+      `[data-chat-message-id="${CSS.escape(String(id))}"]`,
+    ) as HTMLElement | null
+    node?.scrollIntoView({ block: "center", behavior: "smooth" })
+  }, [datedList, expandToRowIndex])
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -844,8 +847,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   )
 
   const renderDatedItem = useCallback(
-    (item: ChatListItem, layout: "list" | "virtual", rowIndex: number): ReactNode => {
-      const asVirtual = layout === "virtual"
+    (item: ChatListItem, rowIndex: number): ReactNode => {
       if (item.kind === "sep") {
         const timeEl = (
           <time
@@ -860,17 +862,6 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             {formatMessageDateSeparator(item.ts, i18n.language)}
           </time>
         )
-        if (asVirtual) {
-          return (
-            <div
-              className="msg-date"
-              role="presentation"
-              data-chat-day-key={item.dayKey}
-            >
-              {timeEl}
-            </div>
-          )
-        }
         return (
           <li
             className="msg-date"
@@ -990,13 +981,6 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             {bubble}
           </InboundClusterRow>
         ) : bubble
-      if (asVirtual) {
-        return (
-          <div className={gutterClass} data-chat-message-id={String(m.id)}>
-            {bubbleWithAttribution}
-          </div>
-        )
-      }
       return (
         <li
           className={gutterClass}
@@ -1193,7 +1177,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
               : "message-scroll__inner"
           }
           ref={scrollRef}
-          onScroll={onScroll}
+          onScroll={handleMessageScroll}
         >
         {datedList.length > 0 && stickyDateLabel && loadedDayBounds.min != null && loadedDayBounds.max != null ? (
           <>
@@ -1237,17 +1221,6 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         ) : null}
         {isInitialLoad ? (
           <MessageListSkeleton />
-        ) : datedList.length > VIRTUAL_MSG_THRESHOLD ? (
-          <ChatMessagesVirtualList
-            ref={virtualListRef}
-            scrollRef={scrollRef}
-            listEpoch={convKey}
-            datedList={datedList}
-            loadingOlder={loadingOlder}
-            loadingLabel={t("loading")}
-            onFirstVisibleRowIndexChange={onVirtualStickyRow}
-            renderRow={(item, index) => renderDatedItem(item, "virtual", index)}
-          />
         ) : (
           <ul className="msg-list">
             {loadingOlder ? (
@@ -1255,16 +1228,36 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
                 {t("loading")}
               </li>
             ) : null}
-            {datedList.map((item, index) => {
+            {sliceActive && topSpacerPx > 0 ? (
+              <li
+                key="msg-list-spacer-top"
+                className="msg-list-spacer"
+                aria-hidden
+                style={{ height: topSpacerPx, flexShrink: 0 }}
+              />
+            ) : null}
+            {(sliceActive
+              ? datedList.slice(sliceStart, sliceEnd + 1)
+              : datedList
+            ).map((item, i) => {
+              const index = sliceActive ? sliceStart + i : i
               const k = item.kind === "sep"
                 ? `date-${item.dayKey}`
                 : `msg-${peerKeyFromPeer(item.message.peerId)}-${item.message.id}`
               return (
                 <Fragment key={k}>
-                  {renderDatedItem(item, "list", index)}
+                  {renderDatedItem(item, index)}
                 </Fragment>
               )
             })}
+            {sliceActive && bottomSpacerPx > 0 ? (
+              <li
+                key="msg-list-spacer-bottom"
+                className="msg-list-spacer"
+                aria-hidden
+                style={{ height: bottomSpacerPx, flexShrink: 0 }}
+              />
+            ) : null}
           </ul>
         )}
         </div>

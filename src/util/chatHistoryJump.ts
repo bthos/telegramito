@@ -1,4 +1,4 @@
-import type { ChatDatedItem } from "../ui/ChatMessagesVirtualList"
+import type { ChatDatedItem } from "../ui/chatDatedItem"
 
 /** Row index of the date separator for `dayKey` (`YYYY-MM-DD`), or null if that day is not in the list. */
 export function findSepRowIndexForDayKey(

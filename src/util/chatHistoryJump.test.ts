@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import type { ChatDatedItem } from "../ui/ChatMessagesVirtualList"
+import type { ChatDatedItem } from "../ui/chatDatedItem"
 import {
   findFirstMessageRowIndexForDayKey,
   findSepRowIndexForDayKey,

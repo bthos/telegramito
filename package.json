@@ -18,7 +18,6 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "^3.13.24",
     "big-integer": "^1.6.52",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.1",

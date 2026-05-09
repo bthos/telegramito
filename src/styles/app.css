@@ -330,6 +330,21 @@ select.input {
   flex-direction: column;
   gap: 0.2rem;
 }
+.msg-list > .msg-list-spacer {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+  visibility: hidden;
+  overflow: hidden;
+}
+/* Flow transcript (Telegram Web–style): defer layout of off-screen rows where supported */
+.msg-list > .msg-gutter,
+.msg-list > .msg-date {
+  content-visibility: auto;
+  contain-intrinsic-size: 100px;
+}
 .msg-row {
   padding: 0.2rem 0.15rem 0.4rem 0.15rem;
   border-bottom: 1px solid var(--line);
@@ -1266,6 +1281,8 @@ button.switch:active .switch__thumb {
   flex: 1 1 0;
   min-height: 0;
   overflow: auto;
+  overflow-anchor: none;
+  scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding: 0.35rem 0.4rem 0.5rem;

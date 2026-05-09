@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import type { RefObject } from "react"
 import { Api } from "telegram"
-import type { ChatDatedItem } from "../ui/ChatMessagesVirtualList"
-
-const VIRTUAL_MSG_THRESHOLD_FOR_SCROLL = 48
+import type { ChatDatedItem } from "../ui/chatDatedItem"
 
 type StickTailMarker = number | "empty" | null
 
@@ -19,7 +17,6 @@ export function useChatScroll(opts: {
   scrollFabVisible: boolean
   stickyRowIndex: number
   onScroll: () => void
-  onVirtualStickyRow: (idx: number) => void
   scrollToLatestMessages: () => void
   notifyPrepend: (prevTop: number, prevHeight: number) => void
 } {
@@ -52,33 +49,29 @@ export function useChatScroll(opts: {
     if (!el || datedList.length === 0) {
       return
     }
-    if (datedList.length > VIRTUAL_MSG_THRESHOLD_FOR_SCROLL) {
-      return
-    }
     const nodes = el.querySelectorAll<HTMLElement>("[data-chat-row-index]")
     if (nodes.length === 0) {
       setStickyRowIndex((prev) => (prev === 0 ? prev : 0))
       return
     }
-    const rootTop = el.getBoundingClientRect().top
+    const rootRect = el.getBoundingClientRect()
     for (const node of nodes) {
       const r = node.getBoundingClientRect()
-      if (r.bottom > rootTop + 2) {
+      if (r.bottom > rootRect.top + 2 && r.top < rootRect.bottom - 2) {
         const idx = Number(node.dataset.chatRowIndex)
         const next = Number.isFinite(idx) ? idx : 0
         setStickyRowIndex((prev) => (prev === next ? prev : next))
         return
       }
     }
-    const last = nodes[nodes.length - 1]
-    const idx = Number(last.dataset.chatRowIndex)
-    const next = Number.isFinite(idx) ? idx : 0
-    setStickyRowIndex((prev) => (prev === next ? prev : next))
+    /* Viewport may sit entirely in a spacer: first mounted row is the transcript head. */
+    const first = nodes[0]
+    if (first) {
+      const idx = Number(first.dataset.chatRowIndex)
+      const next = Number.isFinite(idx) ? idx : 0
+      setStickyRowIndex((prev) => (prev === next ? prev : next))
+    }
   }, [datedList, scrollRef])
-
-  const onVirtualStickyRow = useCallback((idx: number) => {
-    setStickyRowIndex((prev) => (prev === idx ? prev : idx))
-  }, [])
 
   const notifyPrepend = useCallback((prevTop: number, prevHeight: number) => {
     pendingScrollFixRef.current = { type: "prepend", prevTop, prevHeight }
@@ -94,8 +87,7 @@ export function useChatScroll(opts: {
     if (p) {
       const h = el.scrollHeight
       el.scrollTop = p.prevTop + (h - p.prevHeight)
-      // Older fetch: `loadingOlder` toggles before `list` updates (and the virtual list shows a
-      // top hint). Keep the baseline until the request finishes so both paints get one formula.
+      // Older fetch: `loadingOlder` toggles before `list` updates (load-older hint). Keep baseline until done.
       if (!loadingOlder) {
         pendingScrollFixRef.current = null
       }
@@ -178,7 +170,6 @@ export function useChatScroll(opts: {
     scrollFabVisible,
     stickyRowIndex,
     onScroll,
-    onVirtualStickyRow,
     scrollToLatestMessages,
     notifyPrepend,
   }

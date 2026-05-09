@@ -22,6 +22,7 @@ public/pwa*
 .codemie/
 .claude/
 .cursor/
+.cursor*
 # Ignore local .github noise but keep workflows trackable (`.github/` alone blocks negation).
 .github/*
 !.github/workflows/
