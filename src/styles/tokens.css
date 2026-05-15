@@ -1,13 +1,17 @@
 /**
  * Telegramito design system (CSS custom properties).
- * New work: prefer --ds-*; legacy --bg, --card, --acc, … are aliases and remain valid.
+ * Prefer `--ds-*` for new styles; short aliases (`--bg`, `--card`, `--acc`, …) map to `--ds-*`.
  *
  * Layering: tokens.css (global) → tokens-letters.css (Letters desk vars on .app-root--main)
- * → placeholders / media-states → app.css → letters.css (Letters components only).
+ * → placeholders / media-states → message-media-states → app.css → letters.css (Letters only).
  */
 :root {
   /* Layout shell (aligned with evgeny-nadymov/telegram-react MainPage / TelegramApp.css) */
   --layout-page-max-width: 1680px;
+  /*
+   * Viewport breakpoints — single source for names: ../layout/breakpoints.ts (`BP`, `BP_PAIR`).
+   * Keep literal px inside @media rules in CSS in sync when values change there.
+   */
   /* —— Typography —— (.artefacts/ux-analysis/colors_and_type.css — Manrope UI + JetBrains Mono for schema/debug) */
   --ds-font-sans:
     "Manrope",
@@ -169,7 +173,7 @@
   --ds-duration: 0.12s;
   --ds-ease: ease;
 
-  /* —— Legacy (keep existing BEM/utility classnames working) —— */
+  /* —— Short aliases (existing BEM / utilities; map to --ds-*) —— */
   --bg: var(--ds-color-page);
   --bg-raised: var(--ds-color-raised);
   --card: var(--ds-color-surface);

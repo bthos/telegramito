@@ -11,6 +11,8 @@ import {
 import { useTranslation } from "react-i18next"
 import { EMOJI_GROUPS, type EmojiItem } from "../data/emojiGroups"
 import { useFocusTrap } from "../hooks/useFocusTrap"
+import { useMediaQuery } from "../hooks/useMediaQuery"
+import { BP, layoutMq } from "../layout/breakpoints"
 import { EmojiOutlineIcon } from "./ChatChromeIcons"
 import { loadRecentEmojis, saveRecentEmoji } from "../util/recentEmojis"
 
@@ -371,19 +373,7 @@ export function EmojiPickerButton({
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)")
-    const apply = () => {
-      setIsMobile(mq.matches)
-    }
-    apply()
-    mq.addEventListener("change", apply)
-    return () => {
-      mq.removeEventListener("change", apply)
-    }
-  }, [])
+  const isMobile = useMediaQuery(layoutMq.maxWidth(BP.phoneMax))
 
   const onClose = useCallback(() => {
     setOpen(false)

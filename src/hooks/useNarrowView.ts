@@ -1,19 +1,7 @@
-import { useCallback, useSyncExternalStore } from "react"
+import { layoutMq } from "../layout/breakpoints"
+import { useMediaQuery } from "./useMediaQuery"
 
-/** `true` when viewport width &lt; `maxWidth` (typical: mobile / narrow). */
+/** `true` when viewport width ≤ `maxWidth` px (see `BP` / `layoutMq`). */
 export function useNarrowView(maxWidth = 700): boolean {
-  const query = `(max-width: ${maxWidth}px)`
-  const subscribe = useCallback(
-    (onChange: () => void) => {
-      const mq = window.matchMedia(query)
-      mq.addEventListener("change", onChange)
-      return () => mq.removeEventListener("change", onChange)
-    },
-    [query]
-  )
-  const getSnapshot = useCallback(
-    () => window.matchMedia(query).matches,
-    [query]
-  )
-  return useSyncExternalStore(subscribe, getSnapshot, () => false)
+  return useMediaQuery(layoutMq.maxWidth(maxWidth))
 }

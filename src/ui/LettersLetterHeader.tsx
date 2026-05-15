@@ -15,7 +15,7 @@ type Props = {
    * When false, omit the title heading (e.g. narrow shell already renders `#thread-title` in the top bar).
    */
   renderHeading?: boolean
-  /** Small-caps editorial ribbon above title (channels / groups — HF mock). */
+  /** Small-caps editorial ribbon above title (channels / groups). */
   kickerLine?: ReactNode | null
   /** Toolbar beside title (e.g. unread-only toggle). */
   trailingInTitleRow?: ReactNode | null
@@ -32,8 +32,8 @@ type Props = {
 }
 
 /**
- * Editorial thread masthead for Letters v2: `[ title stack ] [ insights ]` with handoff 28px gutter.
- * Jump-by-date interactive grid lives in {@link LettersThreadInsights} (HF mock).
+ * Editorial thread masthead for Letters v2.
+ * Jump-by-date grid lives in {@link LettersThreadInsights}.
  */
 export function LettersLetterHeader({
   titleHeadingLevel = "h1",

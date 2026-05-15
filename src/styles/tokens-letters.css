@@ -1,7 +1,6 @@
 /**
- * Letters desk subsystem — CSS variables only (HF mock alignment).
- * Component/layout rules remain in letters.css.
- * Depends on tokens.css (--ds-font-sans, --ds-font-mono defined on :root).
+ * Letters desk — CSS variables only (see `letters.css` for layout/components).
+ * Depends on tokens.css (`--ds-font-sans`, `--ds-font-mono` on :root).
  */
 .app-root--main {
   --letters-serif:

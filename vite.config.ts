@@ -156,8 +156,6 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
-    /** GramJS + Rolldown sometimes stalls transforming this file alone; hook covered by prod + manual QA until isolated. */
-    exclude: ["src/hooks/useTypingIndicators.test.ts"],
     pool: "forks",
     /** Telegram`s dependency graph is huge — run test files one at a time to avoid fork OOM. */
     maxWorkers: 1,

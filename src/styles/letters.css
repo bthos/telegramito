@@ -1,13 +1,14 @@
 /**
  * Letters v2 — layout & surfaces (tokens: tokens-letters.css).
  * Chat-only selectors stay scoped under `.app-root--letters-chats`.
+ * `@media` px thresholds: keep in sync with `src/layout/breakpoints.ts` (see `BP.*` / `BP_PAIR.*` comments).
  */
 
 .app-root--letters-chats.app-root--main {
   font-family: var(--letters-serif);
 }
 
-/* List + day-mail columns: `--surface` / paper (HF mock aligns both side rails). */
+/* List + day-mail columns: `--surface` / paper; both side rails share ruled paper feel. */
 html[data-theme="light"] .app-root--letters-chats .chat-aside,
 html[data-theme="light"] .app-root--letters-chats .chats-narrow-list,
 html[data-theme="light"] .app-root--letters-chats .letters-day-mail-aside {
@@ -80,7 +81,7 @@ html[data-theme="dark"] .app-root--main .letters-masthead {
   margin-top: 0;
 }
 
-/* Central thread: ruled notepad (#eeede8 band) — lighter rails than `--letters-paper`; handoff `--chat-bg` superseded by HF mock contrast. */
+/* Central thread: ruled notepad band; rails slightly richer than `--letters-paper`. */
 html[data-theme="light"] .app-root--letters-chats .chat-main--letters,
 html[data-theme="light"] .app-root--letters-chats .chats-narrow__thread {
   background:
@@ -241,7 +242,7 @@ html[data-theme="dark"] .app-root--letters-chats .chats-narrow__thread {
   outline-color: var(--letters-terra);
 }
 
-/* Ghost sign-out — terracotta-tint hover (no legacy blue accent). */
+/* Ghost sign-out — terracotta-tint hover */
 .letters-masthead .letters-masthead__signout.btn-ghost.btn-ghost--icon {
   color: var(--letters-ink-3);
 }
@@ -363,7 +364,8 @@ html[data-theme="dark"] .app-root--letters-chats .chats-narrow__thread {
   overflow: hidden;
 }
 
-/* Full viewport width on wide screens (override app.css `--layout-page-max-width` + `margin: auto`). */
+/* Full viewport width on wide screens (override app.css `--layout-page-max-width` + `margin: auto`).
+   BP_PAIR.narrowDesktopMin */
 @media (min-width: 961px) {
   .app-root--letters-chats .chats-layout {
     max-width: none;
@@ -1008,7 +1010,7 @@ html[data-theme="dark"] .app-root--letters-chats .chat-row.is-active {
   user-select: none;
 }
 
-/* Letters compose strip: muted caps chrome (HF mock — not terra links). */
+/* Letters compose strip: muted caps chrome (secondary links vs terra accent). */
 .thread.thread--letters .attach-menu--letters .attach-menu__letters {
   margin-right: 0;
 }
@@ -1105,7 +1107,8 @@ html[data-theme="dark"]
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-@media (max-width: 719px) {
+/* BP.stackMdMax */
+@media (max-width: 720px) {
   .thread.thread--letters {
     --letters-passage-speaker-col: minmax(84px, 108px);
     --letters-passage-gap: 10px;
@@ -1698,14 +1701,15 @@ html[data-theme="dark"] .thread.thread--letters .message-scroll__fab {
   align-items: flex-end;
 }
 
-/* Thread header band + inline insights (HF mock — bundle ribbon + bordered widget). */
+/* Thread header band + inline insights (ribbon + bordered widget). */
 .thread.thread--letters .thread-header-row--letters {
   flex-wrap: nowrap;
   align-items: flex-start;
   gap: 0.75rem 1rem;
 }
 
-@media (max-width: 640px) {
+/* BP.phoneMax — thread masthead wraps */
+@media (max-width: 639px) {
   .thread.thread--letters .thread-header-row--letters {
     flex-wrap: wrap;
   }
@@ -1730,7 +1734,8 @@ html[data-theme="dark"] .thread.thread--letters .message-scroll__fab {
   grid-template-columns: minmax(0, 1fr);
 }
 
-@media (max-width: 719px) {
+/* BP.stackMdMax */
+@media (max-width: 720px) {
   .app-root--letters-chats .letters-letter-header {
     grid-template-columns: 1fr;
     align-items: start;
@@ -2116,7 +2121,8 @@ button.letters-insights__cal-cell {
   width: 100%;
 }
 
-@media (max-width: 719px) {
+/* BP.stackMdMax */
+@media (max-width: 720px) {
   .app-root--letters-chats
     .chat-context-panel
     .context-panel__letters-panel-tools
@@ -2234,12 +2240,14 @@ button.letters-insights__cal-cell {
   );
 }
 
+/* BP_PAIR.lettersBelowThreeColMax — no day-mail rail in two-pane */
 @media (max-width: 1279px) {
   .letters-day-mail-aside {
     display: none;
   }
 }
 
+/* BP_PAIR.narrowDesktopMin */
 @media (min-width: 961px) {
   .chats-layout--letters-three {
     border-inline: 1px solid var(--letters-lines);

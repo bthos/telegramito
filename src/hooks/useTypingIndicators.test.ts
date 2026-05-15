@@ -292,6 +292,7 @@ describe("useTypingIndicators", () => {
     act(() => {
       rerender({ entity: entityB })
     })
+    await flushMicrotasks()
 
     expect(result.current.typers).toEqual([])
   })

@@ -1,6 +1,6 @@
 /**
- * UX parity with `.artefacts/ux-analysis/preview/*.html` — polls, dice, game, invoice,
- * paid media, story, giveaways, todo, unsupported (decorative “full” states).
+ * Rich message attachments & media UI (polls, invoices, games, giveaways, etc.).
+ * Styled to match UX reference HTML under `.artefacts/ux-analysis/preview/` where applicable.
  */
 
 /* --- Poll: subtitle + closed footer + quiz explanation --- */

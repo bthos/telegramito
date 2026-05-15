@@ -6,6 +6,7 @@ import { useTelegram } from "../context/TelegramContext"
 import { useMinWidth } from "../hooks/useMinWidth"
 import { useNarrowView } from "../hooks/useNarrowView"
 import { usePeriodicTick } from "../hooks/usePeriodicTick"
+import { BP } from "../layout/breakpoints"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import { getPendingRequests } from "../parental/storage"
 import { getDialogPreviewText } from "../telegram/dialogPreview"
@@ -65,8 +66,8 @@ export function MainShell() {
     () => new Set()
   )
   /** Same breakpoint intent as `PAGE_WIDTH_SMALL` (960) in telegram-react for “small page”. */
-  const narrow = useNarrowView(960)
-  const lettersThreeCol = useMinWidth(1280)
+  const narrow = useNarrowView(BP.narrowMax)
+  const lettersThreeCol = useMinWidth(BP.lettersThreeColMin)
 
   const literaryDateLine = formatLiteraryDateLine(new Date(), i18n.language)
 

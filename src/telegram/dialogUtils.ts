@@ -14,7 +14,7 @@ export function isBroadcastChannelDialog(d: Dialog): boolean {
 }
 
 /**
- * Legacy basic group chats and megagroups (multi-member dialogs).
+ * Basic (`Chat`) and megagroup (`Channel` + megagroup) dialogs — multi-member chats.
  */
 export function dialogIsMultiMemberChat(d: Dialog): boolean {
   const e = d.entity
@@ -31,8 +31,7 @@ export function dialogIsMultiMemberChat(d: Dialog): boolean {
 }
 
 /**
- * Letters sidebar — "Groups" bucket: legacy group chats and supergroups (mega channels).
- * Broadcast channels and private users are handled elsewhere.
+ * Letters sidebar — "Groups": basic chats and megagroups (multi-member channels).
  */
 export function isLettersSidebarGroupDialog(d: Dialog): boolean {
   const e = d.entity
