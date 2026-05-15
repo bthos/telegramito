@@ -518,32 +518,29 @@ export function useChatMessages(opts: {
     mediaPlaceholderRefetchInFlightRef.current = true
     void (async () => {
       try {
-        const collected = new Map<number, Api.Message>()
-        for (const id of targets) {
-          mediaPlaceholderRefetchAttemptsRef.current.set(
-            id,
-            (mediaPlaceholderRefetchAttemptsRef.current.get(id) ?? 0) + 1,
-          )
-          try {
-            const fetched = await withTransientRetry(client, () =>
-              client.getMessages(dialog.entity as never, { ids: [id] }),
+        const results = await Promise.all(
+          targets.map(async (id) => {
+            mediaPlaceholderRefetchAttemptsRef.current.set(
+              id,
+              (mediaPlaceholderRefetchAttemptsRef.current.get(id) ?? 0) + 1,
             )
-            const msgs = toMessageList(fetched)
-            const u = msgs.find((x) => Number(x.id) === id)
-            if (
-              !u
-              || (isForum && topicId != null && !messageInActiveThread(u, topicId))
-            ) {
-              continue
+            try {
+              const fetched = await withTransientRetry(client, () =>
+                client.getMessages(dialog.entity as never, { ids: [id] }),
+              )
+              const msgs = toMessageList(fetched)
+              const u = msgs.find((x) => Number(x.id) === id)
+              if (!u || (isForum && topicId != null && !messageInActiveThread(u, topicId))) return null
+              if (u.media?.className === "MessageMediaUnsupported") return null
+              return [id, u] as [number, Api.Message]
+            } catch {
+              return null
             }
-            if (u.media?.className === "MessageMediaUnsupported") {
-              continue
-            }
-            collected.set(id, u)
-          } catch {
-            /* skip id */
-          }
-        }
+          }),
+        )
+        const collected = new Map<number, Api.Message>(
+          results.filter((r): r is [number, Api.Message] => r !== null),
+        )
         if (collected.size === 0) {
           return
         }

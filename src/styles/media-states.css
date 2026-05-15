@@ -1558,3 +1558,16 @@ button.msg-video-play.msg-video-thumb-play-fab {
   margin-top: 14px;
   font-size: 12px;
 }
+
+.msg-media-stripped-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(12px);
+  transform: scale(1.08);
+  border-radius: inherit;
+  pointer-events: none;
+  user-select: none;
+}

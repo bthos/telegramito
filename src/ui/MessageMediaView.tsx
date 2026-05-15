@@ -35,6 +35,7 @@ import { AudioTrackInline } from "./AudioTrackInline"
 import { DocumentAttachmentInline } from "./DocumentAttachmentInline"
 import { StickerInline } from "./StickerInline"
 import { peerKeyFromPeer } from "../telegram/peerKey"
+import { useInlineThumb } from "./useInlineThumb"
 
 import type { MediaViewerContext } from "./mediaViewerContext"
 
@@ -452,11 +453,13 @@ function PhotoDeferredPending({
   tapLabel,
   footHint,
   sentAtLabel,
+  thumbDataUrl,
 }: {
   onActivate: () => void
   tapLabel: string
   footHint: string
   sentAtLabel: string | null
+  thumbDataUrl?: string
 }) {
   return (
     <div className="msg-photo-deferred" data-media-state="preview">
@@ -470,6 +473,9 @@ function PhotoDeferredPending({
         }}
       >
         <div className="msg-photo-deferred__canvas" aria-hidden>
+          {thumbDataUrl ? (
+            <img src={thumbDataUrl} className="msg-media-stripped-thumb" aria-hidden alt="" />
+          ) : null}
           <span className="msg-photo-deferred__sun" />
           <span className="msg-photo-deferred__horizon" />
           <span className="msg-photo-deferred__ridge" />
@@ -491,13 +497,18 @@ function PhotoDeferredPending({
 function PhotoDeferredLoading({
   hint,
   timeLabel,
+  thumbDataUrl,
 }: {
   hint: string
   timeLabel: string | null
+  thumbDataUrl?: string
 }) {
   return (
     <div className="msg-media msg-media--photo-fetch" data-media-state="loading">
       <div className="msg-photo-deferred__canvas msg-photo-deferred__canvas--busy" aria-hidden>
+        {thumbDataUrl ? (
+          <img src={thumbDataUrl} className="msg-media-stripped-thumb" aria-hidden alt="" />
+        ) : null}
         <span className="msg-photo-deferred__sun" />
         <span className="msg-photo-deferred__horizon" />
         <span className="msg-photo-deferred__ridge" />
@@ -523,11 +534,13 @@ function GifDeferredPending({
   tapLabel,
   footHint,
   sentAtLabel,
+  thumbDataUrl,
 }: {
   onActivate: () => void
   tapLabel: string
   footHint: string
   sentAtLabel: string | null
+  thumbDataUrl?: string
 }) {
   return (
     <div className="msg-gif-deferred" data-media-state="preview">
@@ -541,6 +554,9 @@ function GifDeferredPending({
         }}
       >
         <div className="msg-gif-deferred__canvas" aria-hidden>
+          {thumbDataUrl ? (
+            <img src={thumbDataUrl} className="msg-media-stripped-thumb" aria-hidden alt="" />
+          ) : null}
           <span className="msg-gif-deferred__splash" />
           <span className="msg-gif-deferred__streaks" />
           <span className="msg-gif-deferred__tag">GIF</span>
@@ -561,13 +577,18 @@ function GifDeferredPending({
 function GifDeferredLoading({
   hint,
   timeLabel,
+  thumbDataUrl,
 }: {
   hint: string
   timeLabel: string | null
+  thumbDataUrl?: string
 }) {
   return (
     <div className="msg-media msg-media--gif-fetch" data-media-state="loading">
       <div className="msg-gif-deferred__canvas msg-gif-deferred__canvas--busy" aria-hidden>
+        {thumbDataUrl ? (
+          <img src={thumbDataUrl} className="msg-media-stripped-thumb" aria-hidden alt="" />
+        ) : null}
         <span className="msg-gif-deferred__splash" />
         <span className="msg-gif-deferred__streaks" />
         <span className="msg-gif-deferred__tag">GIF</span>
@@ -594,12 +615,14 @@ function VideoDeferredPending({
   tapLabel,
   footHint,
   sentAtLabel,
+  thumbDataUrl,
 }: {
   resolved: Api.Message
   onActivate: () => void
   tapLabel: string
   footHint: string
   sentAtLabel: string | null
+  thumbDataUrl?: string
 }) {
   const d = getMessageDocument(resolved)
   const round = d ? isRoundVideoDoc(d) : false
@@ -625,6 +648,9 @@ function VideoDeferredPending({
         }}
       >
         <div className={frameClass}>
+          {thumbDataUrl ? (
+            <img src={thumbDataUrl} className="msg-media-stripped-thumb" aria-hidden alt="" />
+          ) : null}
           {durationLabel ? (
             <span
               className={
@@ -671,10 +697,12 @@ function VideoDeferredLoading({
   hint,
   timeLabel,
   round = false,
+  thumbDataUrl,
 }: {
   hint: string
   timeLabel: string | null
   round?: boolean
+  thumbDataUrl?: string
 }) {
   const frameClass = round
     ? "msg-video-deferred__frame msg-video-deferred__frame--busy msg-video-deferred__frame--round"
@@ -687,6 +715,9 @@ function VideoDeferredLoading({
       data-media-state="loading"
     >
       <div className={frameClass}>
+        {thumbDataUrl ? (
+          <img src={thumbDataUrl} className="msg-media-stripped-thumb" aria-hidden alt="" />
+        ) : null}
         <TgProgressIndeterminate />
       </div>
       <div className="media-loading-foot" role="status">
@@ -877,6 +908,7 @@ export function MessageMediaView({
 
   const wpPreview = useWpPreview(resolved, client, noPreview)
   const [s, requestLoad] = useBlob(blobSourceMessage, client, filterGifs)
+  const inlineThumb = useInlineThumb(blobSourceMessage.media)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [videoFullOpen, setVideoFullOpen] = useState(false)
   const errLabel = te("error")
@@ -1014,6 +1046,7 @@ export function MessageMediaView({
           tapLabel={tapLabel}
           footHint={te("chat.mediaTapToLoadHint")}
           sentAtLabel={viewerContext?.sentAtLabel ?? null}
+          thumbDataUrl={inlineThumb?.dataUrl}
         />
       )
     }
@@ -1024,6 +1057,7 @@ export function MessageMediaView({
           tapLabel={tapLabel}
           footHint={te("chat.mediaTapToLoadHint")}
           sentAtLabel={viewerContext?.sentAtLabel ?? null}
+          thumbDataUrl={inlineThumb?.dataUrl}
         />
       )
     }
@@ -1034,6 +1068,7 @@ export function MessageMediaView({
           tapLabel={tapLabel}
           footHint={te("chat.mediaTapToLoadHint")}
           sentAtLabel={viewerContext?.sentAtLabel ?? null}
+          thumbDataUrl={inlineThumb?.dataUrl}
         />
       )
     }
@@ -1094,6 +1129,7 @@ export function MessageMediaView({
           hint={te("chat.mediaDownloadProgress")}
           timeLabel={viewerContext?.sentAtLabel ?? null}
           round={roundV}
+          thumbDataUrl={inlineThumb?.dataUrl}
         />
       )
     }
@@ -1102,6 +1138,7 @@ export function MessageMediaView({
         <GifDeferredLoading
           hint={te("chat.mediaDownloadProgress")}
           timeLabel={viewerContext?.sentAtLabel ?? null}
+          thumbDataUrl={inlineThumb?.dataUrl}
         />
       )
     }
@@ -1110,6 +1147,7 @@ export function MessageMediaView({
         <PhotoDeferredLoading
           hint={te("chat.mediaDownloadProgress")}
           timeLabel={viewerContext?.sentAtLabel ?? null}
+          thumbDataUrl={inlineThumb?.dataUrl}
         />
       )
     }
