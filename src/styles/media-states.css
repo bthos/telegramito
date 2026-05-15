@@ -456,7 +456,9 @@ button.msg-video-play.msg-video-thumb-play-fab {
 }
 
 .media-modal-backdrop--iv .media-modal-panel {
+  /* Light canvas — force ink (don't inherit app's dark `--text`, or titles vanish). */
   background: #fff;
+  color: #1a1f28;
   max-width: min(460px, 100%);
 }
 
@@ -1353,6 +1355,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   border-radius: 14px;
   overflow: hidden;
   max-width: 460px;
+  color: #1a1f28;
 }
 
 .web-iv__topbar {
@@ -1377,6 +1380,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   background: transparent;
   font-size: 20px;
   cursor: pointer;
+  color: #3a4556;
 }
 
 .web-iv__hero {
@@ -1393,6 +1397,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   font-size: 20px;
   font-weight: 700;
   line-height: 1.2;
+  color: #0f1319;
 }
 
 .web-iv__by {
@@ -1422,9 +1427,12 @@ button.msg-video-play.msg-video-thumb-play-fab {
   text-align: center;
   font-weight: 600;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--tg-blue, #3390ec);
+  text-decoration: none;
 }
-
-/* Geo / contact expand */
+.web-iv__open:hover {
+  text-decoration: underline;
+}
 .msg-media-expand-hit {
   width: 100%;
   padding: 0;
