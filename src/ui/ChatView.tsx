@@ -972,10 +972,11 @@ export function ChatView({
     const seq = ++lettersJumpRunSeq.current
     let cancelled = false
     void (async () => {
-      let consumeAfter = false
       try {
         if (!client || !dialog.entity) {
-          consumeAfter = true
+          if (!cancelled && seq === lettersJumpRunSeq.current) {
+            onLettersJumpToMessageConsumed?.()
+          }
           return
         }
         if (isForum && topicsLoading) {
@@ -999,12 +1000,10 @@ export function ChatView({
           }
         }
         await jumpToMessageById(id)
-        consumeAfter = true
       } catch {
         appLog.warn("lettersJumpToMessage failed", { id })
-        consumeAfter = true
       }
-      if (!consumeAfter || cancelled || seq !== lettersJumpRunSeq.current) {
+      if (cancelled || seq !== lettersJumpRunSeq.current) {
         return
       }
       onLettersJumpToMessageConsumed?.()
