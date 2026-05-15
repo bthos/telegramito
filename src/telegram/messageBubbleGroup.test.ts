@@ -36,4 +36,10 @@ describe("messageBubbleGroup", () => {
     const b = msg({ id: 2, date: 150, out: false, fromId: u2 })
     expect(canGroupMessages(a, b)).toBe(false)
   })
+  it("does not group inbound when either peer id is unknown", () => {
+    const a = msg({ id: 1, date: 100, out: false })
+    const b = msg({ id: 2, date: 150, out: false })
+    expect(canGroupMessages(a, b)).toBe(false)
+    expect(computeMessageClusterRoles([a, b])).toEqual(["single", "single"])
+  })
 })

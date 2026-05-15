@@ -1,10 +1,17 @@
 import type { Api } from "telegram"
+import type { Dialog } from "telegram/tl/custom/dialog"
 import { describe, expect, it } from "vitest"
 import {
+  getDayMailRailHeadlineParts,
   getDocumentTypeLabel,
   getMessageMediaTypeLabel,
   getReplyToPreviewText,
+  getRepliedMessagePreviewText,
 } from "./dialogPreview"
+
+function dialogWithMessage(msg: unknown): Dialog {
+  return { message: msg as Api.Message } as Dialog
+}
 
 const t = (k: string) => k
 
@@ -210,5 +217,113 @@ describe("getReplyToPreviewText", () => {
       message: "line one\n  line two",
     } as unknown as Api.Message
     expect(getReplyToPreviewText(m, t)).toBe("line one line two")
+  })
+})
+
+describe("getRepliedMessagePreviewText", () => {
+  it("uses Message text like getReplyToPreviewText", () => {
+    const m = {
+      className: "Message" as const,
+      id: 9,
+      message: "Prior line",
+    } as unknown as Api.Message
+    expect(getRepliedMessagePreviewText(m, t)).toBe("Prior line")
+  })
+
+  it("returns null when message is undefined", () => {
+    expect(getRepliedMessagePreviewText(undefined, t)).toBeNull()
+  })
+
+  it("maps MessageService to previewService", () => {
+    const svc = { className: "MessageService" as const } as unknown as Api.MessageService
+    expect(getRepliedMessagePreviewText(svc, t)).toBe("chat.previewService")
+  })
+})
+
+describe("getDayMailRailHeadlineParts", () => {
+  it("incoming text → said + excerpt", () => {
+    const d = dialogWithMessage({
+      className: "Message" as const,
+      message: "Hello",
+      out: false,
+    })
+    expect(getDayMailRailHeadlineParts(d, t)).toEqual({
+      verb: "letters.dayMailSaid",
+      content: "Hello",
+    })
+  })
+
+  it("outgoing text → sent + excerpt", () => {
+    const d = dialogWithMessage({
+      className: "Message" as const,
+      message: "Hi there",
+      out: true,
+    })
+    expect(getDayMailRailHeadlineParts(d, t)).toEqual({
+      verb: "letters.dayMailSent",
+      content: "Hi there",
+    })
+  })
+
+  it("photo-only → sent + media label", () => {
+    const d = dialogWithMessage({
+      className: "Message" as const,
+      message: "",
+      media: { className: "MessageMediaPhoto" as const },
+    })
+    expect(getDayMailRailHeadlineParts(d, t)).toEqual({
+      verb: "letters.dayMailSent",
+      content: "chat.previewPhoto",
+    })
+  })
+
+  it("webpage-only → shared + link label", () => {
+    const d = dialogWithMessage({
+      className: "Message" as const,
+      message: "",
+      media: { className: "MessageMediaWebPage" as const },
+    })
+    expect(getDayMailRailHeadlineParts(d, t)).toEqual({
+      verb: "letters.dayMailShared",
+      content: "chat.previewLink",
+    })
+  })
+
+  it("forwarded → forwarded + preview from media hint", () => {
+    const d = dialogWithMessage({
+      className: "Message" as const,
+      message: "",
+      fwdFrom: { date: 1 },
+      media: { className: "MessageMediaPhoto" as const },
+    })
+    const r = getDayMailRailHeadlineParts(d, t)
+    expect(r.verb).toBe("letters.dayMailForwarded")
+    expect(r.content).toBe("chat.previewPhoto")
+  })
+
+  it("lowercases first letter of media label for day-mail locale", () => {
+    const tPhoto = (k: string) => {
+      if (k === "chat.previewPhoto") return "Photo"
+      return k
+    }
+    const d = dialogWithMessage({
+      className: "Message" as const,
+      message: "",
+      media: { className: "MessageMediaPhoto" as const },
+    })
+    expect(getDayMailRailHeadlineParts(d, tPhoto, 96, "en")).toEqual({
+      verb: "letters.dayMailSent",
+      content: "photo",
+    })
+  })
+
+  it("service → posted + previewService", () => {
+    const d = dialogWithMessage({
+      className: "MessageService" as const,
+    })
+    expect(getDayMailRailHeadlineParts(d, t)).toEqual({
+      verb: "letters.dayMailPosted",
+      content: "chat.previewService",
+    })
   })
 })

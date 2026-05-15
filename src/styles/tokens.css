@@ -1,6 +1,9 @@
 /**
  * Telegramito design system (CSS custom properties).
  * New work: prefer --ds-*; legacy --bg, --card, --acc, … are aliases and remain valid.
+ *
+ * Layering: tokens.css (global) → tokens-letters.css (Letters desk vars on .app-root--main)
+ * → placeholders / media-states → app.css → letters.css (Letters components only).
  */
 :root {
   /* Layout shell (aligned with evgeny-nadymov/telegram-react MainPage / TelegramApp.css) */
@@ -50,8 +53,8 @@
   --ds-bubble-out: #1e4a7a;
   --ds-bubble-glow: #2564a0;
   --ds-bubble-out-grad-1: #2564a0;
-  --ds-vein-in:  var(--ds-color-primary);
-  --ds-vein-out: rgba(255, 255, 255, 0.18);
+  --ds-vein-in: var(--ds-color-primary);
+  /* Outbound bubble seam (single source — avoid redundant declarations) */
   --ds-vein-out: color-mix(in srgb, var(--ds-bubble-out) 30%, transparent);
   --ds-avatar-cluster-size: 32px;
   /* Shell surfaces (app.css) */
@@ -217,8 +220,7 @@ html[data-theme="light"] {
   --ds-bubble-out: #e3f0fc;
   --ds-bubble-glow: #3390ec;
   --ds-bubble-out-grad-1: #d4e6fa;
-  --ds-vein-in:  var(--ds-color-primary);
-  --ds-vein-out: rgba(0, 0, 0, 0.12);
+  --ds-vein-in: var(--ds-color-primary);
   --ds-vein-out: color-mix(in srgb, var(--ds-bubble-out) 30%, transparent);
   --ds-color-canvas: #ebedf0;
   --ds-color-canvas-list: #e8eaef;

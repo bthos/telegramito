@@ -44,11 +44,25 @@ export function EmojiOutlineIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-/** Attach — paperclip (single stroke path). */
+/** Attach — paperclip (Feather / Lucide geometry, single continuous path). */
 export function AttachClipIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg aria-hidden focusable="false" {...strokeIco} {...props}>
-      <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 1 1 5.66 5.66l-9.2 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19" />
+      <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 0 2.83 2.83l9.19-9.19a6 6 0 0 0-8.49-8.49l-9.19 9.19" />
+    </svg>
+  )
+}
+
+/**
+ * Add file — sheet + plus; reads clearly at compose control sizes (Letters narrow).
+ */
+export function AttachFileAddIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg aria-hidden focusable="false" {...strokeIco} {...props}>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="M12 18v-6" />
+      <path d="M9 15h6" />
     </svg>
   )
 }
@@ -67,6 +81,18 @@ export function ChevronDownIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg aria-hidden focusable="false" {...strokeIco} {...props}>
       <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}
+
+/** Open full calendar for jump-to-date (stroke calendar grid). */
+export function JumpDateCalendarIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg aria-hidden focusable="false" {...strokeIco} {...props}>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
     </svg>
   )
 }

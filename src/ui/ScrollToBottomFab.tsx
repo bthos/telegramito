@@ -13,8 +13,7 @@ export function ScrollToBottomFab({
 }) {
   const n = unreadBadge ?? 0
   const showBadge = visible && n > 0
-  const aria =
-    showBadge ? `${label} (${n > 99 ? "99+" : String(n)})` : label
+  const aria = showBadge ? `${label} (${String(n)})` : label
   return (
     <button
       type="button"
@@ -39,9 +38,7 @@ export function ScrollToBottomFab({
         <path d="M6 9l6 6 6-6" />
       </svg>
       {showBadge ? (
-        <span className="message-scroll__fab-badge">
-          {n > 99 ? "99+" : n}
-        </span>
+        <span className="message-scroll__fab-badge">{n}</span>
       ) : null}
     </button>
   )

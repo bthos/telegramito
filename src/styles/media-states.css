@@ -21,12 +21,59 @@
   color: #fff;
   background: rgba(0, 0, 0, 0.55);
   pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.msg-video-thumb__duration--round {
+  left: 50%;
+  top: auto;
+  bottom: var(--space-2, 8px);
+  transform: translateX(-50%);
+  border-radius: 999px;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.msg-video-thumb__duration svg {
+  flex-shrink: 0;
+}
+
+.msg-video-thumb-play-fab {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  pointer-events: none;
+}
+
+button.msg-video-thumb-play-fab.msg-video-play,
+button.msg-video-play.msg-video-thumb-play-fab {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.msg-video-thumb-play-fab svg {
+  margin-left: 3px;
 }
 
 .msg-video-thumb__expand {
   position: absolute;
   right: var(--space-2, 8px);
-  top: var(--space-2, 8px);
+  top: auto;
+  bottom: var(--space-2, 8px);
   z-index: 3;
   width: 36px;
   height: 36px;
@@ -38,6 +85,10 @@
   cursor: pointer;
   color: #fff;
   background: rgba(0, 0, 0, 0.45);
+}
+
+.msg-video-wrap--round .msg-video-thumb__expand {
+  display: none;
 }
 
 .msg-video-thumb__expand:hover {
@@ -472,14 +523,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-.msg-voice-inline__expand {
+.msg-voice-inline__slash {
+  color: var(--tg-ink-muted, #9aa7b8);
+}
+
+.msg-voice-inline__sent {
   margin-left: auto;
-  border: none;
-  background: transparent;
-  color: var(--tg-blue, #3390ec);
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
+  font-variant-numeric: tabular-nums;
 }
 
 .voice-full-modal {
@@ -847,14 +897,6 @@
   max-height: 280px;
   margin: 0 auto;
   border-radius: 50%;
-}
-
-.msg-video-deferred__play {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
 }
 
 .msg-video-deferred__frame .msg-video-thumb__duration {

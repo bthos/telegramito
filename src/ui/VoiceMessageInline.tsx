@@ -175,7 +175,11 @@ export function VoiceMessageInline({
             </svg>
           )}
         </button>
-        <div className="msg-voice-inline__col">
+        <div
+          className="msg-voice-inline__col"
+          onDoubleClick={() => setFull(true)}
+          title={t("chat.expandVoice")}
+        >
           <div className="msg-voice-wave" aria-hidden>
             {bars.map((h, i) => {
               const frac = i / Math.max(1, bars.length - 1)
@@ -188,13 +192,26 @@ export function VoiceMessageInline({
             })}
           </div>
           <div className="msg-voice-inline__meta">
-            <span className="msg-voice-inline__elapsed">{formatVideoDuration(Math.floor(tcur))}</span>
-            <span className="msg-voice-inline__dur" aria-hidden>
-              {" "}
-              / {durLabel}
+            <span className="msg-voice-inline__elapsed">
+              {playing ? formatVideoDuration(Math.floor(tcur)) : durLabel}
             </span>
-            <button type="button" className="msg-voice-inline__expand" onClick={() => setFull(true)}>
-              {t("chat.expandVoice")}
+            {playing ? (
+              <span className="msg-voice-inline__slash" aria-hidden>
+                {" "}
+                / {durLabel}
+              </span>
+            ) : null}
+            {viewerContext?.sentAtLabel ? (
+              <span className="msg-voice-inline__sent">{viewerContext.sentAtLabel}</span>
+            ) : null}
+            <button
+              type="button"
+              className="msg-voice-inline__transcript"
+              onClick={() => {
+                setFull(true)
+              }}
+            >
+              {t("chat.readTranscript")}
             </button>
           </div>
         </div>

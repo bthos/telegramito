@@ -15,6 +15,43 @@ export function getForumReplyToTopId(message: Api.Message): number | undefined {
   return (rt as Api.MessageReplyHeader).replyToTopId
 }
 
+/**
+ * Map a concrete {@link Api.Message} to a forum thread id from the loaded topic list.
+ * Used when opening a specific message (e.g. day mail) so the UI switches to the right topic
+ * before scrolling. Relies on {@link getForumReplyToTopId}, or on {@link Api.ForumTopic#id} /
+ * {@link Api.ForumTopic#topMessage} when the server omits `reply_to_top_id` (e.g. some topic roots).
+ */
+export function resolveForumTopicIdFromMessage(
+  message: Api.Message,
+  topics: readonly Api.ForumTopic[],
+): number | null {
+  const concrete = topics.filter((x): x is Api.ForumTopic => x.className === "ForumTopic")
+  if (concrete.length === 0) {
+    return null
+  }
+  const idSet = new Set(concrete.map((x) => x.id))
+
+  const rt = getForumReplyToTopId(message)
+  if (rt != null) {
+    return idSet.has(rt) ? rt : null
+  }
+
+  const mid = message.id
+  if (typeof mid === "number") {
+    if (idSet.has(mid)) {
+      return mid
+    }
+    const byTop = concrete.find(
+      (x) => typeof x.topMessage === "number" && x.topMessage === mid,
+    )
+    if (byTop != null) {
+      return byTop.id
+    }
+  }
+
+  return null
+}
+
 /** Forum supergroup: topics enabled and not the “as single chat” layout. */
 export function isForumWithSubchats(
   entity: Entity | undefined
@@ -205,6 +242,18 @@ export function forumTopicLabel(t: Api.ForumTopic): string {
   return t.title || `#${t.id}`
 }
 
+/**
+ * Background for a forum topic without a custom emoji: `iconColor` is Telegram's palette key
+ * (see tdesktop `ForumTopicIcons`, e.g. 0x6FB9F0). Renders as `#rrggbb`.
+ */
+export function forumTopicIconSwatchColor(iconColor: number): string {
+  const rgb = iconColor >>> 0
+  if ((rgb & 0xffffff) === 0) {
+    return "#9aa7b8"
+  }
+  return `#${(rgb & 0xffffff).toString(16).padStart(6, "0")}`
+}
+
 /** Sum of per-topic `unreadCount` for loaded topics (for UI comparison with {@link Dialog#unreadCount}). */
 export function sumTopicUnreadCounts(topics: readonly Api.ForumTopic[]): number {
   let s = 0
@@ -220,5 +269,5 @@ export function formatTopicUnreadSuffix(topic: Api.ForumTopic, empty = ""): stri
   if (n <= 0) {
     return empty
   }
-  return n > 99 ? "  (99+)" : `  (${n})`
+  return `  (${n})`
 }

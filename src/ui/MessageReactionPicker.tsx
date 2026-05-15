@@ -5,7 +5,9 @@ import { useTranslation } from "react-i18next"
 import { useFocusTrap } from "../hooks/useFocusTrap"
 import {
   availableEntryToTypeReaction,
+  filterActiveAvailableReactions,
   getAvailableReactionsForClient,
+  peekAvailableReactionsCache,
   pickReactionDisplayDocument,
 } from "../telegram/availableReactionsCache"
 import { getReactionStaticIconObjectUrl } from "../telegram/customEmojiCache"
@@ -130,7 +132,8 @@ export function MessageReactionPicker({
 }) {
   const { t: tRoot } = useTranslation()
   const [busy, setBusy] = useState(false)
-  const [items, setItems] = useState<Api.AvailableReaction[]>([])
+  const [items, setItems] = useState<Api.AvailableReaction[]>(() =>
+    filterActiveAvailableReactions(peekAvailableReactionsCache()))
   const [loadErr, setLoadErr] = useState(false)
   const panelRef = useRef<HTMLDivElement | null>(null)
   useFocusTrap(panelRef, open)
@@ -156,12 +159,7 @@ export function MessageReactionPicker({
       try {
         const raw = await getAvailableReactionsForClient(client)
         if (a) {
-          setItems(
-            raw.filter(
-              (x): x is Api.AvailableReaction =>
-                x.className === "AvailableReaction" && !x.inactive
-            )
-          )
+          setItems(filterActiveAvailableReactions(raw))
         }
       } catch {
         if (a) {

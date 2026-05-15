@@ -1,4 +1,3 @@
-import { useTranslation } from "react-i18next"
 import {
   createContext,
   useCallback,
@@ -8,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
+import { BootLoading } from "../ui/BootLoading"
 import { changeAppLocale } from "../i18n/config"
 import {
   applyStoredLocaleToDocument,
@@ -30,7 +30,6 @@ type ParentalContextValue = {
 const ParentalContext = createContext<ParentalContextValue | null>(null)
 
 export function ParentalProvider({ children }: { children: ReactNode }): React.ReactNode {
-  const { t } = useTranslation()
   const [settings, setSt] = useState<ParentalSettings>(defaultParentalSettings)
   const [parentUnlocked, setParentUnlocked] = useState(false)
   const [ready, setReady] = useState(false)
@@ -82,11 +81,7 @@ export function ParentalProvider({ children }: { children: ReactNode }): React.R
   )
 
   if (!ready) {
-    return (
-      <div className="app-boot" role="status" aria-live="polite">
-        {t("loading")}
-      </div>
-    )
+    return <BootLoading />
   }
   return (
     <ParentalContext.Provider value={value}>

@@ -7,7 +7,6 @@ import { VitePWA } from "vite-plugin-pwa"
 import { viteSingleFile } from "vite-plugin-singlefile"
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url))
-const telegramRoot = path.resolve(projectRoot, "vendor", "telegram-built")
 
 // https://vite.dev/config/
 // Single-file build inlines JS/CSS so `dist/index.html` can be opened via file://
@@ -89,10 +88,14 @@ export default defineConfig({
     },
   ],
   resolve: {
-    /** One physical copy of GramJS — avoids two `tlobjects` maps (e.g. `telegram` vs `telegram/tl/...`). */
+    /**
+     * One physical copy of GramJS — avoids two `tlobjects` maps (e.g. `telegram` vs `telegram/tl/...`).
+     * Do not alias `telegram` to `vendor/…`: that makes Vite treat GramJS as app source and serves raw CJS
+     * in dev (`import { StringSession }` fails). Use `dependencies.telegram` → `file:./vendor/telegram-built`
+     * (node_modules symlink) so `optimizeDeps.include: ["telegram"]` can pre-bundle with CJS interop.
+     */
     dedupe: ["telegram"],
     alias: {
-      telegram: telegramRoot,
       buffer: "buffer",
       // Vite/rolldown sometimes resolves `node:*` built-ins in deps; map to the same
       // browser polyfills as bare `util` / `crypto` / etc.
@@ -127,11 +130,18 @@ export default defineConfig({
   },
   optimizeDeps: {
     /**
-     * Do not pre-bundle `telegram` (GramJS): `include: ["telegram"]` produced a second
-     * module graph so `BinaryReader` saw an empty `tlobjects` while Node `require()` was fine.
+     * GramJS is `file:./vendor/telegram-built` — linked packages are skipped unless listed here.
+     * Pre-bundle so dev gets ESM interop for CJS subpaths (`telegram/sessions`, etc.).
+     * Keep `resolve.dedupe: ["telegram"]` so there is one physical copy / one `tlobjects` map.
      */
-    exclude: ["telegram"],
     include: [
+      "telegram",
+      "telegram/sessions",
+      /** CJS subpaths — without these, dev serves raw `/vendor/…/*.js` and named ESM imports fail. */
+      "telegram/events",
+      "telegram/Helpers",
+      "telegram/Utils",
+      "telegram/client/downloads",
       "buffer",
       "util",
       "events",

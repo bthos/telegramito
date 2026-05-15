@@ -1,36 +1,34 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ComponentType,
-  type SVGProps,
-} from "react"
+import { Api } from "telegram"
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useParentalSettings } from "../context/ParentalContext"
-import { useTheme } from "../context/ThemeContext"
 import { useTelegram } from "../context/TelegramContext"
+import { useMinWidth } from "../hooks/useMinWidth"
 import { useNarrowView } from "../hooks/useNarrowView"
 import { usePeriodicTick } from "../hooks/usePeriodicTick"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import { getPendingRequests } from "../parental/storage"
 import { getDialogPreviewText } from "../telegram/dialogPreview"
-import { getPeerInfo, isPrivateUserDialog } from "../telegram/dialogUtils"
+import { getPeerInfo, isBroadcastChannelDialog, isPrivateUserDialog } from "../telegram/dialogUtils"
 import { requestChatAccessForDialog } from "../parental/requestAccess"
 import { isNightListHidden, isPrivateOmittedInChildListForDeny } from "../parental/policy"
 import type { AppMode } from "../parental/types"
-import type { ThemePreference } from "../theme/storage"
+import {
+  filterDialogsByCorrespondenceTab,
+  dialogIsArchived,
+  type CorrespondenceTab,
+} from "../util/correspondenceFilter"
+import { formatLiteraryDateLine } from "../util/literaryDate"
 import { ChatView, THREAD_HEADER_ACTIONS_ID, THREAD_HEADER_CENTER_ID } from "./ChatView"
 import { ChatsListPanel } from "./ChatsListPanel"
+import { LettersMasthead } from "./LettersMasthead"
+import { LettersChatRailProvider } from "./LettersChatRailContext"
+import { LettersRightRailColumn } from "./LettersRightRailColumn"
 import { SettingsView } from "./SettingsView"
 import { PinDialog } from "./PinDialog"
 import { RequestsView } from "./RequestsView"
 import { Button } from "./ds"
 import { BackIcon } from "./BackIcon"
-import { ChildModeIcon, ParentModeIcon } from "./ModeToggleIcons"
-import { TelegramMark } from "./TelegramMark"
-import { SignOutIcon } from "./SignOutIcon"
-import { DarkThemeIcon, LightThemeIcon, SystemThemeIcon } from "./ThemeToggleIcons"
 
 type Tab = "chats" | "settings" | "requests"
 
@@ -48,30 +46,81 @@ function filterDialogs(
   })
 }
 
-const THEME_TOGGLES: {
-  pref: ThemePreference
-  Icon: ComponentType<SVGProps<SVGSVGElement>>
-}[] = [
-  { pref: "light", Icon: LightThemeIcon },
-  { pref: "system", Icon: SystemThemeIcon },
-  { pref: "dark", Icon: DarkThemeIcon },
-]
-
 export function MainShell() {
-  const { t } = useTranslation()
-  const { theme, setTheme } = useTheme()
+  const { t, i18n } = useTranslation()
   const { settings, setSettings, parentUnlocked, setParentUnlocked } = useParentalSettings()
   const { dialogs, refreshDialogs, logOut, lastMessageTick, client, hasMoreDialogs, dialogsLoadingMore, loadMoreDialogs } = useTelegram()
   const [tab, setTab] = useState<Tab>("chats")
+  const [correspondenceTab, setCorrespondenceTab] = useState<CorrespondenceTab>("letters")
   const [selected, setSelected] = useState<Dialog | null>(null)
+  /** Desktop day mail: scroll `ChatView` to this message id once opened. */
+  const [lettersDayMailFocusMessageId, setLettersDayMailFocusMessageId] = useState<number | null>(
+    null,
+  )
   const [showPin, setShowPin] = useState(false)
   const [modePinToParent, setModePinToParent] = useState(false)
   const [search, setSearch] = useState("")
+  const deferredSearch = useDeferredValue(search)
   const [deniedPeerIds, setDeniedPeerIds] = useState<ReadonlySet<string>>(
     () => new Set()
   )
   /** Same breakpoint intent as `PAGE_WIDTH_SMALL` (960) in telegram-react for “small page”. */
   const narrow = useNarrowView(960)
+  const lettersThreeCol = useMinWidth(1280)
+
+  const literaryDateLine = formatLiteraryDateLine(new Date(), i18n.language)
+
+  const bulletinPeers = useMemo(() => {
+    return dialogs
+      .filter((d) => !dialogIsArchived(d))
+      .filter((d) => {
+        const e = d.entity
+        if (e?.className !== "Channel") return false
+        const c = e as Api.Channel
+        return Boolean(c.broadcast) && !c.megagroup
+      })
+      .slice(0, 8)
+      .map((d) => {
+        const { key, name } = getPeerInfo(d)
+        const rawDate = (d as { date?: unknown }).date
+        const ts = typeof rawDate === "number" ? rawDate : undefined
+        return {
+          key,
+          name,
+          unreadCount: d.unreadCount ?? 0,
+          lastMessageUnix: ts,
+        }
+      })
+  }, [dialogs])
+
+  const focusComposer = useCallback(() => {
+    document.getElementById("letters-compose-textarea")?.focus()
+  }, [])
+
+  const consumeLettersJump = useCallback(() => {
+    setLettersDayMailFocusMessageId(null)
+  }, [])
+
+  const handleSelectChat = useCallback((d: Dialog) => {
+    setLettersDayMailFocusMessageId(null)
+    setSelected(d)
+  }, [])
+
+  const handleDayMailSelect = useCallback((d: Dialog, opts?: { focusMessageId?: number }) => {
+    setSelected(d)
+    const fid = opts?.focusMessageId
+    setLettersDayMailFocusMessageId(typeof fid === "number" && fid > 0 ? fid : null)
+  }, [])
+
+  const handleBulletinSelect = useCallback(
+    (peerKey: string) => {
+      const di = dialogs.find((x) => getPeerInfo(x).key === peerKey)
+      if (di) {
+        handleSelectChat(di)
+      }
+    },
+    [dialogs, handleSelectChat],
+  )
 
   useEffect(() => {
     if (!client) return
@@ -111,24 +160,74 @@ export function MainShell() {
     })()
   }, [settings])
 
-  const visibleDialogs = useMemo(
-    () => filterDialogs(dialogs, search, t),
-    [dialogs, search, t]
+  const dialogsForCorrespondence = useMemo(
+    () => filterDialogsByCorrespondenceTab(dialogs, correspondenceTab),
+    [dialogs, correspondenceTab],
   )
-  const childListDialogs = useMemo(() => {
-    if (settings.appMode !== "child") return visibleDialogs
-    if (deniedPeerIds.size === 0) return visibleDialogs
-    return visibleDialogs.filter((d) => {
-      if (!isPrivateUserDialog(d)) return true
+
+  /** Correspondence rail + parental rules; excludes masthead search (search must not collapse the thread). */
+  const dialogsEligibleToRetainSelection = useMemo(() => {
+    if (settings.appMode !== "child") {
+      return dialogsForCorrespondence
+    }
+    if (deniedPeerIds.size === 0) {
+      return dialogsForCorrespondence
+    }
+    return dialogsForCorrespondence.filter((d) => {
+      if (!isPrivateUserDialog(d)) {
+        return true
+      }
       const { key } = getPeerInfo(d)
       return !isPrivateOmittedInChildListForDeny(
         settings.appMode,
         true,
         key,
-        deniedPeerIds
+        deniedPeerIds,
       )
     })
-  }, [visibleDialogs, settings.appMode, deniedPeerIds])
+  }, [dialogsForCorrespondence, settings.appMode, deniedPeerIds])
+
+  const childListDialogs = useMemo(
+    () => filterDialogs(dialogsEligibleToRetainSelection, deferredSearch, t),
+    [dialogsEligibleToRetainSelection, deferredSearch, t],
+  )
+
+  const lettersCorrespondentsDialogs = useMemo(
+    () => childListDialogs.filter(isPrivateUserDialog),
+    [childListDialogs],
+  )
+  const lettersCirclesDialogs = useMemo(
+    () =>
+      childListDialogs.filter(
+        (d) =>
+          !isPrivateUserDialog(d) && !isBroadcastChannelDialog(d),
+      ),
+    [childListDialogs],
+  )
+
+  const lettersRailDigest = useMemo(
+    () => ({
+      dialogs: childListDialogs,
+      selectedKey: selected ? getPeerInfo(selected).key : null,
+      onSelect: handleDayMailSelect,
+    }),
+    [childListDialogs, selected, handleDayMailSelect],
+  )
+  const lettersRailSelectedKey = selected ? getPeerInfo(selected).key : null
+
+  useEffect(() => {
+    if (!selected) {
+      return
+    }
+    const sk = getPeerInfo(selected).key
+    const retain = dialogsEligibleToRetainSelection.some((d) => getPeerInfo(d).key === sk)
+    const stillLoaded = dialogs.some((d) => getPeerInfo(d).key === sk)
+    if (!retain || !stillLoaded) {
+      queueMicrotask(() => {
+        setSelected(null)
+      })
+    }
+  }, [dialogs, dialogsEligibleToRetainSelection, selected])
 
   useEffect(() => {
     if (settings.appMode !== "child" || !selected) {
@@ -187,137 +286,24 @@ export function MainShell() {
   }, [nightHidden, settings.appMode])
   return (
     <div
-      className={`app-root app-root--main app-root--mode-${settings.appMode}`}
+      className={`app-root app-root--main app-root--mode-${settings.appMode}${tab === "chats" ? " app-root--letters-chats" : ""}`}
     >
-      <header
-        className={`app-topbar app-topbar--mode-${settings.appMode}`}
-        role="banner"
-      >
-        <div className="app-topbar__row app-topbar__row--head">
-          <div className="app-topbar__brand">
-            <TelegramMark className="app-topbar__logo" />
-            <h1 className="app-topbar__title">{t("appName")}</h1>
-          </div>
-          {settings.appMode === "parent" ? (
-            <nav className="app-topbar__tabs" aria-label="main">
-              <button
-                type="button"
-                className={tab === "chats" ? "app-tab is-active" : "app-tab"}
-                onClick={() => {
-                  setTab("chats")
-                }}
-              >
-                {t("chats")}
-              </button>
-              <button
-                type="button"
-                className={tab === "settings" ? "app-tab is-active" : "app-tab"}
-                onClick={() => {
-                  setTab("settings")
-                }}
-              >
-                {t("settings")}
-              </button>
-              <button
-                type="button"
-                className={tab === "requests" ? "app-tab is-active" : "app-tab"}
-                onClick={() => {
-                  setTab("requests")
-                }}
-              >
-                {t("requestsTab")}
-              </button>
-            </nav>
-          ) : null}
-        </div>
-        <div className="app-topbar__row app-topbar__row--tools">
-          <div className="app-topbar__toggles">
-            <div
-              className="app-mode-toggle"
-              role="group"
-              aria-label={t("mode.headerToggle")}
-            >
-              <button
-                type="button"
-                className={
-                  settings.appMode === "child"
-                    ? "app-mode-toggle__btn is-active"
-                    : "app-mode-toggle__btn"
-                }
-                onClick={() => {
-                  setAppMode("child")
-                }}
-                aria-pressed={settings.appMode === "child"}
-                aria-label={t("mode.child")}
-                title={t("mode.child")}
-              >
-                <span className="app-mode-toggle__ic" aria-hidden>
-                  <ChildModeIcon />
-                </span>
-              </button>
-              <button
-                type="button"
-                className={
-                  settings.appMode === "parent"
-                    ? "app-mode-toggle__btn is-active"
-                    : "app-mode-toggle__btn"
-                }
-                onClick={() => {
-                  setAppMode("parent")
-                }}
-                aria-pressed={settings.appMode === "parent"}
-                aria-label={t("mode.parent")}
-                title={t("mode.parent")}
-              >
-                <span className="app-mode-toggle__ic" aria-hidden>
-                  <ParentModeIcon />
-                </span>
-              </button>
-            </div>
-            <div
-              className="app-mode-toggle"
-              role="group"
-              aria-label={t("theme.label")}
-            >
-              {THEME_TOGGLES.map(({ pref, Icon }) => {
-                const active = theme === pref
-                return (
-                  <button
-                    key={pref}
-                    type="button"
-                    className={
-                      active
-                        ? "app-mode-toggle__btn is-active"
-                        : "app-mode-toggle__btn"
-                    }
-                    onClick={() => {
-                      setTheme(pref)
-                    }}
-                    aria-pressed={active}
-                    aria-label={t(`theme.${pref}`)}
-                    title={t(`theme.${pref}`)}
-                  >
-                    <span className="app-mode-toggle__ic" aria-hidden>
-                      <Icon />
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <div className="app-topbar__end">
-            <Button
-              variant="ghostIcon"
-              type="button"
-              aria-label={t("signOut")}
-              title={t("signOut")}
-              onClick={() => { void logOut() }}
-            >
-              <SignOutIcon />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <LettersMasthead
+        dateLine={literaryDateLine}
+        correspondenceTab={correspondenceTab}
+        onCorrespondenceTab={setCorrespondenceTab}
+        search={search}
+        onSearchChange={setSearch}
+        onWrite={focusComposer}
+        shellTab={tab}
+        onShellTab={setTab}
+        showParentShellNav={settings.appMode === "parent"}
+        appMode={settings.appMode}
+        onAppMode={setAppMode}
+        onSignOut={() => {
+          void logOut()
+        }}
+      />
 
       <div className="app-body app-body--fill">
         {tab === "chats" ? (
@@ -346,6 +332,9 @@ export function MainShell() {
                     dialog={selected}
                     settings={settings}
                     showTitle={false}
+                    lettersLayout
+                    lettersJumpToMessageId={lettersDayMailFocusMessageId}
+                    onLettersJumpToMessageConsumed={consumeLettersJump}
                   />
                 </div>
               </div>
@@ -358,7 +347,7 @@ export function MainShell() {
                   nightWindow={nightHidden ? { start: settings.nightMode.start, end: settings.nightMode.end } : undefined}
                   dialogs={childListDialogs}
                   selected={selected}
-                  onSelect={setSelected}
+                  onSelect={handleSelectChat}
                   onRequestForHidden={handleRequestForHidden}
                   settings={settings}
                   hasMoreDialogs={hasMoreDialogs}
@@ -366,45 +355,75 @@ export function MainShell() {
                   dialogsLoadingMore={dialogsLoadingMore}
                   loadedDialogCount={dialogs.length}
                   client={client}
+                  lettersMode
+                  correspondentsDialogs={lettersCorrespondentsDialogs}
+                  circlesDialogs={lettersCirclesDialogs}
+                  bulletinChannelPeers={bulletinPeers}
+                  onSelectBulletinPeer={handleBulletinSelect}
                 />
               </div>
             )
           ) : (
-            <div className="chats-layout">
-              <aside className="chat-aside" aria-label={t("chats")}>
-                <ChatsListPanel
-                  search={search}
-                  onSearchChange={setSearch}
-                  nightListHidden={nightHidden}
-                  nightWindow={nightHidden ? { start: settings.nightMode.start, end: settings.nightMode.end } : undefined}
-                  dialogs={childListDialogs}
-                  selected={selected}
-                  onSelect={setSelected}
-                  onRequestForHidden={handleRequestForHidden}
-                  settings={settings}
-                  hasMoreDialogs={hasMoreDialogs}
-                  loadMoreDialogs={loadMoreDialogs}
-                  dialogsLoadingMore={dialogsLoadingMore}
-                  loadedDialogCount={dialogs.length}
-                  client={client}
-                />
-              </aside>
-              <div className="chat-main">
-                {selected ? (
-                  <ChatView
-                    key={getPeerInfo(selected).key}
-                    dialog={selected}
+            <LettersChatRailProvider
+              digest={lettersRailDigest}
+              selectedKey={lettersRailSelectedKey}
+            >
+              <div
+                className={`chats-layout${lettersThreeCol ? " chats-layout--letters-three" : ""}`}
+              >
+                <aside className="chat-aside letters-correspondents-aside" aria-label={t("letters.correspondentsAria")}>
+                  <ChatsListPanel
+                    search={search}
+                    onSearchChange={setSearch}
+                    nightListHidden={nightHidden}
+                    nightWindow={nightHidden ? { start: settings.nightMode.start, end: settings.nightMode.end } : undefined}
+                    dialogs={childListDialogs}
+                    selected={selected}
+                    onSelect={handleSelectChat}
+                    onRequestForHidden={handleRequestForHidden}
                     settings={settings}
+                    hasMoreDialogs={hasMoreDialogs}
+                    loadMoreDialogs={loadMoreDialogs}
+                    dialogsLoadingMore={dialogsLoadingMore}
+                    loadedDialogCount={dialogs.length}
+                    client={client}
+                    lettersMode
+                    showSearch={false}
+                    correspondentsDialogs={lettersCorrespondentsDialogs}
+                    circlesDialogs={lettersCirclesDialogs}
+                    bulletinChannelPeers={bulletinPeers}
+                    onSelectBulletinPeer={handleBulletinSelect}
                   />
-                ) : (
-                  <div className="empty-chat" role="status">
-                    <div className="empty-chat__icon" aria-hidden />
-                    <p className="empty-chat__t">{t("chat.noChat")}</p>
-                    <p className="empty-chat__d muted small">{t("chat.emptyHint")}</p>
-                  </div>
-                )}
+                </aside>
+                <div className="chat-main chat-main--letters">
+                  {selected ? (
+                    <ChatView
+                      key={getPeerInfo(selected).key}
+                      dialog={selected}
+                      settings={settings}
+                      lettersLayout
+                      lettersThreePane={lettersThreeCol}
+                      lettersJumpToMessageId={lettersDayMailFocusMessageId}
+                      onLettersJumpToMessageConsumed={consumeLettersJump}
+                    />
+                  ) : (
+                    <div className="empty-chat" role="status">
+                      <div className="empty-chat__icon" aria-hidden />
+                      <p className="empty-chat__t">{t("chat.noChat")}</p>
+                      <p className="empty-chat__d muted small">{t("chat.emptyHint")}</p>
+                    </div>
+                  )}
+                </div>
+                {lettersThreeCol ? (
+                  <aside
+                    className="letters-day-mail-aside"
+                    aria-label={t("letters.railAsideAria")}
+                  >
+                    <LettersRightRailColumn />
+                  </aside>
+                ) : null}
               </div>
-            </div>
+            </LettersChatRailProvider>
           )
         ) : null}
 

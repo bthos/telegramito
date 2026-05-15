@@ -69,3 +69,15 @@ export function getLoadedDayKeyBounds(datedList: readonly ChatDatedItem[]): {
   }
   return { min, max }
 }
+
+/** Calendar days inclusive between two `YYYY-MM-DD` keys (local calendar). */
+export function inclusiveDaySpan(minKey: string, maxKey: string): number {
+  const a = parseDayKey(minKey)
+  const b = parseDayKey(maxKey)
+  const t0 = new Date(a.y, a.m, a.d).getTime()
+  const t1 = new Date(b.y, b.m, b.d).getTime()
+  if (!Number.isFinite(t0) || !Number.isFinite(t1)) {
+    return 1
+  }
+  return Math.max(1, Math.round((t1 - t0) / 86_400_000) + 1)
+}

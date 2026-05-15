@@ -145,7 +145,7 @@ export function ChatList({
                     ) : null}
                     {d.unreadCount > 0 ? (
                       <span className="chat-row__unread" aria-label={t("chat.unreadAria", { n: d.unreadCount })}>
-                        {d.unreadCount > 99 ? "99+" : d.unreadCount}
+                        {d.unreadCount}
                       </span>
                     ) : null}
                   </div>

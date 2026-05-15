@@ -161,6 +161,24 @@ export function getReplyToPreviewText(m: Api.Message, t: Tr, maxLength = 80): st
   return getMessageMediaTypeLabel(m, t)
 }
 
+/** One-line preview for a reply target loaded from local history (when TL has no inline quote). */
+export function getRepliedMessagePreviewText(
+  m: Api.TypeMessage | undefined,
+  t: Tr,
+  maxLength = 80,
+): string | null {
+  if (!m) {
+    return null
+  }
+  if (m.className === "Message") {
+    return getReplyToPreviewText(m as Api.Message, t, maxLength)
+  }
+  if (m.className === "MessageService") {
+    return t("chat.previewService")
+  }
+  return t("chat.previewAttachment")
+}
+
 export function getDialogPreviewText(d: Dialog, t: Tr, maxLength = 72): string {
   const m = d.message
   if (!m) return ""
@@ -175,4 +193,118 @@ export function getDialogPreviewText(d: Dialog, t: Tr, maxLength = 72): string {
     return t("chat.previewService")
   }
   return t("chat.previewAttachment")
+}
+
+function messageHasCaptionText(m: Api.Message): boolean {
+  if (typeof m.message !== "string") {
+    return false
+  }
+  const trimmed = m.message.replace(/\s+/g, " ").trim()
+  return trimmed.length > 0
+}
+
+/** First character lower for translated media/link cues; leaves URLs unchanged. */
+function dayMailLowerFirstCue(s: string, locale?: string): string {
+  const v = s.trim()
+  if (!v.length) {
+    return s
+  }
+  if (/^[a-z][a-z\d+.-]*:\/\//i.test(v)) {
+    return s.trim()
+  }
+  const rest = v.slice(1)
+  const lc =
+    locale && locale.length > 0
+      ? v.charAt(0).toLocaleLowerCase(locale)
+      : v.charAt(0).toLowerCase()
+  return lc + rest
+}
+
+/**
+ * Day-mail rail headline: action verb (said / sent / shared / …) + content line
+ * (truncated text or a concrete media label — Photo, Voice message, Link, …).
+ */
+export function getDayMailRailHeadlineParts(
+  d: Dialog,
+  t: Tr,
+  maxText = 96,
+  /** For lowercasing the first letter of media labels («Photo» → «photo»). */
+  locale?: string,
+): { verb: string; content: string } {
+  const m = d.message as Api.TypeMessage | undefined
+  if (!m) {
+    return {
+      verb: t("letters.dayMailSent"),
+      content: dayMailLowerFirstCue(t("chat.previewAttachment"), locale),
+    }
+  }
+
+  if (m.className === "MessageService") {
+    return {
+      verb: t("letters.dayMailPosted"),
+      content: dayMailLowerFirstCue(
+        getDialogPreviewText(d, t) || t("chat.previewService"),
+        locale,
+      ),
+    }
+  }
+
+  if (m.className !== "Message") {
+    return {
+      verb: t("letters.dayMailSent"),
+      content: dayMailLowerFirstCue(t("chat.previewAttachment"), locale),
+    }
+  }
+
+  const msg = m as Api.Message
+  const fwd = msg.fwdFrom != null
+  if (fwd) {
+    return {
+      verb: t("letters.dayMailForwarded"),
+      content: getDialogPreviewText(d, t) || t("chat.previewAttachment"),
+    }
+  }
+
+  if (messageHasCaptionText(msg)) {
+    const verb = msg.out ? t("letters.dayMailSent") : t("letters.dayMailSaid")
+    const content = getReplyToPreviewText(msg, t, maxText)
+    return { verb, content }
+  }
+
+  const medClass = msg.media?.className
+  if (medClass === "MessageMediaWebPage") {
+    return {
+      verb: t("letters.dayMailShared"),
+      content: dayMailLowerFirstCue(
+        getDialogPreviewText(d, t) ||
+          getMessageMediaTypeLabel(msg, t) ||
+          t("chat.previewLink"),
+        locale,
+      ),
+    }
+  }
+  if (
+    medClass === "MessageMediaContact" ||
+    medClass === "MessageMediaGeo" ||
+    medClass === "MessageMediaVenue" ||
+    medClass === "MessageMediaGame"
+  ) {
+    return {
+      verb: t("letters.dayMailShared"),
+      content: dayMailLowerFirstCue(
+        getMessageMediaTypeLabel(msg, t) || getDialogPreviewText(d, t),
+        locale,
+      ),
+    }
+  }
+
+  return {
+    verb: t("letters.dayMailSent"),
+    content: dayMailLowerFirstCue(
+      getMessageMediaTypeLabel(msg, t) ||
+        getDialogPreviewText(d, t) ||
+        t("chat.previewAttachment"),
+      locale,
+    ),
+  }
 }

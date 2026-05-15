@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react"
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { useTranslation } from "react-i18next"
@@ -24,12 +30,22 @@ type Props = {
   client: TelegramClient | null
   isOpen: boolean
   onClose: () => void
+  /**
+   * Overlay slide-in (default) vs editorial column in Letters right rail (no backdrop / fixed layer).
+   */
+  presentation?: "overlay" | "lettersRail"
   /** Forum / topics: in-chat search is not wired yet — hide or disable search action. */
   isForum?: boolean
   /** Opens the in-thread search strip in {@link ChatView} and should close the panel. */
   onOpenInChatSearch?: () => void
   /** Called after a successful block so the shell can refresh dialogs. */
   onAfterBlock?: () => void
+  /** Letters two-pane desktop: masthead widgets (ribbon, insights calendar) rendered above peer header. */
+  lettersThreadChrome?: ReactNode | null
+  /** Letters chats: row (search + unread filter) rendered at top of panel after {@link lettersThreadChrome}. */
+  lettersPanelTools?: ReactNode | null
+  /** When true, hides the textual "Search in chat" quick action ({@link lettersPanelTools} provides search). */
+  omitQuickInChatSearch?: boolean
 }
 
 /** Returns true when the entity is a private (user) peer. */
@@ -165,9 +181,13 @@ export function ChatContextPanel({
   client,
   isOpen,
   onClose,
+  presentation = "overlay",
   isForum = false,
   onOpenInChatSearch,
   onAfterBlock,
+  lettersThreadChrome = null,
+  lettersPanelTools = null,
+  omitQuickInChatSearch = false,
 }: Props) {
   const { t } = useTranslation()
   const panelRef = useRef<HTMLDivElement | null>(null)
@@ -278,22 +298,18 @@ export function ChatContextPanel({
   // Placeholder cells to fill grid up to 6 when fewer items are available
   const placeholderCount = Math.max(0, 6 - items.length)
 
-  return (
+  const isRail = presentation === "lettersRail"
+
+  const inner = (
     <>
-      {isOpen ? (
-        <div
-          className="context-panel__backdrop"
-          onClick={onClose}
-          aria-hidden="true"
-        />
-      ) : null}
-      <div
-        ref={panelRef}
-        className={`chat-context-panel${isOpen ? " context-panel--open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("chat.info")}
-      >
+        {lettersThreadChrome != null ? (
+          <div className="context-panel__letters-thread-chrome">
+            {lettersThreadChrome}
+          </div>
+        ) : null}
+        {lettersPanelTools != null ? (
+          <div className="context-panel__letters-panel-tools">{lettersPanelTools}</div>
+        ) : null}
         {/* Peer header */}
         <div className="context-panel__header">
           <PeerAvatar id={peerId} name={peerName} size={48} client={client} />
@@ -340,19 +356,21 @@ export function ChatContextPanel({
             </p>
           ) : null}
           <div className="context-panel__actions">
-            <button
-              type="button"
-              className="context-panel__action-btn"
-              disabled={isForum}
-              title={isForum ? t("chat.searchForumDisabled") : undefined}
-              onClick={() => {
-                if (isForum) return
-                onOpenInChatSearch?.()
-                onClose()
-              }}
-            >
-              {t("chat.searchInChat")}
-            </button>
+            {!omitQuickInChatSearch ? (
+              <button
+                type="button"
+                className="context-panel__action-btn"
+                disabled={isForum}
+                title={isForum ? t("chat.searchForumDisabled") : undefined}
+                onClick={() => {
+                  if (isForum) return
+                  onOpenInChatSearch?.()
+                  onClose()
+                }}
+              >
+                {t("chat.searchInChat")}
+              </button>
+            ) : null}
 
             <button
               type="button"
@@ -436,6 +454,38 @@ export function ChatContextPanel({
             ) : null}
           </div>
         </section>
+    </>
+  )
+
+  if (isRail) {
+    return (
+      <div
+        ref={panelRef}
+        className="chat-context-panel chat-context-panel--letters-rail"
+        aria-label={t("chat.info")}
+      >
+        {inner}
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {isOpen ? (
+        <div
+          className="context-panel__backdrop"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      ) : null}
+      <div
+        ref={panelRef}
+        className={`chat-context-panel${isOpen ? " context-panel--open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("chat.info")}
+      >
+        {inner}
       </div>
     </>
   )

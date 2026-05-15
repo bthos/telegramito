@@ -17,6 +17,7 @@ async function miniI18n() {
             attachMenuLabel: "Attachment options",
             attachMenuPhotoVideo: "Photo or video",
             attachMenuFile: "File",
+            composeFile: "File",
           },
         },
       },
@@ -55,6 +56,21 @@ describe("AttachMenu", () => {
     )
     fireEvent.click(screen.getByRole("button", { name: "Attach file" }))
     fireEvent.keyDown(document, { key: "Escape" })
+    expect(screen.queryByRole("menu")).toBeNull()
+  })
+
+  it("letters + lettersIconOnly: clip button, no menu", async () => {
+    const onFiles = vi.fn()
+    render(
+      <I18nextProvider i18n={inst}>
+        <AttachMenu
+          variant="letters"
+          lettersIconOnly
+          onFilesSelected={onFiles}
+        />
+      </I18nextProvider>,
+    )
+    fireEvent.click(screen.getByRole("button", { name: "File" }))
     expect(screen.queryByRole("menu")).toBeNull()
   })
 })

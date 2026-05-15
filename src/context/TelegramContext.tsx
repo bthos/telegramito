@@ -13,6 +13,10 @@ import {
   type ReactNode,
 } from "react"
 import { createClientFromStringSession } from "../telegram/clientFactory"
+import {
+  clearAvailableReactionsCache,
+  prefetchAvailableReactionsAssets,
+} from "../telegram/availableReactionsCache"
 import { getApiCredentials } from "../telegram/credentials"
 import { getPeerInfo } from "../telegram/dialogUtils"
 import { getStringSession, setStringSession } from "../parental/storage"
@@ -86,7 +90,12 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
 
   const loadDialogsFirstPage = useCallback(async (c: TelegramClient) => {
     const list = await c.getDialogs({ limit: DIALOG_PAGE })
-    setDialogs(list)
+    /** Keep dialogs from pagination tails; naked `setDialogs(list)` drops them on every tick refresh. */
+    setDialogs((prev) => {
+      const keys = new Set(list.map((d) => getPeerInfo(d).key))
+      const tail = prev.filter((d) => !keys.has(getPeerInfo(d).key))
+      return tail.length === 0 ? list : [...list, ...tail]
+    })
     setHasMoreDialogs(list.length >= DIALOG_PAGE)
   }, [])
 
@@ -309,6 +318,17 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
     setHasMoreDialogs(true)
     await setStringSession(null)
   }, [client, destroyClient])
+
+  useEffect(() => {
+    if (!client) {
+      clearAvailableReactionsCache()
+      return
+    }
+    if (!authorized) {
+      return
+    }
+    void prefetchAvailableReactionsAssets(client)
+  }, [client, authorized])
 
   const value = useMemo<TelegramValue>(
     () => ({

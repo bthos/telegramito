@@ -1,5 +1,6 @@
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
+import { getReactionStaticIconObjectUrl } from "./customEmojiCache"
 
 type Cache = {
   hash: number
@@ -7,6 +8,24 @@ type Cache = {
 }
 
 let cache: Cache | null = null
+
+/** Drops server cache (e.g. on sign-out) so the next session refetches. */
+export function clearAvailableReactionsCache(): void {
+  cache = null
+}
+
+/** In-memory list from the last successful fetch (may be empty before first load). */
+export function peekAvailableReactionsCache(): Api.AvailableReaction[] {
+  return cache?.list ?? []
+}
+
+export function filterActiveAvailableReactions(
+  raw: readonly Api.AvailableReaction[],
+): Api.AvailableReaction[] {
+  return raw.filter(
+    (x): x is Api.AvailableReaction => x.className === "AvailableReaction" && !x.inactive,
+  )
+}
 
 function docToReaction(d: Api.TypeDocument | undefined, fallbackEmoji: string): Api.TypeReaction {
   if (d && d.className === "Document") {
@@ -58,4 +77,41 @@ export async function getAvailableReactionsForClient(client: TelegramClient): Pr
     return r.reactions
   }
   return []
+}
+
+const PREFETCH_REACTION_ICON_CONCURRENCY = 14
+
+/**
+ * Warms {@link getAvailableReactionsForClient} plus reaction picker artwork so the popup opens
+ * without waiting on MTProto + dozens of sequential icon resolves.
+ */
+export async function prefetchAvailableReactionsAssets(client: TelegramClient): Promise<void> {
+  try {
+    const list = await getAvailableReactionsForClient(client)
+    const active = filterActiveAvailableReactions(list)
+    const docs: Api.Document[] = []
+    const seen = new Set<string>()
+    for (const item of active) {
+      const d = pickReactionDisplayDocument(item)
+      if (d?.className !== "Document") {
+        continue
+      }
+      const id = (d as Api.Document).id
+      if (id == null) {
+        continue
+      }
+      const k = String(id)
+      if (seen.has(k)) {
+        continue
+      }
+      seen.add(k)
+      docs.push(d as Api.Document)
+    }
+    for (let i = 0; i < docs.length; i += PREFETCH_REACTION_ICON_CONCURRENCY) {
+      const slice = docs.slice(i, i + PREFETCH_REACTION_ICON_CONCURRENCY)
+      await Promise.all(slice.map((doc) => getReactionStaticIconObjectUrl(client, doc)))
+    }
+  } catch {
+    /* best-effort */
+  }
 }

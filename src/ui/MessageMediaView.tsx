@@ -625,9 +625,33 @@ function VideoDeferredPending({
         }}
       >
         <div className={frameClass}>
-          <span className="msg-video-deferred__play ds-glyph ds-glyph--lg" aria-hidden />
           {durationLabel ? (
-            <span className="msg-video-thumb__duration">{durationLabel}</span>
+            <span
+              className={
+                round
+                  ? "msg-video-thumb__duration msg-video-thumb__duration--round"
+                  : "msg-video-thumb__duration"
+              }
+            >
+              {round ? (
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="#fff" aria-hidden>
+                  <path d="M2 4v2h2l3 2V2L4 4z" />
+                  <path d="M8 3a3 3 0 010 4" stroke="#fff" strokeWidth="1" fill="none" />
+                </svg>
+              ) : (
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="#fff" aria-hidden>
+                  <path d="M2 1l7 4-7 4z" />
+                </svg>
+              )}
+              {durationLabel}
+            </span>
+          ) : null}
+          {!round ? (
+            <span className="msg-video-thumb-play-fab" aria-hidden>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="#fff">
+                <path d="M5 3l13 7-13 7z" />
+              </svg>
+            </span>
           ) : null}
         </div>
       </button>
@@ -708,8 +732,18 @@ function VideoInlinePlayer({
   const ref = useRef<HTMLVideoElement>(null)
   const [started, setStarted] = useState(autoPlay)
   const wrapClass = round ? "msg-video-wrap msg-video-wrap--round" : "msg-video-wrap"
+  const showRectChrome = Boolean(durationLabel && !showGifTag)
   return (
-    <div className={wrapClass} data-media-state="preview">
+    <div
+      className={wrapClass}
+      data-media-state="preview"
+      onDoubleClick={(e) => {
+        if (round && !showGifTag) {
+          e.stopPropagation()
+          onExpand()
+        }
+      }}
+    >
       <video
         ref={ref}
         className={round ? "msg-video msg-video--round" : "msg-video"}
@@ -719,6 +753,12 @@ function VideoInlinePlayer({
         playsInline
         autoPlay={autoPlay}
         controls={autoPlay ? false : started}
+        onClick={(e) => {
+          if (round && !autoPlay && !started) {
+            e.stopPropagation()
+            void ref.current?.play()
+          }
+        }}
         onPlay={() => {
           setStarted(true)
         }}
@@ -727,36 +767,55 @@ function VideoInlinePlayer({
         }}
       />
       {showGifTag ? <span className="msg-gif-tag">GIF</span> : null}
-      {durationLabel ? (
-        <span className="msg-video-thumb__duration">{durationLabel}</span>
+      {showRectChrome ? (
+        <span
+          className={
+            round ? "msg-video-thumb__duration msg-video-thumb__duration--round" : "msg-video-thumb__duration"
+          }
+        >
+          {round ? (
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="#fff" aria-hidden>
+              <path d="M2 4v2h2l3 2V2L4 4z" />
+              <path d="M8 3a3 3 0 010 4" stroke="#fff" strokeWidth="1" fill="none" />
+            </svg>
+          ) : (
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="#fff" aria-hidden>
+              <path d="M2 1l7 4-7 4z" />
+            </svg>
+          )}
+          {durationLabel}
+        </span>
       ) : null}
-      <button
-        type="button"
-        className="msg-video-thumb__expand"
-        aria-label={expandLabel}
-        onClick={(e) => {
-          e.stopPropagation()
-          onExpand()
-        }}
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-          <path
-            fill="currentColor"
-            d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"
-          />
-        </svg>
-      </button>
-      {!autoPlay && !started ? (
+      {!showGifTag && !round ? (
         <button
           type="button"
-          className="msg-video-play ds-glyph ds-glyph--lg"
+          className="msg-video-thumb__expand"
+          aria-label={expandLabel}
+          onClick={(e) => {
+            e.stopPropagation()
+            onExpand()
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+            <path
+              fill="currentColor"
+              d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"
+            />
+          </svg>
+        </button>
+      ) : null}
+      {!autoPlay && !started && !round ? (
+        <button
+          type="button"
+          className="msg-video-play msg-video-thumb-play-fab"
           aria-label={playLabel}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation()
             void ref.current?.play()
           }}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
-            <path fill="currentColor" d="M8 5v14l11-7z" />
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden>
+            <path fill="#fff" d="M5 3l13 7-13 7z" />
           </svg>
         </button>
       ) : null}
@@ -1144,7 +1203,7 @@ export function MessageMediaView({
           muted
           playLabel={te("chat.playVideo")}
           round={round}
-          durationLabel={durationLabel}
+          durationLabel={gifStyle ? null : durationLabel}
           expandLabel={te("chat.expandVideo")}
           onExpand={() => setVideoFullOpen(true)}
           showGifTag={gifStyle}

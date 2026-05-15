@@ -35,6 +35,9 @@ export function canGroupMessages(prev: Api.Message, cur: Api.Message): boolean {
     return false
   }
   if (!prev.out) {
+    if (prev.fromId == null || cur.fromId == null) {
+      return false
+    }
     const a = peerKeyFromFromId(prev.fromId)
     const b = peerKeyFromFromId(cur.fromId)
     if (a !== b) {

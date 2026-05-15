@@ -30,13 +30,18 @@ import {
   findFirstMessageRowIndexForDayKey,
   getLoadedDayKeyBounds,
   getLoadedDayKeys,
+  inclusiveDaySpan,
+  parseDayKey,
 } from "../util/chatHistoryJump"
 import {
   formatTopicUnreadSuffix,
   forumTopicLabel,
   isForumWithSubchats,
+  resolveForumTopicIdFromMessage,
   sendInForumThread,
 } from "../telegram/forum"
+import { withTransientRetry } from "../telegram/invokeWithTransientRetry"
+import { toMessageList } from "../telegram/messageList"
 import { collectCustomEmojiDocumentIdsFromMessages } from "../telegram/customEmojiFromMessages"
 import { prefetchCustomEmojiDocuments } from "../telegram/customEmojiCache"
 import { appLog } from "../util/appLogger"
@@ -53,11 +58,10 @@ import {
 } from "../telegram/messageTickState"
 import { forwardMessageInCurrentChat } from "../telegram/forwardInChat"
 import { peerKeyFromPeer } from "../telegram/peerKey"
-import { ChatSearchBar } from "./ChatSearchBar"
 import { insertAtCursor } from "../util/insertAtCursor"
-import { useInChatSearch } from "../hooks/useInChatSearch"
 import { InboundClusterRow } from "./InboundClusterRow"
-import { ForumTopicIcon, UnreadFilterIcon } from "./ChatFilterIcons"
+import { UnreadFilterIcon } from "./ChatFilterIcons"
+import { ForumTopicBadge } from "./ForumTopicBadge"
 import { ScrollToBottomFab } from "./ScrollToBottomFab"
 import { JumpDateCalendarPop } from "./JumpDateCalendarPop"
 import { Button } from "./ds"
@@ -78,12 +82,24 @@ import { AttachUploadProgress } from "./AttachUploadProgress"
 import { TickIcon } from "./TickIcon"
 import { EmojiPickerButton } from "./EmojiPicker"
 import { TypingIndicator } from "./TypingIndicator"
+import { LettersLetterHeader } from "./LettersLetterHeader"
+import { ChatViewInChatSearch } from "./ChatViewInChatSearch"
+import { LettersPassageMessage } from "./LettersPassageMessage"
+import { LettersThreadInsights } from "./LettersThreadInsights"
+import { useLettersChatRailOptional } from "./LettersChatRailContext"
 
 type Props = {
   dialog: Dialog
   settings: ParentalSettings
   /** When the shell renders its own top bar (narrow layout), skip the title row. */
   showTitle?: boolean
+  /** Letters v2 layout: editorial chrome, jump strip, compose copy. */
+  lettersLayout?: boolean
+  /** Desktop three-pane Letters layout: chat info + calendar dock into the right rail instead of an overlay. */
+  lettersThreePane?: boolean
+  /** Letters day mail rail: scroll to this message id once; parent clears via `onLettersJumpToMessageConsumed`. */
+  lettersJumpToMessageId?: number | null
+  onLettersJumpToMessageConsumed?: () => void
 }
 
 type ChatListItem = ChatDatedItem
@@ -110,7 +126,7 @@ function UnreadOnlyMessagesToggle({
     <div className="thread-header__unread">
       <span id={labelId} className="thread-header__unread-label">
         <UnreadFilterIcon />
-        <span>{t("chat.messagesUnreadOnly")}</span>
+        <span className="thread-header__unread-caption">{t("chat.messagesUnreadOnly")}</span>
       </span>
       <button
         type="button"
@@ -134,7 +150,15 @@ function UnreadOnlyMessagesToggle({
   )
 }
 
-export function ChatView({ dialog, settings, showTitle = true }: Props) {
+export function ChatView({
+  dialog,
+  settings,
+  showTitle = true,
+  lettersLayout = false,
+  lettersThreePane = false,
+  lettersJumpToMessageId = null,
+  onLettersJumpToMessageConsumed,
+}: Props) {
   const { t, i18n } = useTranslation()
   const { client, lastMessageTick, refreshDialogs } = useTelegram()
   const { typers } = useTypingIndicators(dialog.entity, client)
@@ -142,7 +166,10 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     () => makeTypingSender(dialog.entity, client),
     [dialog.entity, client],
   )
-  const [draft, setDraft] = useState("")
+  /** Compose text lives in the textarea DOM to avoid re-rendering the whole chat on every keystroke. */
+  const draftRef = useRef("")
+  /** Updated only when `trim().length > 0` toggles — keeps Send button / Enter-to-send in sync cheaply. */
+  const [draftNonempty, setDraftNonempty] = useState(false)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const jumpDateButtonRef = useRef<HTMLButtonElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -181,29 +208,74 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     return false
   }, [dialog.entity])
 
-  const {
-    query: searchQuery,
-    setQuery: setSearchQuery,
-    results: searchResults,
-    loading: searchLoading,
-  } = useInChatSearch({
-    client,
-    entity: dialog.entity,
-    disabled: isForum,
-  })
+  const participantsCount = useMemo(() => {
+    const e = dialog.entity
+    if (e == null) {
+      return null
+    }
+    if (e.className === "Chat") {
+      const n = (e as Api.Chat).participantsCount
+      return typeof n === "number" ? n : null
+    }
+    if (e.className === "Channel") {
+      const c = e as Api.Channel
+      if (c.megagroup && typeof c.participantsCount === "number") {
+        return c.participantsCount
+      }
+    }
+    return null
+  }, [dialog.entity])
 
   const [searchMode, setSearchMode] = useState(false)
-  const [searchResultIndex, setSearchResultIndex] = useState(0)
   const [highlightedMessageId, setHighlightedMessageId] = useState<number | null>(null)
+  const [scrollLayoutBump, setScrollLayoutBump] = useState(0)
   const messageScrollTopBeforeSearchRef = useRef(0)
   const highlightTimerRef = useRef<number | null>(null)
   const pendingScrollToMessageIdRef = useRef<number | null>(null)
 
-  const [isPanelOpen, setIsPanelOpen] = useState(false)
+  const [slidePanelOpen, setSlidePanelOpen] = useState(false)
+  const lettersRailCtx = useLettersChatRailOptional()
+  /** Info + calendar dock into the Letters right rail only at `lettersThreePane` widths. */
+  const dockInfoInLettersRail = Boolean(
+    lettersLayout && lettersThreePane && lettersRailCtx,
+  )
+  /**
+   * Two-pane Letters desktop: masthead widgets belong in slide-out (`ChatContextPanel`), not Center.
+   */
+  const dockLettersChromeInContextPanel = Boolean(
+    lettersLayout && lettersRailCtx && !lettersThreePane,
+  )
+  const stripLettersChromeFromCenterMasthead = Boolean(
+    dockInfoInLettersRail || dockLettersChromeInContextPanel,
+  )
+
+  /** Narrow shell (`MainShell` `chats-narrow`): save compose width — Send is arrow-only. */
+  const lettersSendIconOnly = lettersLayout && !showTitle
+
+  const isPanelOpen = dockInfoInLettersRail
+    ? Boolean(lettersRailCtx!.lettersInfoOpen)
+    : slidePanelOpen
+
+  const setPanelOpen = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      if (dockInfoInLettersRail && lettersRailCtx) {
+        if (typeof next === "function") {
+          lettersRailCtx.setLettersInfoOpen((prev) => next(prev))
+        } else {
+          lettersRailCtx.setLettersInfoOpen(next)
+        }
+      } else if (typeof next === "function") {
+        setSlidePanelOpen(next)
+      } else {
+        setSlidePanelOpen(next)
+      }
+    },
+    [dockInfoInLettersRail, lettersRailCtx],
+  )
 
   useEffect(() => {
     queueMicrotask(() => {
-      setIsPanelOpen(false)
+      setSlidePanelOpen(false)
     })
   }, [key])
 
@@ -237,8 +309,14 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   const noPreview = shouldHideLinkPreviews(settings)
   const filterGifs = shouldFilterGifs(settings)
 
-  const { topics, topicId, setTopicId, topicsErr, topicsLoading, refreshForumTopics } =
-    useForumTopics(client, dialog.entity, isForum, lastMessageTick)
+  const {
+    topics,
+    topicId,
+    setTopicId,
+    topicsErr,
+    topicsLoading,
+    refreshForumTopics,
+  } = useForumTopics(client, dialog.entity, isForum, lastMessageTick)
 
   const currentForumTopic = useMemo((): Api.ForumTopic | undefined => {
     if (!isForum || topicId == null) {
@@ -259,10 +337,8 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     pendingScrollToMessageIdRef.current = null
     queueMicrotask(() => {
       setSearchMode(false)
-      setSearchQuery("")
-      setSearchResultIndex(0)
     })
-  }, [convKey, setSearchQuery])
+  }, [convKey])
 
   useEffect(() => {
     clearAttachments()
@@ -349,6 +425,22 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     }
     return map
   }, [listForView])
+
+  const messageByIdLoaded = useMemo(() => {
+    const map = new Map<number, Api.Message>()
+    for (const msg of list) {
+      const mid = msg.id
+      if (typeof mid === "number") {
+        map.set(mid, msg)
+      }
+    }
+    return map
+  }, [list])
+
+  const resolveRepliedMessage = useCallback(
+    (replyToMsgId: number) => messageByIdLoaded.get(replyToMsgId),
+    [messageByIdLoaded],
+  )
 
   const maxMsgIdVisible = useMemo(
     () => readMaxIdForMarkRead(list, { isForum, topic: currentForumTopic }),
@@ -450,10 +542,143 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     [datedList]
   )
   const loadedDayKeys = useMemo(() => getLoadedDayKeys(datedList), [datedList])
+  const sortedJumpDayKeys = useMemo(() => {
+    const keys = [...getLoadedDayKeys(datedList)]
+    keys.sort()
+    return keys.length > 24 ? keys.slice(-24) : keys
+  }, [datedList])
+
+  const loadedDaysSpan = useMemo(() => {
+    if (loadedDayBounds.min == null || loadedDayBounds.max == null) {
+      return null
+    }
+    return inclusiveDaySpan(loadedDayBounds.min, loadedDayBounds.max)
+  }, [loadedDayBounds.min, loadedDayBounds.max])
+
+  const loadedWindowSinceLabel = useMemo(() => {
+    if (loadedDayBounds.min == null) {
+      return null
+    }
+    const { y, m, d } = parseDayKey(loadedDayBounds.min)
+    const unixSec = Math.floor(new Date(y, m, d).getTime() / 1000)
+    return formatMessageDateSeparator(unixSec, i18n.language)
+  }, [loadedDayBounds.min, i18n.language])
 
   const toggleJumpCalendar = useCallback(() => {
     setJumpCalOpen((v) => !v)
   }, [])
+
+  const forumTopicTitlePlain = useMemo(() => {
+    const tp = currentForumTopic
+    if (!tp || typeof tp !== "object") return ""
+    const rawTitle = (tp as { title?: unknown }).title
+    if (typeof rawTitle === "string") return rawTitle
+    if (
+      rawTitle &&
+      typeof rawTitle === "object" &&
+      "text" in rawTitle &&
+      typeof (rawTitle as { text: unknown }).text === "string"
+    ) {
+      return (rawTitle as { text: string }).text
+    }
+    return ""
+  }, [currentForumTopic])
+
+  const ribbonStrandUpper = useMemo(() => {
+    /* Forum megagroups: ribbon shows peer title; active topic stays in picker + dropdown row (no duplicate strand). */
+    const raw =
+      isForum
+        ? name.trim()
+        : forumTopicTitlePlain.trim().length > 0
+          ? forumTopicTitlePlain.trim()
+          : name.trim()
+    const u = raw.toUpperCase()
+    return u.length <= 38 ? u : `${u.slice(0, 37)}…`
+  }, [forumTopicTitlePlain, isForum, name])
+
+  const lettersLettersKicker = useMemo(() => {
+    if (searchMode) return null
+    const showRibbon =
+      isGroup || isBroadcastChannel || isPrivateUserDialog(dialog)
+    if (!showRibbon) return null
+
+    let accent: string
+    if (isGroup) {
+      accent =
+        participantsCount != null
+          ? ` ● ${t("letters.headerHandsWriting", { count: participantsCount })}`
+          : ` ● ${t("letters.headerHandsFallback")}`
+    } else if (isBroadcastChannel) {
+      accent = ` ● ${t("letters.headerBroadcastRibbon")}`
+    } else {
+      accent = ` ● ${t("letters.headerDmRibbon")}`
+    }
+
+    return (
+      <p className="letters-letter-header__kicker-print" role="presentation">
+        <span className="letters-letter-header__kicker-plain">{ribbonStrandUpper}</span>
+        <span className="letters-letter-header__kicker-accent">{accent}</span>
+      </p>
+    )
+  }, [
+    searchMode,
+    isGroup,
+    isBroadcastChannel,
+    dialog,
+    participantsCount,
+    ribbonStrandUpper,
+    t,
+  ])
+
+  /** Hide duplicate masthead heading when ribbon already shows peer name (forums always; others when no forum-topic strand). */
+  const lettersTitleVisuallyHidden =
+    !searchMode &&
+    (isGroup || isBroadcastChannel || isPrivateUserDialog(dialog)) &&
+    (forumTopicTitlePlain.trim().length === 0 || isForum)
+
+  const lettersLettersMetaLine = useMemo(() => {
+    if (searchMode) {
+      return null
+    }
+    if (isGroup && participantsCount != null) {
+      return (
+        <p className="letters-letter-header__meta muted small" role="status">
+          {t("letters.headerBundleMeta", {
+            participants: participantsCount,
+            unread: dialog.unreadCount ?? 0,
+          })}
+        </p>
+      )
+    }
+    if (!isGroup) {
+      return (
+        <p className="letters-letter-header__meta muted small" role="status">
+          {t("letters.headerDmUnread", { unread: dialog.unreadCount ?? 0 })}
+        </p>
+      )
+    }
+    return null
+  }, [searchMode, isGroup, participantsCount, dialog.unreadCount, t])
+
+  const lettersLettersWindowLine = useMemo(() => {
+    if (searchMode || loadedDaysSpan == null || loadedWindowSinceLabel == null) {
+      return null
+    }
+    return (
+      <p className="letters-letter-header__window muted small" role="status">
+        {t("letters.headerCorrespondenceWindow", {
+          days: loadedDaysSpan,
+          since: loadedWindowSinceLabel,
+        })}
+      </p>
+    )
+  }, [searchMode, loadedDaysSpan, loadedWindowSinceLabel, t])
+
+  const insightsJumpEnabled =
+    !searchMode &&
+    sortedJumpDayKeys.length > 0 &&
+    loadedDayBounds.min != null &&
+    loadedDayBounds.max != null
 
   const jumpToDayKey = useCallback(
     (dayKey: string) => {
@@ -483,61 +708,211 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     [datedList, expandToRowIndex],
   )
 
+  const lettersThreadInsightsWidget = useMemo(
+    () => (
+      <LettersThreadInsights
+        layout="full"
+        messages={listForView}
+        locale={i18n.language}
+        activeDayKey={
+          stickyDateTs != null ? getLocalDayKey(stickyDateTs) : undefined
+        }
+        onPickDay={insightsJumpEnabled ? jumpToDayKey : undefined}
+        onOpenCalendar={
+          insightsJumpEnabled ? () => setJumpCalOpen(true) : undefined
+        }
+        calendarLabel={t("chat.jumpToDate")}
+      />
+    ),
+    [
+      insightsJumpEnabled,
+      i18n.language,
+      jumpToDayKey,
+      listForView,
+      stickyDateTs,
+      t,
+    ],
+  )
+
+  const lettersPanelChromeBundles = useMemo(() => {
+    /**
+     * One masthead bundle for Letters info UI: ribbon, insights, correspondence meta.
+     * - Slide / mobile overlay (`overlay`): heading lives in shell / thread `#thread-title`.
+     * - Right rail (`rail`): visible `h2` for accessibility in the docked column.
+     */
+    const overlay = (
+      <LettersLetterHeader
+        title={name}
+        renderHeading={false}
+        titleVisuallyHidden={lettersTitleVisuallyHidden}
+        layoutVariant="stacked"
+        kickerLine={lettersLettersKicker}
+        trailingInTitleRow={null}
+        insights={lettersThreadInsightsWidget}
+        metaLine={lettersLettersMetaLine}
+        windowLine={lettersLettersWindowLine}
+        jumpStrip={null}
+      />
+    )
+    const rail = (
+      <LettersLetterHeader
+        titleHeadingLevel="h2"
+        title={name}
+        titleVisuallyHidden={lettersTitleVisuallyHidden}
+        layoutVariant="stacked"
+        kickerLine={lettersLettersKicker}
+        trailingInTitleRow={null}
+        insights={lettersThreadInsightsWidget}
+        metaLine={lettersLettersMetaLine}
+        windowLine={lettersLettersWindowLine}
+        jumpStrip={null}
+      />
+    )
+    return { overlay, rail }
+  }, [
+    lettersLettersKicker,
+    lettersLettersMetaLine,
+    lettersLettersWindowLine,
+    lettersThreadInsightsWidget,
+    lettersTitleVisuallyHidden,
+    name,
+  ])
+
+  const lettersThreadChromeForSlidePanel =
+    lettersLayout &&
+    !searchMode &&
+    (dockLettersChromeInContextPanel || (!showTitle && !dockInfoInLettersRail))
+      ? lettersPanelChromeBundles.overlay
+      : null
+
+  const lettersRailContextChrome = lettersPanelChromeBundles.rail
+
   const openSearchMode = useCallback(() => {
     const el = scrollRef.current
     if (el) {
       messageScrollTopBeforeSearchRef.current = el.scrollTop
     }
     setSearchMode(true)
-    setIsPanelOpen(false)
-  }, [setSearchMode, setIsPanelOpen])
+    setPanelOpen(false)
+  }, [setSearchMode, setPanelOpen])
+
+  const lettersPanelTools = useMemo(() => {
+    if (!lettersLayout) {
+      return null
+    }
+    return (
+      <div className="context-panel__letters-tools-row">
+        {!isForum ? (
+          <button
+            type="button"
+            className="btn-icon"
+            aria-label={t("chat.searchInChat")}
+            title={t("chat.searchInChat")}
+            onClick={() => {
+              openSearchMode()
+            }}
+          >
+            <SearchInChatIcon />
+          </button>
+        ) : null}
+        {showUnreadToggle ? (
+          <UnreadOnlyMessagesToggle active={messagesUnreadOnly} onToggle={toggleUnreadOnly} />
+        ) : null}
+      </div>
+    )
+  }, [
+    isForum,
+    lettersLayout,
+    messagesUnreadOnly,
+    openSearchMode,
+    showUnreadToggle,
+    t,
+    toggleUnreadOnly,
+  ])
+
+  useEffect(() => {
+    if (!dockInfoInLettersRail || !lettersRailCtx) {
+      return
+    }
+    if (!lettersRailCtx.lettersInfoOpen) {
+      lettersRailCtx.setLettersInfoSlot(null)
+      return
+    }
+
+    const closeRail = (): void => {
+      lettersRailCtx.setLettersInfoOpen(false)
+    }
+
+    lettersRailCtx.setLettersInfoSlot(
+      <ChatContextPanel
+        key={`${convKey}-rail-info`}
+        presentation="lettersRail"
+        entity={
+            dialog.entity as
+              | Api.User
+              | Api.Chat
+              | Api.Channel
+              | null
+              | undefined
+          }
+          peerName={name}
+          peerId={key}
+          client={client}
+          isOpen
+          onClose={closeRail}
+          isForum={isForum}
+          onOpenInChatSearch={() => {
+            openSearchMode()
+          }}
+          onAfterBlock={() => void refreshDialogs()}
+          lettersThreadChrome={lettersRailContextChrome}
+          lettersPanelTools={lettersPanelTools}
+          omitQuickInChatSearch
+        />
+    )
+
+    return (): void => {
+      lettersRailCtx.setLettersInfoSlot(null)
+    }
+  }, [
+    client,
+    convKey,
+    dialog.entity,
+    dialog.unreadCount,
+    dockInfoInLettersRail,
+    isBroadcastChannel,
+    isForum,
+    isGroup,
+    key,
+    lettersPanelTools,
+    lettersRailContextChrome,
+    lettersRailCtx,
+    lettersRailCtx?.lettersInfoOpen,
+    loadedDaysSpan,
+    loadedWindowSinceLabel,
+    openSearchMode,
+    participantsCount,
+    refreshDialogs,
+  ])
 
   const closeSearchMode = useCallback(() => {
     setSearchMode(false)
-    setSearchQuery("")
-    setSearchResultIndex(0)
     window.setTimeout(() => {
       const el = scrollRef.current
       if (el) {
         el.scrollTop = messageScrollTopBeforeSearchRef.current
       }
     }, 0)
-  }, [setSearchQuery, setSearchMode, setSearchResultIndex])
+  }, [])
 
-  const navigateSearchResult = useCallback((dir: "up" | "down") => {
-    setSearchResultIndex((i) => {
-      const n = searchResults.length
-      if (n === 0) {
-        return 0
-      }
-      if (dir === "down") {
-        return Math.min(n - 1, i + 1)
-      }
-      return Math.max(0, i - 1)
-    })
-  }, [searchResults.length, setSearchResultIndex])
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      setSearchResultIndex((i) => {
-        const n = searchResults.length
-        if (n === 0) {
-          return 0
-        }
-        return Math.min(i, n - 1)
-      })
-    })
-  }, [searchResults.length])
-
-  const jumpToMessageFromSearch = useCallback(
-    async (m: Api.Message) => {
-      const id = m.id
-      if (typeof id !== "number") {
+  const jumpToMessageById = useCallback(
+    async (id: number) => {
+      if (typeof id !== "number" || id <= 0) {
         return
       }
       setMessagesUnreadOnly(false)
       closeSearchMode()
-      setIsPanelOpen(false)
+      setPanelOpen(false)
       if (highlightTimerRef.current != null) {
         clearTimeout(highlightTimerRef.current)
       }
@@ -546,21 +921,110 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         setHighlightedMessageId(null)
         highlightTimerRef.current = null
       }, 1500)
-      try {
-        await refreshMessagesById([id])
-        pendingScrollToMessageIdRef.current = id
-      } catch {
-        appLog.warn("jumpToMessageFromSearch failed", { id })
-      }
+      await refreshMessagesById([id])
+      pendingScrollToMessageIdRef.current = id
+      setScrollLayoutBump((b) => b + 1)
     },
     [
       closeSearchMode,
       refreshMessagesById,
       setMessagesUnreadOnly,
-      setIsPanelOpen,
-      setHighlightedMessageId,
+      setPanelOpen,
     ],
   )
+
+  const jumpToMessageFromSearch = useCallback(
+    async (m: Api.Message) => {
+      const id = m.id
+      if (typeof id !== "number") {
+        return
+      }
+      try {
+        await jumpToMessageById(id)
+      } catch {
+        appLog.warn("jumpToMessageFromSearch failed", { id })
+      }
+    },
+    [jumpToMessageById],
+  )
+
+  const goToQuotedMessage = useCallback(
+    async (quotedId: number) => {
+      if (typeof quotedId !== "number" || quotedId <= 0) {
+        return
+      }
+      try {
+        await jumpToMessageById(quotedId)
+      } catch {
+        appLog.warn("goToQuotedMessage failed", { id: quotedId })
+      }
+    },
+    [jumpToMessageById],
+  )
+
+  const lettersJumpRunSeq = useRef(0)
+
+  useEffect(() => {
+    const id = lettersJumpToMessageId
+    if (id == null || id <= 0) {
+      return
+    }
+    const seq = ++lettersJumpRunSeq.current
+    let cancelled = false
+    void (async () => {
+      let consumeAfter = false
+      try {
+        if (!client || !dialog.entity) {
+          consumeAfter = true
+          return
+        }
+        if (isForum && topicsLoading) {
+          return
+        }
+        if (isForum) {
+          const fetched = await withTransientRetry(client, () =>
+            client.getMessages(dialog.entity as never, { ids: [id] }),
+          )
+          if (cancelled || seq !== lettersJumpRunSeq.current) {
+            return
+          }
+          const full = toMessageList(fetched)[0]
+          const forumTopics = topics.filter((x): x is Api.ForumTopic => x.className === "ForumTopic")
+          if (full?.className === "Message" && forumTopics.length > 0) {
+            const tNext = resolveForumTopicIdFromMessage(full as Api.Message, forumTopics)
+            if (tNext != null && tNext !== topicId) {
+              setTopicId(tNext)
+              return
+            }
+          }
+        }
+        await jumpToMessageById(id)
+        consumeAfter = true
+      } catch {
+        appLog.warn("lettersJumpToMessage failed", { id })
+        consumeAfter = true
+      }
+      if (!consumeAfter || cancelled || seq !== lettersJumpRunSeq.current) {
+        return
+      }
+      onLettersJumpToMessageConsumed?.()
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [
+    lettersJumpToMessageId,
+    convKey,
+    jumpToMessageById,
+    onLettersJumpToMessageConsumed,
+    isForum,
+    topicsLoading,
+    topics,
+    topicId,
+    setTopicId,
+    client,
+    dialog.entity,
+  ])
 
   useLayoutEffect(() => {
     const id = pendingScrollToMessageIdRef.current
@@ -582,7 +1046,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       `[data-chat-message-id="${CSS.escape(String(id))}"]`,
     ) as HTMLElement | null
     node?.scrollIntoView({ block: "center", behavior: "smooth" })
-  }, [datedList, expandToRowIndex])
+  }, [datedList, expandToRowIndex, scrollLayoutBump])
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -606,6 +1070,27 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     }
   }, [client, list])
 
+  useEffect(() => {
+    if (!client || !isForum || topics.length === 0) {
+      return
+    }
+    const ids = topics.flatMap((x) => {
+      if (x.className !== "ForumTopic") {
+        return []
+      }
+      return x.iconEmojiId != null ? [x.iconEmojiId] : []
+    })
+    if (ids.length === 0) {
+      return
+    }
+    const tid = window.setTimeout(() => {
+      void prefetchCustomEmojiDocuments(client, ids)
+    }, 120)
+    return () => {
+      window.clearTimeout(tid)
+    }
+  }, [client, isForum, topics])
+
   const canCompose =
     !isForum ||
     (!topicsLoading && topicsErr == null && topicId != null && topics.length > 0)
@@ -621,7 +1106,28 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   const canSendNow =
     canCompose &&
     !isUploading &&
-    (draft.trim().length > 0 || pendingAttachments.length > 0)
+    (draftNonempty || pendingAttachments.length > 0)
+
+  const resizeComposeTextareaToContent = useCallback(() => {
+    const el = textareaRef.current
+    if (!el || lettersLayout) return
+    el.style.height = "auto"
+    el.style.height = `${Math.min(el.scrollHeight, MAX_COMPOSE_HEIGHT)}px`
+  }, [lettersLayout])
+
+  const applyComposeText = useCallback((text: string) => {
+    draftRef.current = text
+    const has = text.trim().length > 0
+    setDraftNonempty((prev) => (prev === has ? prev : has))
+  }, [])
+
+  const clearComposeField = useCallback(() => {
+    const ta = textareaRef.current
+    if (ta) ta.value = ""
+    draftRef.current = ""
+    setDraftNonempty(false)
+    resizeComposeTextareaToContent()
+  }, [resizeComposeTextareaToContent])
 
   const retryAttachmentSend = async (id: string) => {
     if (!client || !dialog.entity || isUploading) {
@@ -662,7 +1168,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     if (!client || !dialog.entity || !canCompose || isUploading) {
       return
     }
-    const text = draft.trim()
+    const text = (textareaRef.current?.value ?? "").trim()
     const queue = attachments.filter((a) => !a.failed)
 
     if (queue.length > 0) {
@@ -698,7 +1204,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             })
             removeAttachment(att.id)
             if (first && captionText) {
-              setDraft("")
+              clearComposeField()
             }
             first = false
             setUploadProgress({ sent: i + 1, total: queue.length })
@@ -741,7 +1247,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           topicId,
           typeof rId === "number" && rId > 0 ? rId : undefined
         )
-        setDraft("")
+        clearComposeField()
         setReplyingTo(null)
         setMessageActionError(null)
         scrollToLatestMessages()
@@ -758,7 +1264,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         message: text,
         ...(typeof rId === "number" && rId > 0 ? { replyTo: rId } : {}),
       })
-      setDraft("")
+      clearComposeField()
       setReplyingTo(null)
       setMessageActionError(null)
       scrollToLatestMessages()
@@ -810,9 +1316,37 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
   useLayoutEffect(() => {
     const el = textareaRef.current
     if (!el) return
-    el.style.height = "auto"
-    el.style.height = `${Math.min(el.scrollHeight, MAX_COMPOSE_HEIGHT)}px`
-  }, [draft])
+    // Letters compose uses a fixed single-line chrome height from CSS.
+    if (lettersLayout) {
+      el.style.removeProperty("height")
+      return
+    }
+    resizeComposeTextareaToContent()
+  }, [lettersLayout, resizeComposeTextareaToContent])
+
+  const openLettersReactionPicker = useCallback(
+    (e: MouseEvent<Element>, m: Api.Message) => {
+      const mid = m.id
+      if (mid == null) {
+        return
+      }
+      if (client == null || dialog.entity == null) {
+        return
+      }
+      if (reactionTarget?.id === mid) {
+        setReactionTarget(null)
+        return
+      }
+      const tgt = e.currentTarget
+      if (tgt instanceof HTMLElement) {
+        const r = tgt.getBoundingClientRect()
+        setReactionTarget({ id: mid, x: r.left + r.width / 2, y: r.top })
+        return
+      }
+      setReactionTarget({ id: mid, x: e.clientX, y: e.clientY })
+    },
+    [client, dialog.entity, reactionTarget],
+  )
 
   const onMessageBubbleReactions = useCallback(
     (e: MouseEvent, m: Api.Message) => {
@@ -889,15 +1423,41 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       const clusterRole = m.id != null ? clusterRoleByMessageId.get(m.id) : undefined
       const gutterBase = isOut ? "msg-gutter msg-gutter--out" : "msg-gutter msg-gutter--in"
       const gutterHighlight =
-        highlightedMessageId != null && m.id === highlightedMessageId
-          ? " msg-gutter--search-hit"
-          : ""
+        lettersLayout ? ""
+        : highlightedMessageId != null && m.id === highlightedMessageId ? " msg-gutter--search-hit"
+        : ""
       const gutterClass =
         (
           clusterRole != null && clusterRole !== "single"
             ? `${gutterBase} msg-gutter--cluster-${clusterRole}`
             : gutterBase
         ) + gutterHighlight
+      if (lettersLayout) {
+        return (
+          <LettersPassageMessage
+            message={m}
+            rowIndex={rowIndex}
+            gutterClass={gutterClass}
+            clusterRole={clusterRole}
+            isGroup={isGroup}
+            peerDisplayName={name}
+            client={client}
+            entity={dialog.entity}
+            readOutboxMaxId={readOutboxMaxId}
+            isBroadcastChannel={isBroadcastChannel}
+            highlightedMessageId={highlightedMessageId}
+            showMessageIds={settings.showMessageIds}
+            filterGifs={filterGifs}
+            noPreview={noPreview}
+            onLettersReactionPicker={openLettersReactionPicker}
+            patchMessageReactions={patchMessageReactions}
+            refreshMessagesById={refreshMessagesById}
+            mediaViewerCaption={typeof m.message === "string" ? m.message.trim() : ""}
+            resolveRepliedMessage={resolveRepliedMessage}
+            onGoToQuoted={goToQuotedMessage}
+          />
+        )
+      }
       const hasVein = clusterRole === "single" || clusterRole === "last"
       const bubbleClass = [
         "msg-bubble",
@@ -915,7 +1475,12 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
               <span className="msg-debug-id">{t("chat.messageIdLabel", { id: String(m.id) })}</span>
             </div>
           ) : null}
-          <MessageReplyView reply={m.replyTo} client={client} />
+          <MessageReplyView
+            reply={m.replyTo}
+            client={client}
+            resolveRepliedMessage={resolveRepliedMessage}
+            onGoToQuoted={goToQuotedMessage}
+          />
           <div className="msg-media-thumb">
             <MessageMediaView
               message={m}
@@ -1000,6 +1565,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       i18n.language,
       noPreview,
       onMessageBubbleReactions,
+      openLettersReactionPicker,
       patchMessageReactions,
       readOutboxMaxId,
       refreshMessagesById,
@@ -1008,6 +1574,9 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       t,
       name,
       settings.showMessageIds,
+      lettersLayout,
+      resolveRepliedMessage,
+      goToQuotedMessage,
     ]
   )
 
@@ -1029,26 +1598,75 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
     )
   }
 
+  const ThreadEl = lettersLayout ? "main" : "section"
+
   return (
-    <div className="thread-layout" data-panel-open={String(isPanelOpen)}>
-      <section className="thread" aria-label={name}>
+    <div
+      className="thread-layout"
+      data-panel-open={String(!dockInfoInLettersRail && slidePanelOpen)}
+    >
+      <ThreadEl
+        className={lettersLayout ? "thread thread--letters" : "thread"}
+        aria-label={name}
+        {...(lettersLayout ? { "aria-labelledby": "thread-title" } : {})}
+      >
       {showTitle ? (
         searchMode ? (
           <div className="thread-header-row thread-header-row--search">
-            <ChatSearchBar
-              query={searchQuery}
-              onQueryChange={setSearchQuery}
+            <ChatViewInChatSearch
+              client={client}
+              entity={dialog.entity}
+              forumDisabled={isForum}
+              peerDisplayName={name}
               onClose={closeSearchMode}
-              results={searchResults}
-              currentIndex={searchResultIndex}
-              loading={searchLoading}
-              onNavigate={navigateSearchResult}
-              onSelect={(msg) => {
+              onPickMessage={(msg) => {
                 void jumpToMessageFromSearch(msg)
               }}
-              peerDisplayName={name}
-              forumDisabled={isForum}
             />
+          </div>
+        ) : lettersLayout ? (
+          <div className="thread-header-row thread-header-row--letters">
+          <LettersLetterHeader
+            titleId="thread-title"
+            title={name}
+            titleVisuallyHidden={lettersTitleVisuallyHidden}
+            layoutVariant={
+              stripLettersChromeFromCenterMasthead ? "default" : "stacked"
+            }
+            kickerLine={
+              stripLettersChromeFromCenterMasthead ? null : lettersLettersKicker
+            }
+              trailingInTitleRow={null}
+              insights={
+                stripLettersChromeFromCenterMasthead
+                  ? null
+                  : lettersThreadInsightsWidget
+              }
+              metaLine={
+                stripLettersChromeFromCenterMasthead
+                  ? null
+                  : lettersLettersMetaLine
+              }
+              windowLine={
+                stripLettersChromeFromCenterMasthead
+                  ? null
+                  : lettersLettersWindowLine
+              }
+              jumpStrip={null}
+            />
+            <div className="thread-header__actions">
+              <button
+                type="button"
+                aria-label={t("chat.info")}
+                aria-pressed={isPanelOpen}
+                className={isPanelOpen ? "btn-icon btn-icon--active" : "btn-icon"}
+                onClick={() => {
+                  setPanelOpen((v) => !v)
+                }}
+              >
+                <ChatInfoIcon />
+              </button>
+            </div>
           </div>
         ) : (
           <div className="thread-header-row">
@@ -1070,7 +1688,9 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
               aria-label={t("chat.info")}
               aria-pressed={isPanelOpen}
               className={isPanelOpen ? "btn-icon btn-icon--active" : "btn-icon"}
-              onClick={() => setIsPanelOpen((v) => !v)}
+              onClick={() => {
+                setPanelOpen((v) => !v)
+              }}
             >
               <ChatInfoIcon />
             </button>
@@ -1080,20 +1700,20 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
       {!showTitle && headerCenterHost
         ? createPortal(
             searchMode ? (
-              <ChatSearchBar
-                query={searchQuery}
-                onQueryChange={setSearchQuery}
+              <ChatViewInChatSearch
+                client={client}
+                entity={dialog.entity}
+                forumDisabled={isForum}
+                peerDisplayName={name}
                 onClose={closeSearchMode}
-                results={searchResults}
-                currentIndex={searchResultIndex}
-                loading={searchLoading}
-                onNavigate={navigateSearchResult}
-                onSelect={(msg) => {
+                onPickMessage={(msg) => {
                   void jumpToMessageFromSearch(msg)
                 }}
-                peerDisplayName={name}
-                forumDisabled={isForum}
               />
+            ) : lettersLayout ? (
+              <h1 id="thread-title" className="thread-header__h">
+                {name}
+              </h1>
             ) : (
               <h2 className="thread-header__h">{name}</h2>
             ),
@@ -1102,22 +1722,39 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
         : null}
       {!showTitle && headerActionsHost
         ? createPortal(
-            <>
-              {!searchMode ? (
+            lettersLayout ? (
+              !searchMode ? (
                 <button
                   type="button"
-                  className="btn-icon"
-                  aria-label={t("chat.searchInChat")}
-                  title={t("chat.searchInChat")}
-                  onClick={openSearchMode}
+                  className={isPanelOpen ? "btn-icon btn-icon--active" : "btn-icon"}
+                  aria-label={t("chat.info")}
+                  aria-pressed={isPanelOpen}
+                  title={t("chat.info")}
+                  onClick={() => {
+                    setPanelOpen((v) => !v)
+                  }}
                 >
-                  <SearchInChatIcon />
+                  <ChatInfoIcon />
                 </button>
-              ) : null}
-              {showUnreadToggle ? (
-                <UnreadOnlyMessagesToggle active={messagesUnreadOnly} onToggle={toggleUnreadOnly} />
-              ) : null}
-            </>,
+              ) : null
+            ) : (
+              <>
+                {!searchMode ? (
+                  <button
+                    type="button"
+                    className="btn-icon"
+                    aria-label={t("chat.searchInChat")}
+                    title={t("chat.searchInChat")}
+                    onClick={openSearchMode}
+                  >
+                    <SearchInChatIcon />
+                  </button>
+                ) : null}
+                {showUnreadToggle ? (
+                  <UnreadOnlyMessagesToggle active={messagesUnreadOnly} onToggle={toggleUnreadOnly} />
+                ) : null}
+              </>
+            ),
             headerActionsHost,
           )
         : null}
@@ -1136,11 +1773,11 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           {!topicsLoading && topicsErr == null && topics.length > 0 && topicId != null ? (
             <div className="forum-topic-bar__row">
               <span className="forum-topic-lbl">
-                <ForumTopicIcon />
+                <ForumTopicBadge topic={currentForumTopic} client={client} />
                 {t("chat.forumTopic")}
               </span>
               <select
-                className="input"
+                className="forum-topic-bar__select"
                 name="topic"
                 aria-label={t("chat.forumTopic")}
                 value={String(topicId)}
@@ -1261,6 +1898,7 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           </ul>
         )}
         </div>
+        <TypingIndicator typers={typers} />
         <ScrollToBottomFab
           visible={scrollFabVisible && datedList.some((x) => x.kind === "msg")}
           unreadBadge={dialog.unreadCount ?? 0}
@@ -1322,50 +1960,58 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
             />
           </>
         ) : null}
-        <TypingIndicator typers={typers} />
-        <div className="compose__row">
-          <EmojiPickerButton
-            disabled={!canCompose || isUploading}
-            onEmojiSelected={(emoji) => {
-              const ta = textareaRef.current
-              if (!ta) return
-              const { newValue, newCursorPos } = insertAtCursor(
-                ta,
-                emoji,
-                textareaSelectionRef.current,
-              )
-              setDraft(newValue)
-              window.setTimeout(() => {
-                ta.focus()
-                ta.setSelectionRange(newCursorPos, newCursorPos)
-                textareaSelectionRef.current = {
-                  start: newCursorPos,
-                  end: newCursorPos,
-                }
-              }, 0)
-            }}
-          />
-          {showAttach ? (
-            <AttachMenu
-              disabled={!canCompose || isUploading}
-              onFilesSelected={(files) => {
-                setAttachPickErr(null)
-                const { rejectedCount } = addFiles(files)
-                if (rejectedCount > 0) {
-                  setAttachPickErr(t("chat.attachFileTooLarge"))
-                }
-              }}
-            />
+        <div className={lettersLayout ? "compose__row compose__row--letters" : "compose__row"}>
+          {!lettersLayout ? (
+            <>
+              <EmojiPickerButton
+                disabled={!canCompose || isUploading}
+                onEmojiSelected={(emoji) => {
+                  const ta = textareaRef.current
+                  if (!ta) return
+                  const { newValue, newCursorPos } = insertAtCursor(
+                    ta,
+                    emoji,
+                    textareaSelectionRef.current,
+                  )
+                  ta.value = newValue
+                  applyComposeText(newValue)
+                  resizeComposeTextareaToContent()
+                  window.setTimeout(() => {
+                    ta.focus()
+                    ta.setSelectionRange(newCursorPos, newCursorPos)
+                    textareaSelectionRef.current = {
+                      start: newCursorPos,
+                      end: newCursorPos,
+                    }
+                  }, 0)
+                }}
+              />
+              {showAttach ? (
+                <AttachMenu
+                  variant="icon"
+                  disabled={!canCompose || isUploading}
+                  onFilesSelected={(files) => {
+                    setAttachPickErr(null)
+                    const { rejectedCount } = addFiles(files)
+                    if (rejectedCount > 0) {
+                      setAttachPickErr(t("chat.attachFileTooLarge"))
+                    }
+                  }}
+                />
+              ) : null}
+            </>
           ) : null}
           <textarea
             ref={textareaRef}
+            id={lettersLayout ? "letters-compose-textarea" : undefined}
             className="input input-compose"
             name="m"
             rows={1}
-            value={draft}
+            defaultValue=""
             onChange={(e) => {
-              setDraft(e.target.value)
+              applyComposeText(e.currentTarget.value)
               notifyTyping?.()
+              resizeComposeTextareaToContent()
             }}
             onSelect={(e) => {
               const el = e.currentTarget
@@ -1380,7 +2026,11 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
                 end: e.currentTarget.selectionEnd,
               }
             }}
-            placeholder={t("chat.messagePlaceholder")}
+            placeholder={
+              lettersLayout
+                ? t("chat.messagePlaceholderLetters")
+                : t("chat.messagePlaceholder")
+            }
             disabled={!canCompose || isUploading}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -1389,14 +2039,69 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
               }
             }}
           />
+          {lettersLayout ? (
+            <>
+              <EmojiPickerButton
+                disabled={!canCompose || isUploading}
+                onEmojiSelected={(emoji) => {
+                  const ta = textareaRef.current
+                  if (!ta) return
+                  const { newValue, newCursorPos } = insertAtCursor(
+                    ta,
+                    emoji,
+                    textareaSelectionRef.current,
+                  )
+                  ta.value = newValue
+                  applyComposeText(newValue)
+                  resizeComposeTextareaToContent()
+                  window.setTimeout(() => {
+                    ta.focus()
+                    ta.setSelectionRange(newCursorPos, newCursorPos)
+                    textareaSelectionRef.current = {
+                      start: newCursorPos,
+                      end: newCursorPos,
+                    }
+                  }, 0)
+                }}
+              />
+              {showAttach ? (
+                <AttachMenu
+                  variant="letters"
+                  lettersIconOnly={lettersSendIconOnly}
+                  disabled={!canCompose || isUploading}
+                  onFilesSelected={(files) => {
+                    setAttachPickErr(null)
+                    const { rejectedCount } = addFiles(files)
+                    if (rejectedCount > 0) {
+                      setAttachPickErr(t("chat.attachFileTooLarge"))
+                    }
+                  }}
+                />
+              ) : null}
+            </>
+          ) : null}
           <Button
-            className="btn-send"
+            className={
+              lettersSendIconOnly
+                ? "btn-send btn-send--letters-icon-only"
+                : "btn-send"
+            }
             type="button"
             onClick={() => { void onSend() }}
-            aria-label={t("chat.send")}
+            aria-label={
+              lettersSendIconOnly
+                ? t("chat.send")
+                : lettersLayout
+                  ? t("chat.sendArrow")
+                  : t("chat.send")
+            }
             disabled={!canSendNow}
           >
-            {t("chat.send")}
+            {lettersSendIconOnly
+              ? "→"
+              : lettersLayout
+                ? t("chat.sendArrow")
+                : t("chat.send")}
           </Button>
         </div>
       </div>
@@ -1460,20 +2165,32 @@ export function ChatView({ dialog, settings, showTitle = true }: Props) {
           }}
         />
       ) : null}
-      </section>
-      <ChatContextPanel
-        entity={dialog.entity as import("telegram").Api.User | import("telegram").Api.Chat | import("telegram").Api.Channel | null | undefined}
-        peerName={name}
-        peerId={key}
-        client={client}
-        isOpen={isPanelOpen}
-        onClose={() => setIsPanelOpen(false)}
-        isForum={isForum}
-        onOpenInChatSearch={() => {
-          openSearchMode()
-        }}
-        onAfterBlock={() => void refreshDialogs()}
-      />
+      </ThreadEl>
+      {!dockInfoInLettersRail ? (
+        <ChatContextPanel
+          entity={
+            dialog.entity as
+              | import("telegram").Api.User
+              | import("telegram").Api.Chat
+              | import("telegram").Api.Channel
+              | null
+              | undefined
+          }
+          peerName={name}
+          peerId={key}
+          client={client}
+          isOpen={slidePanelOpen}
+          onClose={() => setPanelOpen(false)}
+          isForum={isForum}
+          onOpenInChatSearch={() => {
+            openSearchMode()
+          }}
+          onAfterBlock={() => void refreshDialogs()}
+          lettersThreadChrome={lettersThreadChromeForSlidePanel}
+          lettersPanelTools={lettersPanelTools}
+          omitQuickInChatSearch={lettersLayout}
+        />
+      ) : null}
     </div>
   )
 }
