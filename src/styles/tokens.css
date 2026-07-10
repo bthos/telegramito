@@ -12,7 +12,7 @@
    * Viewport breakpoints — single source for names: ../layout/breakpoints.ts (`BP`, `BP_PAIR`).
    * Keep literal px inside @media rules in CSS in sync when values change there.
    */
-  /* —— Typography —— (.artefacts/ux-analysis/colors_and_type.css — Manrope UI + JetBrains Mono for schema/debug) */
+  /* —— Typography —— (design-system/colors_and_type.css — Manrope UI + JetBrains Mono for schema/debug) */
   --ds-font-sans:
     "Manrope",
     system-ui,
@@ -167,7 +167,7 @@
   --placeholder-bg:      rgba(255, 255, 255, 0.07);
   --placeholder-shimmer: rgba(255, 255, 255, 0.13);
   --placeholder-delay:   100ms;
-  /** Inline “preview” column (tap-to-load) — aligns with `.artefacts/ux-analysis/preview/*.html` */
+  /** Inline “preview” column (tap-to-load) — aligns with `design-system/preview/*.html` */
   --ds-media-preview-shade: linear-gradient(
     135deg,
     color-mix(in srgb, var(--ds-chat-accent) 42%, var(--ds-color-elevated)) 0%,

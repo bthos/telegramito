@@ -22,7 +22,7 @@ type Props = {
 }
 
 /**
- * Full-screen video overlay per `.artefacts/ux-analysis/preview/video.html` (full state):
+ * Full-screen video overlay per `design-system/preview/video.html` (full state):
  * 16:9 player, bottom gradient with scrub (decorative) + time + play/pause.
  */
 export function VideoFullViewer({

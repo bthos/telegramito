@@ -1,7 +1,7 @@
 {
   "name": "telegramito",
   "private": true,
-  "version": "0.9.1",
+  "version": "0.10.0",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -13,6 +13,7 @@
     "build": "node scripts/check-telegram-layer.mjs && tsc -b && vite build",
     "check:telegram-layer": "node scripts/check-telegram-layer.mjs",
     "lint": "eslint .",
+    "lint:ds-refs": "node scripts/check-ds-refs.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "postinstall": "patch-package"

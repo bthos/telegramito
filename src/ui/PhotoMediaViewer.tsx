@@ -28,7 +28,7 @@ function initialsFromTitle(title: string): string {
 }
 
 /**
- * Full-screen photo viewer matching `.artefacts/ux-analysis/preview/photo.html` (full state):
+ * Full-screen photo viewer matching `design-system/preview/photo.html` (full state):
  * overlay chrome, top bar (avatar + who + time), image stage, bottom caption + actions.
  */
 export function PhotoMediaViewer({

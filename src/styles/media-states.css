@@ -1,5 +1,5 @@
 /**
- * Three UX states (preview / loading / full) aligned with `.artefacts/ux-analysis/preview/*.html`.
+ * Three UX states (preview / loading / full) aligned with `design-system/preview/*.html`.
  * Components set `data-media-state` on the relevant wrapper; full-screen portals use `full`.
  */
 
@@ -931,7 +931,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   display: none;
 }
 
-/* Deferred file (tap-to-load): matches `.artefacts/ux-analysis/preview/document.html` preview row */
+/* Deferred file (tap-to-load): matches `design-system/preview/document.html` preview row */
 .msg-doc-row--deferred {
   max-width: min(100%, 20rem);
 }
@@ -973,7 +973,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   height: 40px;
 }
 
-/* Deferred video — `.artefacts/ux-analysis/preview/video.html` (preview + downloading rows) */
+/* Deferred video — `design-system/preview/video.html` (preview + downloading rows) */
 .msg-video-deferred {
   display: block;
   width: 100%;
@@ -1064,7 +1064,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   margin-left: 0;
 }
 
-/* Deferred photo — `.artefacts/ux-analysis/preview/photo.html` */
+/* Deferred photo — `design-system/preview/photo.html` */
 .msg-photo-deferred {
   display: block;
   width: 100%;
@@ -1174,7 +1174,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   max-width: min(100%, 280px);
 }
 
-/* Deferred GIF — `.artefacts/ux-analysis/preview/gif.html` */
+/* Deferred GIF — `design-system/preview/gif.html` */
 .msg-gif-deferred {
   display: block;
   width: 100%;

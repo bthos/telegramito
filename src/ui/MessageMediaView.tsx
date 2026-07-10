@@ -490,7 +490,7 @@ export function DocumentAttachmentLoadingRow({
   )
 }
 
-/** Tap-to-load photo — `.artefacts/ux-analysis/preview/photo.html` (preview). */
+/** Tap-to-load photo — `design-system/preview/photo.html` (preview). */
 function PhotoDeferredPending({
   onActivate,
   tapLabel,
@@ -575,7 +575,7 @@ function PhotoDeferredLoading({
   )
 }
 
-/** Tap-to-load animated GIF / animated image — `.artefacts/ux-analysis/preview/gif.html`. */
+/** Tap-to-load animated GIF / animated image — `design-system/preview/gif.html`. */
 function GifDeferredPending({
   onActivate,
   tapLabel,
@@ -659,7 +659,7 @@ function GifDeferredLoading({
   )
 }
 
-/** Tap-to-load / fetching video chrome — aligns with `.artefacts/ux-analysis/preview/video.html`. */
+/** Tap-to-load / fetching video chrome — aligns with `design-system/preview/video.html`. */
 function VideoDeferredPending({
   resolved,
   onActivate,

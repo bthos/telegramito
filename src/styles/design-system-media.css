@@ -34,7 +34,7 @@
   height: 36px;
 }
 
-/* ── Tap-to-load: UX “preview” column (mock `.artefacts/ux-analysis/preview/*.html`) ── */
+/* ── Tap-to-load: UX “preview” column (mock `design-system/preview/*.html`) ── */
 .ds-media-pending {
   position: relative;
   display: block;
