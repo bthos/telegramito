@@ -29,6 +29,10 @@ export type ParentalSettings = {
   logLevel: AppLogLevel
   /** When true, each message bubble shows its Telegram `message.id` (for bug reports). */
   showMessageIds: boolean
+  /** First open each day defaults mobile tab to day mail (letters ritual). */
+  morningDayMailEnabled: boolean
+  /** Long-press send: wax-seal animation + 5s undo before MTProto send. */
+  waxSealSendEnabled: boolean
 }
 
 export function defaultParentalSettings(): ParentalSettings {
@@ -46,6 +50,8 @@ export function defaultParentalSettings(): ParentalSettings {
     locale: null,
     logLevel: "warn",
     showMessageIds: false,
+    morningDayMailEnabled: true,
+    waxSealSendEnabled: false,
   }
 }
 
@@ -69,6 +75,14 @@ export function normalizeParentalSettings(
     logLevel: isAppLogLevel(s.logLevel) ? s.logLevel : d.logLevel,
     showMessageIds:
       typeof s.showMessageIds === "boolean" ? s.showMessageIds : d.showMessageIds,
+    morningDayMailEnabled:
+      typeof s.morningDayMailEnabled === "boolean"
+        ? s.morningDayMailEnabled
+        : d.morningDayMailEnabled,
+    waxSealSendEnabled:
+      typeof s.waxSealSendEnabled === "boolean"
+        ? s.waxSealSendEnabled
+        : d.waxSealSendEnabled,
   }
 }
 

@@ -14,6 +14,7 @@ import { ChevronDownIcon } from "./ChatChromeIcons"
 import { ChannelsBulletinTiles, type ChannelStripPeer } from "./ChannelsBulletinsStrip"
 import { ChatList } from "./ChatList"
 import { TextField } from "./ds"
+import type { CorrespondenceTab } from "../util/correspondenceFilter"
 
 type Props = {
   search: string
@@ -44,6 +45,8 @@ type Props = {
   /** Letters v2: channel bulletins FM tiles inside channels accordion */
   bulletinChannelPeers?: ChannelStripPeer[]
   onSelectBulletinPeer?: (peerKey: string) => void
+  /** Active correspondence chip — drives drafts empty state and row layout. */
+  correspondenceTab?: CorrespondenceTab
 }
 
 /** Letters sidebar accordion: exactly one section expanded; collapsing cycles to the next. */
@@ -82,6 +85,7 @@ export function ChatsListPanel({
   circlesDialogs: circlesDialogsProp,
   bulletinChannelPeers,
   onSelectBulletinPeer,
+  correspondenceTab = "letters",
 }: Props) {
   const { t } = useTranslation()
   const corrUid = useId()
@@ -179,20 +183,33 @@ export function ChatsListPanel({
   }, [openSection, sidebarSectionsOrdered])
 
   const correspondentsChatList = (
-    <ChatList
-      nightListHidden={nightListHidden}
-      nightWindow={nightWindow}
-      dialogs={lettersMode ? peopleDialogs : dialogs}
-      onSelect={onSelect}
-      selectedKey={selected ? getPeerInfo(selected).key : null}
-      onRequestForHidden={onRequestForHidden}
-      settings={settings}
-      hasMoreDialogs={hasMoreDialogs}
-      loadMoreDialogs={loadMoreDialogs}
-      dialogsLoadingMore={dialogsLoadingMore}
-      loadedDialogCount={loadedDialogCount}
-      client={client}
-    />
+    <>
+      {correspondenceTab === "drafts" && peopleDialogs.length === 0 ? (
+        <div className="letters-drafts-empty" role="status">
+          <p className="letters-drafts-empty__mark" aria-hidden>
+            ✎
+          </p>
+          <p className="letters-drafts-empty__title">{t("letters.draftsEmptyTitle")}</p>
+          <p className="letters-drafts-empty__sub muted small">{t("letters.draftsEmptySub")}</p>
+        </div>
+      ) : (
+        <ChatList
+          nightListHidden={nightListHidden}
+          nightWindow={nightWindow}
+          dialogs={lettersMode ? peopleDialogs : dialogs}
+          onSelect={onSelect}
+          selectedKey={selected ? getPeerInfo(selected).key : null}
+          onRequestForHidden={onRequestForHidden}
+          settings={settings}
+          hasMoreDialogs={hasMoreDialogs}
+          loadMoreDialogs={loadMoreDialogs}
+          dialogsLoadingMore={dialogsLoadingMore}
+          loadedDialogCount={loadedDialogCount}
+          client={client}
+          draftsMode={correspondenceTab === "drafts"}
+        />
+      )}
+    </>
   )
 
   const circlesChatListShared = {

@@ -3,8 +3,8 @@ import type { ChatDatedItem } from "../ui/chatDatedItem"
 
 /** Fallback row height when the bubble has never been measured (viewport slice spacers). */
 export function estimateChatRowHeight(row: ChatDatedItem | undefined): number {
-  if (!row || row.kind === "sep") {
-    return 40
+  if (!row || row.kind === "sep" || row.kind === "catchup") {
+    return row?.kind === "catchup" ? 48 : 40
   }
   const m = row.message
   let base = 112

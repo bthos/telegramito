@@ -59,6 +59,7 @@ import {
 import { forwardMessageInCurrentChat } from "../telegram/forwardInChat"
 import { peerKeyFromPeer } from "../telegram/peerKey"
 import { insertAtCursor } from "../util/insertAtCursor"
+import { findFirstUnreadRowIndex, insertCatchUpRibbon } from "../util/threadCatchUp"
 import { InboundClusterRow } from "./InboundClusterRow"
 import { UnreadFilterIcon } from "./ChatFilterIcons"
 import { ForumTopicBadge } from "./ForumTopicBadge"
@@ -76,6 +77,10 @@ import { ChatInfoIcon, SearchInChatIcon } from "./ChatChromeIcons"
 import { ChatContextPanel } from "./ChatContextPanel"
 import { makeTypingSender, useTypingIndicators } from "../hooks/useTypingIndicators"
 import { useDraftAttachments } from "../hooks/useDraftAttachments"
+import { useWaxSealSend } from "../hooks/useWaxSealSend"
+import { getDialogDraftText } from "../util/dialogDraft"
+import { addCoReadingBookmark } from "../util/lettersRitualsStorage"
+import { getDialogPreviewText } from "../telegram/dialogPreview"
 import { AttachMenu } from "./AttachMenu"
 import { AttachmentPreviewStrip } from "./AttachmentPreviewStrip"
 import { AttachUploadProgress } from "./AttachUploadProgress"
@@ -85,6 +90,7 @@ import { TypingIndicator } from "./TypingIndicator"
 import { LettersLetterHeader } from "./LettersLetterHeader"
 import { ChatViewInChatSearch } from "./ChatViewInChatSearch"
 import { LettersPassageMessage } from "./LettersPassageMessage"
+import { LettersFreshMailPill } from "./LettersFreshMailPill"
 import { LettersThreadInsights } from "./LettersThreadInsights"
 import { useLettersChatRailOptional } from "./LettersChatRailContext"
 
@@ -100,6 +106,7 @@ type Props = {
   /** Letters day mail rail: scroll to this message id once; parent clears via `onLettersJumpToMessageConsumed`. */
   lettersJumpToMessageId?: number | null
   onLettersJumpToMessageConsumed?: () => void
+  onCoReadingBookmarked?: () => void
 }
 
 type ChatListItem = ChatDatedItem
@@ -158,6 +165,7 @@ export function ChatView({
   lettersThreePane = false,
   lettersJumpToMessageId = null,
   onLettersJumpToMessageConsumed,
+  onCoReadingBookmarked,
 }: Props) {
   const { t, i18n } = useTranslation()
   const { client, lastMessageTick, refreshDialogs } = useTelegram()
@@ -176,9 +184,14 @@ export function ChatView({
   /** Snapshot selection when textarea blurs (emoji picker, etc.). */
   const textareaSelectionRef = useRef({ start: 0, end: 0 })
   const [jumpCalOpen, setJumpCalOpen] = useState(false)
+  const [freshMailDismissed, setFreshMailDismissed] = useState(false)
   const [reactionTarget, setReactionTarget] = useState<{ id: number; x: number; y: number } | null>(null)
   const [replyingTo, setReplyingTo] = useState<Api.Message | null>(null)
   const [messageActionError, setMessageActionError] = useState<string | null>(null)
+  const [hasTelegramDraft, setHasTelegramDraft] = useState(false)
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
   const {
     attachments,
     addFiles,
@@ -493,8 +506,20 @@ export function ChatView({
       }
       out.push({ kind: "msg", message: m })
     }
-    return out
-  }, [listForView])
+    if (!lettersLayout || messagesUnreadOnly) {
+      return out
+    }
+    const readMax = readInboxMaxIdForThread(dialog, isForum, topicId, topics)
+    if (readMax <= 0) {
+      return out
+    }
+    return insertCatchUpRibbon(out, readMax)
+  }, [dialog, isForum, lettersLayout, listForView, messagesUnreadOnly, topicId, topics])
+
+  const readInboxMaxId = useMemo(
+    () => readInboxMaxIdForThread(dialog, isForum, topicId, topics),
+    [dialog, isForum, topicId, topics],
+  )
 
   const {
     scrollFabVisible,
@@ -530,6 +555,50 @@ export function ChatView({
     onScroll()
     onViewportSliceScroll()
   }, [onScroll, onViewportSliceScroll])
+
+  const catchUpRowIndex = useMemo(
+    () => datedList.findIndex((row) => row.kind === "catchup"),
+    [datedList],
+  )
+
+  const threadUnreadCount = dialog.unreadCount ?? 0
+
+  const showFreshMailPill =
+    lettersLayout &&
+    !freshMailDismissed &&
+    catchUpRowIndex >= 0 &&
+    threadUnreadCount > 0 &&
+    scrollFabVisible
+
+  const scrollToFirstUnread = useCallback(() => {
+    const idx = findFirstUnreadRowIndex(datedList, readInboxMaxId)
+    if (idx < 0) {
+      scrollToLatestMessages()
+      setFreshMailDismissed(true)
+      return
+    }
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    flushSync(() => {
+      expandToRowIndex(idx)
+    })
+    const root = scrollRef.current
+    const node = root?.querySelector(`[data-chat-row-index="${idx}"]`) as HTMLElement | null
+    node?.scrollIntoView({ block: "start", behavior: reducedMotion ? "instant" : "smooth" })
+    setFreshMailDismissed(true)
+  }, [datedList, expandToRowIndex, readInboxMaxId, scrollToLatestMessages])
+
+  useEffect(() => {
+    setFreshMailDismissed(false)
+  }, [convKey])
+
+  useEffect(() => {
+    if (catchUpRowIndex < 0) {
+      return
+    }
+    if (stickyRowIndex > catchUpRowIndex) {
+      setFreshMailDismissed(true)
+    }
+  }, [catchUpRowIndex, stickyRowIndex])
 
   const stickyDateTs = useMemo(
     () => getStickyDateTsForRow(datedList, stickyRowIndex),
@@ -1107,6 +1176,11 @@ export function ChatView({
     !isUploading &&
     (draftNonempty || pendingAttachments.length > 0)
 
+  const waxSealEnabled =
+    lettersLayout &&
+    settings.appMode === "parent" &&
+    settings.waxSealSendEnabled === true
+
   const resizeComposeTextareaToContent = useCallback(() => {
     const el = textareaRef.current
     if (!el || lettersLayout) return
@@ -1208,6 +1282,7 @@ export function ChatView({
             first = false
             setUploadProgress({ sent: i + 1, total: queue.length })
             scrollToLatestMessages()
+            setFreshMailDismissed(true)
             void refreshHead()
           } catch (e) {
             appLog.warn("sendFile", e)
@@ -1250,6 +1325,7 @@ export function ChatView({
         setReplyingTo(null)
         setMessageActionError(null)
         scrollToLatestMessages()
+        setFreshMailDismissed(true)
         void refreshHead()
       } catch (e) {
         appLog.warn("sendInForumThread", e)
@@ -1267,6 +1343,7 @@ export function ChatView({
       setReplyingTo(null)
       setMessageActionError(null)
       scrollToLatestMessages()
+      setFreshMailDismissed(true)
       void refreshHead()
     } catch (e) {
       appLog.warn("sendMessage", e)
@@ -1276,6 +1353,21 @@ export function ChatView({
     }
   }
 
+  const {
+    state: waxSealState,
+    onSendPointerDown,
+    onSendPointerUp,
+    onSendPointerLeave,
+    onSendClick,
+    cancelSeal,
+  } = useWaxSealSend({
+    enabled: waxSealEnabled,
+    reducedMotion,
+    onSend: () => {
+      void onSend()
+    },
+  })
+
   const pickerMessage = useMemo(
     () =>
       reactionTarget == null
@@ -1283,6 +1375,25 @@ export function ChatView({
         : (list.find((m) => m.id === reactionTarget.id) ?? null),
     [list, reactionTarget]
   )
+
+  const dialogPeerKey = getPeerInfo(dialog).key
+
+  useEffect(() => {
+    const draftText = getDialogDraftText(dialog)
+    setHasTelegramDraft(draftText != null)
+    const ta = textareaRef.current
+    if (!ta) {
+      return
+    }
+    if (draftText != null) {
+      ta.value = draftText
+      applyComposeText(draftText)
+    } else {
+      ta.value = ""
+      applyComposeText("")
+    }
+    resizeComposeTextareaToContent()
+  }, [dialogPeerKey, dialog, applyComposeText, resizeComposeTextareaToContent])
 
   useEffect(() => {
     if (reactionTarget == null) {
@@ -1381,6 +1492,26 @@ export function ChatView({
 
   const renderDatedItem = useCallback(
     (item: ChatListItem, rowIndex: number): ReactNode => {
+      if (item.kind === "catchup") {
+        const dateLabel = formatMessageDateSeparator(item.ts, i18n.language)
+        const childMode = settings.appMode === "child"
+        return (
+          <li
+            className="letters-catchup"
+            role="separator"
+            aria-label={
+              childMode
+                ? t("letters.catchUpRibbonAriaChild", { date: dateLabel })
+                : t("letters.catchUpRibbonAria", { date: dateLabel })
+            }
+            data-chat-row-index={rowIndex}
+          >
+            {childMode
+              ? t("letters.catchUpRibbonChild", { date: dateLabel })
+              : t("letters.catchUpRibbon", { date: dateLabel })}
+          </li>
+        )
+      }
       if (item.kind === "sep") {
         const timeEl = (
           <time
@@ -1573,6 +1704,7 @@ export function ChatView({
       t,
       name,
       settings.showMessageIds,
+      settings.appMode,
       lettersLayout,
       resolveRepliedMessage,
       goToQuotedMessage,
@@ -1879,7 +2011,9 @@ export function ChatView({
               const index = sliceActive ? sliceStart + i : i
               const k = item.kind === "sep"
                 ? `date-${item.dayKey}`
-                : `msg-${peerKeyFromPeer(item.message.peerId)}-${item.message.id}`
+                : item.kind === "catchup"
+                  ? `catchup-${item.readInboxMaxId}`
+                  : `msg-${peerKeyFromPeer(item.message.peerId)}-${item.message.id}`
               return (
                 <Fragment key={k}>
                   {renderDatedItem(item, index)}
@@ -1899,12 +2033,23 @@ export function ChatView({
         </div>
         <TypingIndicator typers={typers} />
         <ScrollToBottomFab
-          visible={scrollFabVisible && datedList.some((x) => x.kind === "msg")}
-          unreadBadge={dialog.unreadCount ?? 0}
+          visible={
+            scrollFabVisible &&
+            !showFreshMailPill &&
+            datedList.some((x) => x.kind === "msg")
+          }
+          unreadBadge={lettersLayout ? undefined : threadUnreadCount}
           onClick={scrollToLatestMessages}
           label={t("chat.scrollToBottom")}
         />
       </div>
+      {showFreshMailPill ? (
+        <LettersFreshMailPill
+          count={threadUnreadCount}
+          childMode={settings.appMode === "child"}
+          onClick={scrollToFirstUnread}
+        />
+      ) : null}
       <div className="compose">
         {messageActionError
           ? (
@@ -2082,28 +2227,50 @@ export function ChatView({
           <Button
             className={
               lettersSendIconOnly
-                ? "btn-send btn-send--letters-icon-only"
-                : "btn-send"
+                ? `btn-send btn-send--letters-icon-only${waxSealState.sealing ? " btn-send--sealing" : ""}`
+                : `btn-send${waxSealState.sealing ? " btn-send--sealing" : ""}`
             }
             type="button"
-            onClick={() => { void onSend() }}
+            onPointerDown={waxSealEnabled ? onSendPointerDown : undefined}
+            onPointerUp={waxSealEnabled ? onSendPointerUp : undefined}
+            onPointerLeave={waxSealEnabled ? onSendPointerLeave : undefined}
+            onClick={() => {
+              if (waxSealEnabled) {
+                onSendClick()
+              } else {
+                void onSend()
+              }
+            }}
             aria-label={
-              lettersSendIconOnly
-                ? t("chat.send")
-                : lettersLayout
-                  ? t("chat.sendArrow")
-                  : t("chat.send")
+              hasTelegramDraft && lettersLayout
+                ? t("letters.continueLetter")
+                : lettersSendIconOnly
+                  ? t("chat.send")
+                  : lettersLayout
+                    ? t("chat.sendArrow")
+                    : t("chat.send")
             }
             disabled={!canSendNow}
+            title={waxSealEnabled ? t("letters.waxSealHint") : undefined}
           >
-            {lettersSendIconOnly
-              ? "→"
-              : lettersLayout
-                ? t("chat.sendArrow")
-                : t("chat.send")}
+            {hasTelegramDraft && lettersLayout
+              ? t("letters.continueLetterShort")
+              : lettersSendIconOnly
+                ? "→"
+                : lettersLayout
+                  ? t("chat.sendArrow")
+                  : t("chat.send")}
           </Button>
         </div>
       </div>
+      {waxSealState.undoOpen ? (
+        <div className="letters-wax-seal-toast" role="status">
+          <span>{t("letters.waxSealPending", { seconds: waxSealState.undoSecondsLeft })}</span>
+          <Button type="button" size="sm" variant="ghost" onClick={cancelSeal}>
+            {t("letters.waxSealUndo")}
+          </Button>
+        </div>
+      ) : null}
       {client && dialog.entity && reactionTarget != null && pickerMessage != null ? (
         <MessageReactionPicker
           open
@@ -2118,6 +2285,30 @@ export function ChatView({
             setReplyingTo(pickerMessage)
             setMessageActionError(null)
           }}
+          onCoRead={
+            settings.appMode === "parent"
+              ? () => {
+                  const m = pickerMessage
+                  if (m.className !== "Message" || m.id == null) {
+                    return
+                  }
+                  const { key, name } = getPeerInfo(dialog)
+                  const preview =
+                    typeof m.message === "string" && m.message.trim().length > 0
+                      ? m.message.trim().slice(0, 120)
+                      : getDialogPreviewText(dialog, t)
+                  void addCoReadingBookmark({
+                    chatId: key,
+                    messageId: m.id,
+                    chatTitle: name,
+                    preview,
+                  }).then(() => {
+                    onCoReadingBookmarked?.()
+                  })
+                  setReactionTarget(null)
+                }
+              : undefined
+          }
           onForward={() => {
             const m = pickerMessage
             if (m.id == null) {

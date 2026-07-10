@@ -9,6 +9,7 @@ import type { ThemePreference } from "../theme/storage"
 import { ChildModeIcon, ParentModeIcon } from "./ModeToggleIcons"
 import { SignOutIcon } from "./SignOutIcon"
 import { DarkThemeIcon, LightThemeIcon, SystemThemeIcon } from "./ThemeToggleIcons"
+import type { CoReadingBookmark } from "../util/lettersRitualsStorage"
 
 const THEME_TOGGLES: {
   pref: ThemePreference
@@ -29,6 +30,12 @@ type Props = {
   onOpenSettings: () => void
   onOpenRequests: () => void
   onSignOut: () => void
+  morningDayMailEnabled?: boolean
+  onMorningDayMailEnabled?: (enabled: boolean) => void
+  waxSealSendEnabled?: boolean
+  onWaxSealSendEnabled?: (enabled: boolean) => void
+  coReadingBookmarks?: CoReadingBookmark[]
+  onCoReadingNavigate?: (bookmark: CoReadingBookmark) => void
 }
 
 export function LettersDeskSheet({
@@ -41,6 +48,12 @@ export function LettersDeskSheet({
   onOpenSettings,
   onOpenRequests,
   onSignOut,
+  morningDayMailEnabled = true,
+  onMorningDayMailEnabled,
+  waxSealSendEnabled = false,
+  onWaxSealSendEnabled,
+  coReadingBookmarks = [],
+  onCoReadingNavigate,
 }: Props) {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
@@ -133,6 +146,69 @@ export function LettersDeskSheet({
               </button>
             </div>
           </div>
+
+          <div className="letters-desk-sheet__row">
+            <span className="letters-desk-sheet__row-label">{t("letters.deskMorningMail")}</span>
+            <button
+              type="button"
+              className="switch"
+              role="switch"
+              aria-checked={morningDayMailEnabled}
+              aria-label={t("letters.deskMorningMail")}
+              onClick={() => {
+                onMorningDayMailEnabled?.(!morningDayMailEnabled)
+              }}
+            >
+              <span className="switch__track" aria-hidden>
+                <span className="switch__thumb" />
+              </span>
+            </button>
+          </div>
+
+          {appMode === "parent" ? (
+            <div className="letters-desk-sheet__row">
+              <span className="letters-desk-sheet__row-label">{t("letters.deskWaxSeal")}</span>
+              <button
+                type="button"
+                className="switch"
+                role="switch"
+                aria-checked={waxSealSendEnabled}
+                aria-label={t("letters.deskWaxSeal")}
+                onClick={() => {
+                  onWaxSealSendEnabled?.(!waxSealSendEnabled)
+                }}
+              >
+                <span className="switch__track" aria-hidden>
+                  <span className="switch__thumb" />
+                </span>
+              </button>
+            </div>
+          ) : null}
+
+          {showParentRows && coReadingBookmarks.length > 0 ? (
+            <div className="letters-desk-sheet__bookmarks">
+              <h3 className="letters-desk-sheet__bookmarks-title">{t("letters.coReadingDeskTitle")}</h3>
+              <ul className="letters-desk-sheet__bookmarks-list" role="list">
+                {coReadingBookmarks.map((b) => (
+                  <li key={b.id}>
+                    <button
+                      type="button"
+                      className="letters-desk-sheet__bookmark"
+                      onClick={() => {
+                        onCoReadingNavigate?.(b)
+                        onClose()
+                      }}
+                    >
+                      <span className="letters-desk-sheet__bookmark-chat">{b.chatTitle}</span>
+                      <span className="letters-desk-sheet__bookmark-preview muted small">
+                        {b.preview}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           {showParentRows ? (
             <button

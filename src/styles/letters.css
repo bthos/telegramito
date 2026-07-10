@@ -635,6 +635,145 @@ html[data-theme="dark"] .letters-day-mail__item.is-active {
   white-space: nowrap;
 }
 
+.letters-day-mail__lock-notice {
+  margin: 0 0 0.5rem;
+  color: var(--letters-ink-3);
+  font-style: italic;
+}
+
+.letters-day-mail__summary {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border-inline-start: 2px solid var(--letters-accent, var(--accent));
+  background: color-mix(in srgb, var(--surface) 92%, var(--letters-ink-1) 8%);
+}
+
+.letters-day-mail__summary-line {
+  margin: 0.15rem 0;
+}
+
+.letters-day-mail__summary-label {
+  font-weight: 600;
+}
+
+.chat-row--draft .chat-row__draft-preview {
+  font-family: var(--letters-serif, inherit);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-row--draft .chat-row__preview--addressee {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--letters-ink-3, var(--muted));
+}
+
+.letters-drafts-empty {
+  padding: 2.5rem 1.25rem 1rem;
+  text-align: center;
+}
+
+.letters-drafts-empty__mark {
+  margin: 0 0 0.5rem;
+  font-size: 2rem;
+  line-height: 1;
+  opacity: 0.45;
+}
+
+.letters-drafts-empty__title {
+  margin: 0 0 0.35rem;
+  font-family: var(--letters-serif, inherit);
+  font-size: 1.05rem;
+}
+
+.letters-drafts-empty__sub {
+  margin: 0;
+  max-width: 18rem;
+  margin-inline: auto;
+}
+
+.letters-wax-seal-toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.35rem 0.75rem 0;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface-elevated, var(--surface));
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.btn-send--sealing {
+  animation: letters-wax-seal-pulse 0.3s ease-out;
+}
+
+@keyframes letters-wax-seal-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.92); filter: sepia(0.35); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-send--sealing {
+    animation: none;
+  }
+}
+
+.letters-desk-sheet__bookmarks {
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.letters-desk-sheet__bookmarks-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--letters-ink-3, var(--muted));
+}
+
+.letters-desk-sheet__bookmarks-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.letters-desk-sheet__bookmark {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.55rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  text-align: start;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.letters-desk-sheet__bookmark-chat {
+  font-weight: 600;
+}
+
+.letters-desk-sheet__bookmark-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
 .letters-correspondents-h {
   margin: 0;
   padding: 0;
@@ -1057,6 +1196,7 @@ html[data-theme="dark"] .app-root--letters-chats .chat-row.is-active {
 
 /* Correspondence thread: shared horizontal gutter (masthead ↔ scroll ↔ compose). */
 .thread.thread--letters {
+  position: relative;
   padding-top: 0.6rem;
   padding-bottom: 0.3rem;
   padding-left: 0;
@@ -1653,6 +1793,77 @@ html[data-theme="dark"] .thread.thread--letters .message-scroll__fab {
   border-radius: 0;
   background: var(--letters-terra);
   color: #f5f0e6;
+}
+
+/* Catch-up ribbon (review mockup C `.t-catchup`) */
+.thread.thread--letters .letters-catchup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px var(--letters-thread-x-inset-end) 14px var(--letters-thread-x-inset);
+  padding: 0;
+  list-style: none;
+  font-family: var(--letters-ui);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--letters-terra);
+}
+
+.thread.thread--letters .letters-catchup::before,
+.thread.thread--letters .letters-catchup::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--letters-terra) 45%, transparent);
+}
+
+/* Fresh-mail pill above composer (review mockup C `.t-newmail`) */
+.thread.thread--letters .letters-fresh-mail {
+  position: absolute;
+  right: max(14px, var(--letters-thread-x-inset-end));
+  bottom: calc(var(--letters-compose-offset, 4.25rem) + 10px);
+  z-index: 14;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 7px 14px;
+  border: 1px solid color-mix(in srgb, var(--letters-terra) 55%, var(--letters-lines));
+  border-radius: 999px;
+  background: var(--letters-panel);
+  color: var(--letters-terra);
+  font-family: var(--letters-ui);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+}
+
+.thread.thread--letters .letters-fresh-mail:hover,
+.thread.thread--letters .letters-fresh-mail:focus-visible {
+  background: color-mix(in srgb, var(--letters-terra) 10%, var(--letters-panel));
+  outline: 2px solid color-mix(in srgb, var(--letters-terra) 40%, transparent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .thread.thread--letters .letters-fresh-mail {
+    animation: letters-fresh-mail-in 280ms ease-out;
+  }
+}
+
+@keyframes letters-fresh-mail-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .thread.thread--letters .message-scroll > .typing-indicator {

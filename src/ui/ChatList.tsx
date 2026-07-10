@@ -7,6 +7,8 @@ import { getPeerInfo, isPrivateUserDialog, isUserContactForPolicy } from "../tel
 import { isPrivateChatHidden } from "../parental/policy"
 import type { ParentalSettings } from "../parental/types"
 import { formatDialogListTime } from "../util/timeFormat"
+import { formatUnreadBadge } from "../util/formatUnreadBadge"
+import { getDialogDraftPreviewLine } from "../util/dialogDraft"
 import { Button } from "./ds"
 import { PeerAvatar } from "./PeerAvatar"
 
@@ -25,6 +27,8 @@ type Props = {
   loadedDialogCount?: number
   /** When set, chat rows load profile photos for peers. */
   client?: TelegramClient | null
+  /** Drafts tab: show draft body prominently with addressee secondary. */
+  draftsMode?: boolean
 }
 
 export function ChatList({
@@ -40,6 +44,7 @@ export function ChatList({
   dialogsLoadingMore = false,
   loadedDialogCount,
   client,
+  draftsMode = false,
 }: Props) {
   const { t, i18n } = useTranslation()
 
@@ -89,7 +94,9 @@ export function ChatList({
           appMode: settings.appMode,
         })
         const isSel = key === selectedKey
-        const preview = getDialogPreviewText(d, t)
+        const preview = draftsMode
+          ? getDialogDraftPreviewLine(d, t)
+          : getDialogPreviewText(d, t)
         const timeLabel = d.date
           ? formatDialogListTime(d.date, i18n.language)
           : ""
@@ -121,7 +128,15 @@ export function ChatList({
           <li key={key}>
             <button
               type="button"
-              className={isSel ? "chat-row is-active" : "chat-row"}
+              className={
+                draftsMode
+                  ? isSel
+                    ? "chat-row chat-row--draft is-active"
+                    : "chat-row chat-row--draft"
+                  : isSel
+                    ? "chat-row is-active"
+                    : "chat-row"
+              }
               onClick={() => {
                 onSelect(d)
               }}
@@ -135,7 +150,11 @@ export function ChatList({
                         {"\uD83D\uDCCC "}
                       </span>
                     ) : null}
-                    <span className="chat-row__name">{name}</span>
+                    {draftsMode ? (
+                      <span className="chat-row__draft-preview">{preview || "\u00A0"}</span>
+                    ) : (
+                      <span className="chat-row__name">{name}</span>
+                    )}
                   </div>
                   <div className="chat-row__meta">
                     {timeLabel ? (
@@ -143,14 +162,18 @@ export function ChatList({
                         {timeLabel}
                       </time>
                     ) : null}
-                    {d.unreadCount > 0 ? (
+                    {!draftsMode && d.unreadCount > 0 ? (
                       <span className="chat-row__unread" aria-label={t("chat.unreadAria", { n: d.unreadCount })}>
-                        {d.unreadCount}
+                        {formatUnreadBadge(d.unreadCount)}
                       </span>
                     ) : null}
                   </div>
                 </div>
-                <p className="chat-row__preview">{preview || "\u00A0"}</p>
+                {draftsMode ? (
+                  <p className="chat-row__preview chat-row__preview--addressee">{name}</p>
+                ) : (
+                  <p className="chat-row__preview">{preview || "\u00A0"}</p>
+                )}
               </div>
             </button>
           </li>

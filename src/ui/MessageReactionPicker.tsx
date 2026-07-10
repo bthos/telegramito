@@ -114,6 +114,7 @@ export function MessageReactionPicker({
   t,
   onReply,
   onForward,
+  onCoRead,
   canReply = true,
 }: {
   open: boolean
@@ -128,6 +129,7 @@ export function MessageReactionPicker({
   t: TChat
   onReply?: () => void
   onForward?: () => void
+  onCoRead?: () => void
   canReply?: boolean
 }) {
   const { t: tRoot } = useTranslation()
@@ -175,6 +177,7 @@ export function MessageReactionPicker({
 
   const showMessageBar =
     onForward != null
+    || onCoRead != null
     || (onReply != null && canReply)
 
   useLayoutEffect(() => {
@@ -303,6 +306,20 @@ export function MessageReactionPicker({
                       }}
                     >
                       {t("chat.forwardMessage")}
+                    </button>
+                  )
+                : null}
+              {onCoRead != null
+                ? (
+                    <button
+                      type="button"
+                      className="msg-bubble-action"
+                      onClick={() => {
+                        onCoRead()
+                        onClose()
+                      }}
+                    >
+                      {t("letters.coReadingAction")}
                     </button>
                   )
                 : null}

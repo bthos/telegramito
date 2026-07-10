@@ -3,10 +3,18 @@ import { useTranslation } from "react-i18next"
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import type { Dialog } from "telegram/tl/custom/dialog"
+import { useParentalSettings } from "../context/ParentalContext"
+import { usePeriodicTick } from "../hooks/usePeriodicTick"
 import { usePeerName } from "../hooks/usePeerName"
 import { getDayMailRailHeadlineParts } from "../telegram/dialogPreview"
 import { getPeerInfo, isBroadcastChannelDialog, dialogIsMultiMemberChat } from "../telegram/dialogUtils"
 import { formatMessageTime } from "../util/timeFormat"
+import type { NightMode } from "../parental/types"
+import {
+  buildEveningSummary,
+  isInEveningEditionPeriod,
+  minutesUntilNightLock,
+} from "../util/lettersRituals"
 
 type Props = {
   dialogs: Dialog[]
@@ -14,6 +22,7 @@ type Props = {
   /** Opens the correspondence thread and optionally focuses a specific message (day-mail row). */
   onSelect?: (dialog: Dialog, opts?: { focusMessageId?: number }) => void
   client?: TelegramClient | null
+  nightMode?: NightMode
 }
 
 type RailRowPreview = {
@@ -118,8 +127,13 @@ export function DayMailRail({
   selectedKey = null,
   onSelect,
   client = null,
+  nightMode: nightModeProp,
 }: Props) {
   const { t, i18n } = useTranslation()
+  const { settings } = useParentalSettings()
+  const nightMode = nightModeProp ?? settings.nightMode
+  usePeriodicTick(30_000)
+  const now = new Date()
   const railRef = useRef<HTMLDivElement>(null)
   /** Smallest top-visible row index since last list reset (= newest row the user has aligned with). */
   const newestSeenTopIndexRef = useRef<number | null>(null)
@@ -237,10 +251,48 @@ export function DayMailRail({
     }
   }, [itemFinger, items.length, measureTopVisibleIndex])
 
+  const eveningEdition =
+    nightMode != null && isInEveningEditionPeriod(nightMode, now)
+  const eveningSummary = useMemo(
+    () => (eveningEdition ? buildEveningSummary(dialogs, now) : null),
+    [dialogs, eveningEdition, now],
+  )
+  const lockMinutes = nightMode != null ? minutesUntilNightLock(nightMode, now) : null
+
   return (
     <div className="letters-day-mail" ref={railRef}>
-      <h2 className="letters-day-mail__h">{t("letters.dayMailTitle")}</h2>
-      <p className="letters-day-mail__sub">{t("letters.dayMailSubtitle")}</p>
+      <h2 className="letters-day-mail__h">
+        {eveningEdition ? t("letters.eveningEditionTitle") : t("letters.dayMailTitle")}
+      </h2>
+      <p className="letters-day-mail__sub">
+        {eveningEdition ? t("letters.eveningEditionSubtitle") : t("letters.dayMailSubtitle")}
+      </p>
+      {lockMinutes != null ? (
+        <p className="letters-day-mail__lock-notice small" role="status">
+          {t("letters.eveningLockNotice", { time: nightMode!.start })}
+        </p>
+      ) : null}
+      {eveningSummary &&
+      (eveningSummary.wroteToday.length > 0 || eveningSummary.awaitingReply.length > 0) ? (
+        <section className="letters-day-mail__summary" aria-label={t("letters.eveningSummaryAria")}>
+          {eveningSummary.wroteToday.length > 0 ? (
+            <p className="letters-day-mail__summary-line small">
+              <span className="letters-day-mail__summary-label">
+                {t("letters.eveningWroteToday")}
+              </span>{" "}
+              {eveningSummary.wroteToday.map((x) => x.name).join(", ")}
+            </p>
+          ) : null}
+          {eveningSummary.awaitingReply.length > 0 ? (
+            <p className="letters-day-mail__summary-line small">
+              <span className="letters-day-mail__summary-label">
+                {t("letters.eveningAwaitingReply")}
+              </span>{" "}
+              {eveningSummary.awaitingReply.map((x) => x.name).join(", ")}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
       {items.length === 0 ? (
         <p className="letters-day-mail__empty muted small" role="status">
           {t("letters.dayMailEmpty")}

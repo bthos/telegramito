@@ -22,6 +22,13 @@ import {
   type CorrespondenceTab,
 } from "../util/correspondenceFilter"
 import { formatLiteraryDateLine } from "../util/literaryDate"
+import { localCalendarDayKey, resolveMorningMobileTab } from "../util/lettersRituals"
+import {
+  getCoReadingBookmarks,
+  getLastMorningDayMailDate,
+  setLastMorningDayMailDate,
+  type CoReadingBookmark,
+} from "../util/lettersRitualsStorage"
 import { ChatView, THREAD_HEADER_ACTIONS_ID, THREAD_HEADER_CENTER_ID } from "./ChatView"
 import { ChatsListPanel } from "./ChatsListPanel"
 import { DayMailRail } from "./DayMailRail"
@@ -90,6 +97,7 @@ export function MainShell() {
   const [deskSheetOpen, setDeskSheetOpen] = useState(false)
   const [searchExpanded, setSearchExpanded] = useState(false)
   const [dayMailSlideOpen, setDayMailSlideOpen] = useState(false)
+  const [coReadingBookmarks, setCoReadingBookmarks] = useState<CoReadingBookmark[]>([])
   const mobilePanelRef = useRef<HTMLDivElement>(null)
 
   const mobileCompact = useMaxWidth(BP.mobileCompactMax)
@@ -157,6 +165,62 @@ export function MainShell() {
   }, [client, lastMessageTick, refreshDialogs])
 
   usePeriodicTick(30_000)
+
+  useEffect(() => {
+    if (!mobileCompact || tab !== "chats") {
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const [lastDate, bookmarks] = await Promise.all([
+        getLastMorningDayMailDate(),
+        getCoReadingBookmarks(),
+      ])
+      if (cancelled) {
+        return
+      }
+      setCoReadingBookmarks(bookmarks)
+      const today = localCalendarDayKey()
+      const nextTab = resolveMorningMobileTab({
+        enabled: settings.morningDayMailEnabled,
+        lastMorningDayMailDate: lastDate,
+        today,
+      })
+      if (nextTab === "dayMail") {
+        setMobileTab("dayMail")
+        await setLastMorningDayMailDate(today)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [mobileCompact, tab, settings.morningDayMailEnabled])
+
+  const refreshCoReadingBookmarks = useCallback(async () => {
+    const bookmarks = await getCoReadingBookmarks()
+    setCoReadingBookmarks(bookmarks)
+  }, [])
+
+  useEffect(() => {
+    if (deskSheetOpen && settings.appMode === "parent") {
+      void refreshCoReadingBookmarks()
+    }
+  }, [deskSheetOpen, refreshCoReadingBookmarks, settings.appMode])
+
+  const handleCoReadingNavigate = useCallback(
+    (bookmark: CoReadingBookmark) => {
+      const di = dialogs.find((x) => getPeerInfo(x).key === bookmark.chatId)
+      if (!di) {
+        return
+      }
+      handleDayMailSelect(di, { focusMessageId: bookmark.messageId })
+      setDeskSheetOpen(false)
+      if (mobileCompact) {
+        setMobileTab("letters")
+      }
+    },
+    [dialogs, handleDayMailSelect, mobileCompact],
+  )
 
   useEffect(() => {
     if (settings.appMode === "parent") {
@@ -353,6 +417,7 @@ export function MainShell() {
     circlesDialogs: lettersCirclesDialogs,
     bulletinChannelPeers: bulletinPeers,
     onSelectBulletinPeer: handleBulletinSelect,
+    correspondenceTab,
   }
 
   const mobileListBody = (
@@ -475,6 +540,7 @@ export function MainShell() {
                     lettersLayout
                     lettersJumpToMessageId={lettersDayMailFocusMessageId}
                     onLettersJumpToMessageConsumed={consumeLettersJump}
+                    onCoReadingBookmarked={refreshCoReadingBookmarks}
                   />
                 </div>
               </div>
@@ -506,6 +572,7 @@ export function MainShell() {
                       lettersThreePane={lettersThreeCol}
                       lettersJumpToMessageId={lettersDayMailFocusMessageId}
                       onLettersJumpToMessageConsumed={consumeLettersJump}
+                      onCoReadingBookmarked={refreshCoReadingBookmarks}
                     />
                   ) : (
                     <div className="empty-chat" role="status">
@@ -588,6 +655,16 @@ export function MainShell() {
         onAppMode={setAppMode}
         showParentRows={settings.appMode === "parent"}
         pendingRequestCount={pendingRequestCount}
+        morningDayMailEnabled={settings.morningDayMailEnabled}
+        onMorningDayMailEnabled={(enabled) => {
+          void setSettings((prev) => ({ ...prev, morningDayMailEnabled: enabled }))
+        }}
+        waxSealSendEnabled={settings.waxSealSendEnabled}
+        onWaxSealSendEnabled={(enabled) => {
+          void setSettings((prev) => ({ ...prev, waxSealSendEnabled: enabled }))
+        }}
+        coReadingBookmarks={settings.appMode === "parent" ? coReadingBookmarks : []}
+        onCoReadingNavigate={handleCoReadingNavigate}
         onOpenSettings={() => {
           setTab("settings")
         }}
