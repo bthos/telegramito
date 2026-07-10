@@ -2,7 +2,7 @@
   "appName": "Telegramito",
   "error": "Error",
   "apiMissing": "Configure VITE_TELEGRAM_API_ID y VITE_TELEGRAM_API_HASH en .env (vea my.telegram.org).",
-  "common": { "cancel": "Cancelar", "back": "Atrás", "close": "Cerrar" },
+  "common": { "cancel": "Cancelar", "back": "Atrás", "close": "Cerrar", "pressBackToExit": "Pulse Atrás de nuevo para salir" },
   "loading": "Cargando…",
   "signOut": "Cerrar sesión",
   "chats": "Chats",

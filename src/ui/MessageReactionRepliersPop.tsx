@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { withTransientRetry } from "../telegram/invokeWithTransientRetry"
+import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { getMessageReactionsListPage, mapReactionsList, type ReactionReplierRow } from "../telegram/reactionRepliers"
 import { setMessageReactions } from "../telegram/reactionsAndPolls"
 import { Button } from "./ds"
@@ -43,6 +44,7 @@ export function MessageReactionRepliersPop({
   t,
 }: Props) {
   const { i18n } = useTranslation()
+  useHardwareBackLayer(open, onClose)
   const [rows, setRows] = useState<ReactionReplierRow[]>([])
   const [total, setTotal] = useState(0)
   const [nextOff, setNextOff] = useState<string | undefined>(undefined)

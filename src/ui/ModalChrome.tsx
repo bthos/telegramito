@@ -25,7 +25,7 @@ export function ModalChrome({
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   useFocusTrap(rootRef, true)
-  useBodyScrollLockAndEscape(onClose)
+  useBodyScrollLockAndEscape(true, onClose)
 
   const node = (
     <div

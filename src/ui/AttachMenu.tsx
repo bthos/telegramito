@@ -5,6 +5,7 @@ import {
   useState,
 } from "react"
 import { useTranslation } from "react-i18next"
+import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { AttachClipIcon, AttachFileAddIcon } from "./ChatChromeIcons"
 
 type Props = {
@@ -36,6 +37,8 @@ export function AttachMenu({
   const close = useCallback(() => {
     setOpen(false)
   }, [])
+
+  useHardwareBackLayer(open, close)
 
   useEffect(() => {
     if (!open) return

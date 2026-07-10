@@ -1,5 +1,6 @@
 import { type ComponentType, type SVGProps, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
+import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { useTheme } from "../context/ThemeContext"
 import type { AppMode } from "../parental/types"
 import type { ThemePreference } from "../theme/storage"
@@ -94,6 +95,11 @@ export function LettersMasthead({
       searchInputRef.current?.focus()
     }
   }, [compact, searchExpanded])
+
+  useHardwareBackLayer(
+    searchExpanded,
+    () => onSearchExpandedChange?.(false),
+  )
 
   if (compact) {
     const rootClass = [

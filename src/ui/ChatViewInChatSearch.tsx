@@ -2,6 +2,7 @@ import type { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import { useCallback, useEffect, useState } from "react"
+import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { useInChatSearch } from "../hooks/useInChatSearch"
 import { ChatSearchBar } from "./ChatSearchBar"
 
@@ -25,6 +26,7 @@ export function ChatViewInChatSearch({
   onClose,
   onPickMessage,
 }: Props) {
+  useHardwareBackLayer(true, onClose)
   const {
     query,
     setQuery,

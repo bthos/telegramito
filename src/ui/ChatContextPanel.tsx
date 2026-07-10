@@ -8,6 +8,7 @@ import {
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { useTranslation } from "react-i18next"
+import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { blockTelegramUser } from "../telegram/blockUser"
 import {
   getPeerMuteUntil,
@@ -195,6 +196,8 @@ export function ChatContextPanel({
     entity as Api.User | Api.Chat | Api.Channel | null | undefined,
     client,
   )
+
+  useHardwareBackLayer(isOpen, onClose)
 
   // Escape key dismisses
   useEffect(() => {

@@ -16,7 +16,7 @@ type Props = {
 export function ImageLightbox({ url, onClose, labelClose, labelBackdrop }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   useFocusTrap(containerRef, true)
-  useBodyScrollLockAndEscape(onClose)
+  useBodyScrollLockAndEscape(true, onClose)
 
   const node = (
     <div

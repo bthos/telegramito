@@ -11,6 +11,7 @@ import {
 import { useTranslation } from "react-i18next"
 import { EMOJI_GROUPS, type EmojiItem } from "../data/emojiGroups"
 import { useFocusTrap } from "../hooks/useFocusTrap"
+import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { useMediaQuery } from "../hooks/useMediaQuery"
 import { BP, layoutMq } from "../layout/breakpoints"
 import { EmojiOutlineIcon } from "./ChatChromeIcons"
@@ -61,6 +62,7 @@ export function EmojiPickerPanel({
   } | null>(null)
 
   useFocusTrap(panelRef, open)
+  useHardwareBackLayer(open, onClose)
 
   useEffect(() => {
     if (!open) {

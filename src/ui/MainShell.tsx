@@ -8,6 +8,7 @@ import { useMinWidth } from "../hooks/useMinWidth"
 import { useNarrowView } from "../hooks/useNarrowView"
 import { usePeriodicTick } from "../hooks/usePeriodicTick"
 import { useScrollChromeHide } from "../hooks/useScrollChromeHide"
+import { installHardwareBackRoot, useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { BP } from "../layout/breakpoints"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import { getPendingRequests } from "../parental/storage"
@@ -165,6 +166,16 @@ export function MainShell() {
   }, [client, lastMessageTick, refreshDialogs])
 
   usePeriodicTick(30_000)
+
+  // Hardware back: root install (once per session)
+  const [exitArmed, setExitArmed] = useState(false)
+  useEffect(() => installHardwareBackRoot(setExitArmed), [])
+
+  // Hardware back: open chat layer (mobile stacked layout only)
+  useHardwareBackLayer(mobileStack && selected != null, () => setSelected(null))
+
+  // Hardware back: settings/requests subpage (mobile only)
+  useHardwareBackLayer(mobileCompact && tab !== "chats", () => setTab("chats"))
 
   useEffect(() => {
     if (!mobileCompact || tab !== "chats") {
@@ -637,6 +648,12 @@ export function MainShell() {
           </div>
         ) : null}
       </div>
+
+      {exitArmed ? (
+        <div className="letters-wax-seal-toast" role="status">
+          <span>{t("common.pressBackToExit")}</span>
+        </div>
+      ) : null}
 
       {showMobileTabBar ? (
         <LettersMobileTabBar

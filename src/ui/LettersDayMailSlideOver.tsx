@@ -30,7 +30,7 @@ export function LettersDayMailSlideOver({
   const panelRef = useRef<HTMLDivElement>(null)
 
   useFocusTrap(panelRef, open)
-  useBodyScrollLockAndEscape(onClose)
+  useBodyScrollLockAndEscape(open, onClose)
 
   if (!open) {
     return null

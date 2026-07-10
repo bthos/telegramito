@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
+import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { getPollVotesPage, mapPollVotesList, type PollVoterRow } from "../telegram/pollVoters"
 import { formatPollVoterTimestamp, pollVoterTimestampTitle } from "../util/timeFormat"
 import { Button } from "./ds"
@@ -24,6 +25,7 @@ export function MessagePollVotersPop({
   anchorX, anchorY, client, entity, messageId, optionBytes, onClose, t,
 }: Props) {
   const { i18n } = useTranslation()
+  useHardwareBackLayer(true, onClose)
   const [rows, setRows] = useState<PollVoterRow[]>([])
   const [total, setTotal] = useState(0)
   const [nextOff, setNextOff] = useState<string | undefined>(undefined)

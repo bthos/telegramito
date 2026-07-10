@@ -1,5 +1,6 @@
 import { useRef, useState } from "react"
 import { useFocusTrap } from "../hooks/useFocusTrap"
+import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { useTranslation } from "react-i18next"
 import { useParentalSettings } from "../context/ParentalContext"
 import { verifyPin } from "../parental/pin"
@@ -18,6 +19,7 @@ export function PinDialog({ open, onClose, onSuccess }: Props) {
   const [bad, setBad] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   useFocusTrap(containerRef, open)
+  useHardwareBackLayer(open, onClose)
 
   if (!open) {
     return null

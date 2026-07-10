@@ -43,7 +43,7 @@ export function VideoFullViewer({
   const [playing, setPlaying] = useState(true)
   const [currentSec, setCurrentSec] = useState(0)
   useFocusTrap(rootRef, true)
-  useBodyScrollLockAndEscape(onClose)
+  useBodyScrollLockAndEscape(true, onClose)
 
   const durLabel = durationSec != null ? formatVideoDuration(durationSec) : "—:—"
   const curLabel = formatVideoDuration(Math.floor(currentSec))

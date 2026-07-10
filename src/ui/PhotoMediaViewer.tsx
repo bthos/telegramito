@@ -44,7 +44,7 @@ export function PhotoMediaViewer({
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   useFocusTrap(containerRef, true)
-  useBodyScrollLockAndEscape(onClose)
+  useBodyScrollLockAndEscape(true, onClose)
   const initials = peerInitials ?? initialsFromTitle(peerTitle)
 
   const node = (

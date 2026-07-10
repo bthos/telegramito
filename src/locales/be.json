@@ -2,7 +2,7 @@
   "appName": "Telegramito",
   "error": "Памылка",
   "apiMissing": "Пазначце VITE_TELEGRAM_API_ID і VITE_TELEGRAM_API_HASH у файле .env (дэталі — на my.telegram.org).",
-  "common": { "cancel": "Скасаваць", "back": "Назад", "close": "Закрыць" },
+  "common": { "cancel": "Скасаваць", "back": "Назад", "close": "Закрыць", "pressBackToExit": "Націсніце «Назад» яшчэ раз, каб выйсці" },
   "loading": "Загрузка…",
   "signOut": "Выйсці",
   "chats": "Чаты",
