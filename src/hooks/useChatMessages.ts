@@ -26,6 +26,7 @@ import {
   messageAllowedForGapFetch,
   messageInActiveThread,
 } from "../telegram/messageHistoryReconcile"
+import { rememberEveningThreadMessages } from "../util/eveningThreadCache"
 import { withTransientRetry } from "../telegram/invokeWithTransientRetry"
 
 /** Max extra history pages when unread-only filter matches nothing (after refreshing head). */
@@ -79,6 +80,13 @@ export function useChatMessages(opts: {
   useEffect(() => {
     listRef.current = list
   }, [list])
+
+  useEffect(() => {
+    const peerKey = convKey.split("|")[0] ?? ""
+    if (peerKey && list.length > 0) {
+      rememberEveningThreadMessages(peerKey, list)
+    }
+  }, [convKey, list])
 
   const lastMessageTickRef = useRef(lastMessageTick)
   useEffect(() => {

@@ -663,6 +663,10 @@ export function MainShell() {
         onWaxSealSendEnabled={(enabled) => {
           void setSettings((prev) => ({ ...prev, waxSealSendEnabled: enabled }))
         }}
+        eveningSummaryPreciseEnabled={settings.eveningSummaryPreciseEnabled}
+        onEveningSummaryPreciseEnabled={(enabled) => {
+          void setSettings((prev) => ({ ...prev, eveningSummaryPreciseEnabled: enabled }))
+        }}
         coReadingBookmarks={settings.appMode === "parent" ? coReadingBookmarks : []}
         onCoReadingNavigate={handleCoReadingNavigate}
         onOpenSettings={() => {

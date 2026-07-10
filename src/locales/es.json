@@ -409,6 +409,7 @@
     },
     "deskMorningMail": "Correo matutino del día",
     "deskWaxSeal": "Envío con sello (pulsación larga)",
+    "deskEveningPrecise": "Edición vespertina más precisa",
     "waxSealHint": "Mantenga pulsado para sellar — 5 s para deshacer",
     "waxSealPending": "Sellado — envío en {{seconds}} s",
     "waxSealUndo": "Desellar",

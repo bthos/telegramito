@@ -42,6 +42,7 @@ async function miniI18n() {
             deskSheetAria: "Desk sheet",
             deskSheetTitle: "Desk",
             deskPendingRequests: "{{count}} new",
+            deskEveningPrecise: "Sharper evening edition",
           },
         },
       },
@@ -84,5 +85,34 @@ describe("LettersDeskSheet", () => {
 
     fireEvent.keyDown(document, { key: "Escape" })
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it("shows evening precise toggle in parent mode (AC-U6)", async () => {
+    const inst = await miniI18n()
+    const onEvening = vi.fn()
+    render(
+      <I18nextProvider i18n={inst}>
+        <ThemeProvider>
+          <LettersDeskSheet
+            open
+            onClose={vi.fn()}
+            appMode="parent"
+            onAppMode={vi.fn()}
+            showParentRows
+            pendingRequestCount={0}
+            onOpenSettings={vi.fn()}
+            onOpenRequests={vi.fn()}
+            onSignOut={vi.fn()}
+            eveningSummaryPreciseEnabled={false}
+            onEveningSummaryPreciseEnabled={onEvening}
+          />
+        </ThemeProvider>
+      </I18nextProvider>,
+    )
+
+    const toggle = screen.getByRole("switch", { name: "Sharper evening edition" })
+    expect(toggle.getAttribute("aria-checked")).toBe("false")
+    fireEvent.click(toggle)
+    expect(onEvening).toHaveBeenCalledWith(true)
   })
 })

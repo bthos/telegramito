@@ -183,8 +183,8 @@ describe("evening awaiting detection", () => {
       new Api.Message({
         id: 3,
         peerId: { className: "PeerUser", userId: BigInt(2) } as unknown as Api.TypePeer,
-        date: today,
-        message: "Follow-up?",
+        date: today - 2 * 3600,
+        message: "My last note",
         out: true,
       }),
       2,
@@ -194,18 +194,18 @@ describe("evening awaiting detection", () => {
       new Api.Message({
         id: 1,
         peerId: { className: "PeerUser", userId: BigInt(2) } as unknown as Api.TypePeer,
-        date: today - 3600,
+        date: today - 6 * 3600,
         message: "Hi",
         out: true,
       }),
+      preview.message as Api.Message,
       new Api.Message({
         id: 2,
         peerId: { className: "PeerUser", userId: BigInt(2) } as unknown as Api.TypePeer,
-        date: today - 1800,
-        message: "Sure",
+        date: today - 3600,
+        message: "Sure, later",
         out: false,
       }),
-      preview.message as Api.Message,
     ])
     const summary = buildEveningSummary([preview], now, {
       getThreadMessages: getEveningThreadMessages,
@@ -266,13 +266,9 @@ describe("evening awaiting detection", () => {
   })
 
   it("refineAwaitingReplyTier2 fetches at most 5 peers (AC-U4)", async () => {
-    const peers = Array.from({ length: 7 }, (_, i) => ({
-      key: `u:${i + 10}`,
-      name: `Peer ${i}`,
-    }))
-    const dialogs = peers.map((p, i) =>
+    const dialogs = Array.from({ length: 7 }, (_, i) =>
       stubPrivateDialog(
-        p.name,
+        `Peer ${i}`,
         new Api.Message({
           id: 1,
           peerId: { className: "PeerUser", userId: BigInt(i + 10) } as unknown as Api.TypePeer,
@@ -285,12 +281,8 @@ describe("evening awaiting detection", () => {
     )
     const getMessages = vi.fn().mockResolvedValue([])
     const client = { getMessages } as unknown as TelegramClient
-    const base = {
-      wroteToday: [],
-      awaitingReply: peers,
-      broadcastToday: [],
-      postedToChannelsToday: [],
-    }
+    const base = buildEveningSummary(dialogs, now)
+    expect(base.awaitingReply).toHaveLength(7)
     await refineAwaitingReplyTier2(base, dialogs, client, now, { enabled: true })
     expect(getMessages).toHaveBeenCalledTimes(TIER2_AWAITING_PEER_CAP)
   })
@@ -310,6 +302,13 @@ describe("evening awaiting detection", () => {
     const client = {
       getMessages: vi.fn().mockResolvedValue([
         new Api.Message({
+          id: 1,
+          peerId: { className: "PeerUser", userId: BigInt(99) } as unknown as Api.TypePeer,
+          date: today,
+          message: "Ping",
+          out: true,
+        }),
+        new Api.Message({
           id: 2,
           peerId: { className: "PeerUser", userId: BigInt(99) } as unknown as Api.TypePeer,
           date: today + 60,
@@ -321,8 +320,8 @@ describe("evening awaiting detection", () => {
     const base = buildEveningSummary([d], now)
     expect(base.awaitingReply).toHaveLength(1)
     const refined = await refineAwaitingReplyTier2(base, [d], client, now, { enabled: true })
-    expect(refined.awaitingReply).toEqual([])
     expect(getEveningTier2FetchCount()).toBe(1)
+    expect(refined.awaitingReply).toEqual([])
   })
 })
 

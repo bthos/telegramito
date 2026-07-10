@@ -33,6 +33,8 @@ export type ParentalSettings = {
   morningDayMailEnabled: boolean
   /** Long-press send: wax-seal animation + 5s undo before MTProto send. */
   waxSealSendEnabled: boolean
+  /** Tier 2 evening «awaiting reply» — fetch capped history (parent opt-in, default off). */
+  eveningSummaryPreciseEnabled: boolean
 }
 
 export function defaultParentalSettings(): ParentalSettings {
@@ -52,6 +54,7 @@ export function defaultParentalSettings(): ParentalSettings {
     showMessageIds: false,
     morningDayMailEnabled: true,
     waxSealSendEnabled: false,
+    eveningSummaryPreciseEnabled: false,
   }
 }
 
@@ -83,6 +86,10 @@ export function normalizeParentalSettings(
       typeof s.waxSealSendEnabled === "boolean"
         ? s.waxSealSendEnabled
         : d.waxSealSendEnabled,
+    eveningSummaryPreciseEnabled:
+      typeof s.eveningSummaryPreciseEnabled === "boolean"
+        ? s.eveningSummaryPreciseEnabled
+        : d.eveningSummaryPreciseEnabled,
   }
 }
 

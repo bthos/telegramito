@@ -34,6 +34,8 @@ type Props = {
   onMorningDayMailEnabled?: (enabled: boolean) => void
   waxSealSendEnabled?: boolean
   onWaxSealSendEnabled?: (enabled: boolean) => void
+  eveningSummaryPreciseEnabled?: boolean
+  onEveningSummaryPreciseEnabled?: (enabled: boolean) => void
   coReadingBookmarks?: CoReadingBookmark[]
   onCoReadingNavigate?: (bookmark: CoReadingBookmark) => void
 }
@@ -52,6 +54,8 @@ export function LettersDeskSheet({
   onMorningDayMailEnabled,
   waxSealSendEnabled = false,
   onWaxSealSendEnabled,
+  eveningSummaryPreciseEnabled = false,
+  onEveningSummaryPreciseEnabled,
   coReadingBookmarks = [],
   onCoReadingNavigate,
 }: Props) {
@@ -177,6 +181,26 @@ export function LettersDeskSheet({
                 aria-label={t("letters.deskWaxSeal")}
                 onClick={() => {
                   onWaxSealSendEnabled?.(!waxSealSendEnabled)
+                }}
+              >
+                <span className="switch__track" aria-hidden>
+                  <span className="switch__thumb" />
+                </span>
+              </button>
+            </div>
+          ) : null}
+
+          {appMode === "parent" ? (
+            <div className="letters-desk-sheet__row">
+              <span className="letters-desk-sheet__row-label">{t("letters.deskEveningPrecise")}</span>
+              <button
+                type="button"
+                className="switch"
+                role="switch"
+                aria-checked={eveningSummaryPreciseEnabled}
+                aria-label={t("letters.deskEveningPrecise")}
+                onClick={() => {
+                  onEveningSummaryPreciseEnabled?.(!eveningSummaryPreciseEnabled)
                 }}
               >
                 <span className="switch__track" aria-hidden>

@@ -409,6 +409,7 @@
     },
     "deskMorningMail": "Morning day mail",
     "deskWaxSeal": "Wax-seal send (long-press)",
+    "deskEveningPrecise": "Sharper evening edition",
     "waxSealHint": "Long-press to seal — 5s to undo",
     "waxSealPending": "Sealed — sending in {{seconds}}s",
     "waxSealUndo": "Unseal",
