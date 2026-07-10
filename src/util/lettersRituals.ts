@@ -237,7 +237,7 @@ function resolvePrivateAwaiting(
       return true
     }
   }
-  return previewMsg.out
+  return previewMsg.out === true
 }
 
 /** Heuristic day-end summary from loaded dialog list (private + channels/bulletins). */
