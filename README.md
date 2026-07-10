@@ -14,6 +14,7 @@ A static, browser-only Telegram client built on [GramJS](https://gram.js.org/) (
 - Chat context panel — peer info, shared media grid, quick actions (see below)
 - Parental / supervised mode: child profile, allowlist, PIN-gated settings, night-hours lock
 - Infinite scroll via IntersectionObserver sentinel (no load-more button)
+- Back button (Android hardware/gesture, desktop browser) navigates within the app before exiting — see [docs/back-navigation.md](docs/back-navigation.md)
 - PWA, single-file production HTML output
 - i18n: English, Belarusian, Spanish
 
