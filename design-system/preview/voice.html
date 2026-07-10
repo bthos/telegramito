@@ -1,0 +1,176 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="media-voice" subtitle="Voice: waveform inline, recording state, transcription" viewport="1280x480" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Voice message · Telegramito</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  .voice {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 4px 4px 2px;
+    min-width: 240px;
+  }
+  .voice .play {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--tg-blue);
+    display: grid; place-items: center;
+    flex: none;
+    color: #fff;
+  }
+  .voice .col { flex: 1; min-width: 0; }
+  .wave {
+    display: flex; align-items: center; gap: 2px; height: 22px;
+  }
+  .wave i {
+    display:block; width: 2px; border-radius: 2px;
+    background: rgba(51,144,236,.45);
+  }
+  .wave i.played { background: var(--tg-blue); }
+  .wave i.head { background: var(--tg-blue); width: 3px; }
+  .voice .info {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--ink-3);
+    margin-top: 2px;
+  }
+  .voice .info .unread {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--tg-blue);
+  }
+
+  /* full view = expanded with transcript */
+  .voice-full {
+    width: 360px;
+    background: #fff;
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 12px 40px rgba(10,18,28,.3);
+  }
+  .transcript {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: var(--surface-2);
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  .transcript .label {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    color: var(--tg-blue); text-transform: uppercase;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .transcript .label .spinner {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 1.5px solid var(--tg-blue); border-top-color: transparent;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="card-frame">
+  <header class="card-head">
+    <div>
+      <h1>Voice message</h1>
+      <p>Document with <code>documentAttributeAudio.voice</code>. Inline waveform + play; full view auto-transcribes.</p>
+    </div>
+    <div class="schema">documentAttributeAudio · voice</div>
+  </header>
+
+  <div class="states">
+
+    <section class="state" data-kind="preview">
+      <div class="state-head"><span class="dot"></span> Preview · unplayed</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in">
+          <div class="voice">
+            <div class="play">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="#fff"><path d="M3 2l9 5-9 5z"/></svg>
+            </div>
+            <div class="col">
+              <div class="wave" id="w1"></div>
+              <div class="info"><span>0:24</span><span class="unread"></span><span style="margin-left:auto;">14:46</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="loading">
+      <div class="state-head"><span class="dot"></span> Recording · 0:08</div>
+      <div class="stage" data-side="out">
+        <div style="display:flex; align-items:center; gap: 12px;">
+          <button style="width:48px; height:48px; border-radius:50%; background:#fff; border:0; display:grid; place-items:center; box-shadow:0 4px 12px rgba(0,0,0,.15);">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="6" y="6" width="8" height="8" rx="1" fill="#e2483d"/></svg>
+          </button>
+          <div class="bubble out" style="flex:1; max-width: 240px;">
+            <div class="voice">
+              <div class="play" style="background:#e2483d;">
+                <svg width="12" height="14" viewBox="0 0 12 14" fill="#fff"><rect x="4" y="2" width="4" height="8" rx="2"/><path d="M2 8a4 4 0 008 0M6 11v2" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+              </div>
+              <div class="col">
+                <div class="wave" id="w2"></div>
+                <div class="info"><span style="color:#e2483d; font-variant-numeric: tabular-nums;">0:08</span><span style="margin-left:auto; color:#e2483d;">●</span></div>
+              </div>
+            </div>
+          </div>
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M5 11l4 4 8-10" stroke="var(--tg-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="full">
+      <div class="state-head"><span class="dot"></span> Full view · transcribed</div>
+      <div class="stage" data-mode="surface">
+        <div class="voice-full">
+          <div class="voice">
+            <div class="play">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="#fff"><rect x="2" y="2" width="3" height="8"/><rect x="7" y="2" width="3" height="8"/></svg>
+            </div>
+            <div class="col">
+              <div class="wave" id="w3"></div>
+              <div class="info">
+                <span style="font-variant-numeric: tabular-nums; color: var(--tg-blue); font-weight:600;">0:11</span>
+                <span style="color: var(--ink-4);">/ 0:24</span>
+                <span style="margin-left:auto;">1.5×</span>
+              </div>
+            </div>
+          </div>
+          <div class="transcript">
+            <div class="label">Transcription</div>
+            Hey — can you grab oat milk on the way back? And maybe some of those little tomatoes if they have them. Thanks!
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+<script>
+  // Generate fake waveforms
+  function fillWave(id, opts) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const n = opts.bars || 38;
+    const playedFrac = opts.played ?? 0;
+    const seed = opts.seed ?? 1;
+    let r = seed;
+    for (let i = 0; i < n; i++) {
+      r = (r * 9301 + 49297) % 233280;
+      const h = 4 + (r / 233280) * 18;
+      const bar = document.createElement('i');
+      bar.style.height = h + 'px';
+      const frac = i / (n - 1);
+      if (frac < playedFrac) bar.classList.add('played');
+      if (Math.abs(frac - playedFrac) < 0.02) bar.classList.add('head');
+      el.appendChild(bar);
+    }
+  }
+  fillWave('w1', { played: 0,    seed: 7 });
+  fillWave('w2', { played: 1,    seed: 21, bars: 28 });
+  fillWave('w3', { played: 0.46, seed: 11 });
+</script>
+</body>
+</html>

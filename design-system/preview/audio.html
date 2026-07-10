@@ -1,0 +1,142 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="media-audio" subtitle="Audio: track row, cover-replaced progress, full player card" viewport="1280x480" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Audio · Telegramito</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  .track-row {
+    display: flex; align-items: center; gap: 12px;
+    min-width: 280px; padding: 4px 4px 4px 2px;
+  }
+  .track-row .cover {
+    width: 44px; height: 44px; border-radius: 8px; flex: none;
+    background: linear-gradient(135deg, #ffae3a, #c14a8b 60%, #5b3aa1);
+    display: grid; place-items: center;
+  }
+  .track-row .meta-col {
+    flex: 1; min-width: 0;
+  }
+  .track-row .title { font-size: 14px; font-weight: 600; color: var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .track-row .artist { font-size: 12px; color: var(--ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* Player */
+  .audio-player {
+    width: 360px;
+    background: #fff;
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 12px 40px rgba(10,18,28,.3);
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+  }
+  .audio-player .big-cover {
+    width: 200px; height: 200px; border-radius: 14px;
+    background: linear-gradient(135deg, #ffae3a, #c14a8b 60%, #5b3aa1);
+    box-shadow: 0 12px 30px rgba(193, 74, 139, .35);
+    display:grid; place-items:center;
+  }
+  .audio-player .scrub {
+    width: 100%; height: 3px; border-radius: 3px;
+    background: var(--surface-2); position: relative;
+  }
+  .audio-player .scrub .filled { width: 38%; height: 100%; background: var(--tg-blue); border-radius: 3px; }
+  .audio-player .scrub .knob { position:absolute; left:38%; top:50%; transform: translate(-50%,-50%); width:12px; height:12px; border-radius:50%; background: var(--tg-blue); }
+  .audio-player .times { display:flex; justify-content:space-between; width:100%; font-size:11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .audio-player .controls { display:flex; align-items:center; gap: 18px; }
+  .audio-player .controls .pp {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--tg-blue); display:grid; place-items:center;
+    box-shadow: 0 4px 14px rgba(51,144,236,.4);
+  }
+
+  .download-stub {
+    width: 22px; height: 22px; flex: none;
+  }
+</style>
+</head>
+<body>
+<div class="card-frame">
+  <header class="card-head">
+    <div>
+      <h1>Audio / Music</h1>
+      <p>Document with <code>documentAttributeAudio</code> (non-voice). Title/artist row in bubble; full view = persistent player.</p>
+    </div>
+    <div class="schema">documentAttributeAudio</div>
+  </header>
+
+  <div class="states">
+
+    <section class="state" data-kind="preview">
+      <div class="state-head"><span class="dot"></span> Preview · in chat</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in">
+          <div class="track-row">
+            <div class="cover">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 14V4l9-1v10" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><circle cx="6" cy="14" r="2.5" fill="#fff"/><circle cx="15" cy="13" r="2.5" fill="#fff"/></svg>
+            </div>
+            <div class="meta-col">
+              <div class="title">Northern Lights</div>
+              <div class="artist">Phoebe Sun · 3:42</div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:flex-end; padding: 4px 4px 0; font-size:11px; color: var(--ink-3);">14:55</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="loading">
+      <div class="state-head"><span class="dot"></span> Downloading · 71%</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in">
+          <div class="track-row">
+            <div class="cover" style="background: var(--surface-2); position: relative;">
+              <div class="tg-progress" style="width: 36px; height: 36px; background: rgba(0,0,0,.5);">
+                <svg class="ring" viewBox="0 0 42 42" style="inset: 3px;">
+                  <circle cx="21" cy="21" r="18" />
+                  <circle class="bar" cx="21" cy="21" r="18"
+                    stroke-dasharray="113.1" stroke-dashoffset="32.8" />
+                </svg>
+                <span class="x" style="width:10px; height:10px;"></span>
+              </div>
+            </div>
+            <div class="meta-col">
+              <div class="title">Northern Lights</div>
+              <div class="artist" style="color: var(--tg-blue);">2.6 / 3.7 MB · 540 KB/s</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="full">
+      <div class="state-head"><span class="dot"></span> Full view · player</div>
+      <div class="stage" data-mode="surface">
+        <div class="audio-player">
+          <div class="big-cover">
+            <svg width="56" height="56" viewBox="0 0 20 20" fill="none"><path d="M7 14V4l9-1v10" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><circle cx="6" cy="14" r="2.5" fill="#fff"/><circle cx="15" cy="13" r="2.5" fill="#fff"/></svg>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-weight:600; font-size:16px;">Northern Lights</div>
+            <div style="color: var(--ink-3); font-size:13px; margin-top:2px;">Phoebe Sun</div>
+          </div>
+          <div class="scrub">
+            <div class="filled"></div>
+            <div class="knob"></div>
+          </div>
+          <div class="times"><span>1:24</span><span>−2:18</span></div>
+          <div class="controls">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--ink-2)"><path d="M19 5v14L9 12zM7 5v14h-2V5z"/></svg>
+            <div class="pp">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="#fff"><rect x="6" y="4" width="4" height="14" rx="1"/><rect x="12" y="4" width="4" height="14" rx="1"/></svg>
+            </div>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--ink-2)"><path d="M5 5v14l10-7zM17 5v14h2V5z"/></svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="media-unsupported" subtitle="Unsupported: in-bubble notice, checking-update spinner, update prompt" viewport="1280x480" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Unsupported · Telegramito</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  .unsup-row {
+    display: flex; gap: 10px;
+    padding: 6px 4px;
+    align-items: flex-start;
+    min-width: 260px;
+  }
+  .unsup-row .icn {
+    flex: none; width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(232,72,61,.12);
+    color: var(--err);
+    display: grid; place-items: center;
+  }
+  .unsup-row .body { flex: 1; }
+  .unsup-row .title { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .unsup-row .desc { font-size: 12px; color: var(--ink-3); margin-top: 2px; line-height: 1.4; }
+  .unsup-row .link { color: var(--tg-blue); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="card-frame">
+  <header class="card-head">
+    <div>
+      <h1>Unsupported</h1>
+      <p>Newer media type the client doesn't recognize. Forwards safely; prompts to update; opens settings full-screen.</p>
+    </div>
+    <div class="schema">messageMediaUnsupported</div>
+  </header>
+
+  <div class="states">
+
+    <section class="state" data-kind="preview">
+      <div class="state-head"><span class="dot"></span> Preview · in-bubble notice</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in">
+          <div class="unsup-row">
+            <div class="icn">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5l6.5 11h-13z" stroke="var(--err)" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 6v3" stroke="var(--err)" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11" r=".9" fill="var(--err)"/></svg>
+            </div>
+            <div class="body">
+              <div class="title">This message can't be displayed here</div>
+              <div class="desc">It uses a feature that's not yet supported on this device. <span class="link">Update Telegram</span> to view it.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="loading">
+      <div class="state-head"><span class="dot"></span> Checking for update</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in">
+          <div class="unsup-row">
+            <div class="icn" style="background: var(--bubble-out-2); color: var(--tg-blue); position: relative;">
+              <div style="position:absolute; inset:-3px; border:2px solid var(--tg-blue); border-top-color: transparent; border-radius:50%; animation: spin 1s linear infinite;"></div>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8m0 0l-3-3m3 3l3-3M2 12h10" stroke="var(--tg-blue)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="body">
+              <div class="title">Checking for update…</div>
+              <div class="desc">We're seeing if a newer version supports this message.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="full">
+      <div class="state-head"><span class="dot"></span> Full view · update prompt</div>
+      <div class="stage" data-mode="surface">
+        <div style="width:320px; background:#fff; border-radius:18px; padding: 24px; box-shadow: 0 8px 24px rgba(10,18,28,.15); text-align:center;">
+          <div style="margin: 0 auto 14px; width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(135deg, var(--tg-blue), #5b8def); display:grid; place-items:center; box-shadow: 0 8px 20px rgba(51,144,236,.3);">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M16 5v14m0 0l-6-6m6 6l6-6M6 26h20" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div style="font-size: 18px; font-weight: 700;">Update to view this message</div>
+          <div style="font-size: 13px; color: var(--ink-3); margin-top: 6px; line-height: 1.5;">A newer Telegram version supports this kind of message. Updating takes a few seconds.</div>
+          <div style="margin-top: 14px; padding: 10px 12px; background: var(--surface-2); border-radius: 10px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+            <span style="color: var(--ink-3);">Current version</span>
+            <span style="font-family: var(--mono);">10.4.2</span>
+          </div>
+          <div style="padding: 10px 12px; background: rgba(51,144,236,.08); border-radius: 10px; display:flex; justify-content:space-between; align-items:center; font-size:12px; margin-top:6px;">
+            <span style="color: var(--tg-blue);">Latest available</span>
+            <span style="font-family: var(--mono); color: var(--tg-blue); font-weight:600;">11.2.0</span>
+          </div>
+          <button style="margin-top:18px; width:100%; padding:12px; border:0; background: var(--tg-blue); color:#fff; border-radius:10px; font-weight:600; font-size:14px;">Update Telegram</button>
+          <button style="margin-top:6px; width:100%; padding:10px; border:0; background:transparent; color:var(--ink-3); font-size:13px;">Not now</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>

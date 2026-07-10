@@ -1,0 +1,507 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Handoff — Telegramito Design System" viewport="1440x900" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Telegramito — Developer Handoff</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Spectral:ital,wght@0,400;0,500;0,600;1,300;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+<style>
+:root {
+  --tg: #b03e1b; --tg-d: #8b2f12; --tg-s: rgba(176,62,27,.10);
+  --ink: #1c1815; --ink2: #3a322a; --ink3: #7a705f; --ink4: #a89e8b; --ink5: #ccc7b8;
+  --ok: #4a8c3f; --warn: #c47b18; --err: #c0331f; --gold: #b08030;
+  --s: #dfdbd2; --s2: #d4cfc3; --card: #e9e4d8; --hair: rgba(28,24,21,.14);
+  --r: 'Spectral', Georgia, serif; --sans: 'Manrope', system-ui, sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--s); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+
+/* ─ Layout ─ */
+.page-header {
+  padding: 64px 80px 48px;
+  border-bottom: 2px solid var(--ink);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: end;
+}
+.page-header h1 {
+  font-family: var(--r); font-weight: 500; font-size: 52px; margin: 0;
+  letter-spacing: -.02em; line-height: 1.05;
+}
+.page-header h1 em { color: var(--tg); font-style: italic; }
+.page-header p { font-size: 16px; color: var(--ink3); line-height: 1.6; margin: 12px 0 0; font-family: var(--r); font-style: italic; }
+.breadcrumb { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink3); font-weight: 700; margin-bottom: 12px; }
+.page-nav { display: flex; gap: 24px; align-items: center; font-size: 12px; color: var(--ink3); }
+.page-nav a { color: var(--tg); text-decoration: none; border-bottom: 1px solid var(--tg); padding-bottom: 2px; }
+
+.section { padding: 56px 80px; border-bottom: 1px solid var(--hair); }
+.section:last-child { border-bottom: 0; }
+.section-head { display: flex; align-items: baseline; gap: 16px; margin-bottom: 36px; }
+.section-head h2 { font-family: var(--r); font-weight: 500; font-size: 28px; margin: 0; letter-spacing: -.01em; }
+.section-head .no { font-family: var(--mono); font-size: 13px; color: var(--ink3); }
+.rule-full { height: 1px; background: var(--hair); margin: 20px 0; }
+
+/* ─ Tokens ─ */
+.token-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.swatch-card { background: var(--card); border: 1px solid var(--hair); overflow: hidden; }
+.swatch { height: 56px; }
+.swatch-body { padding: 10px 12px; }
+.swatch-body .name { font-family: var(--mono); font-size: 11px; color: var(--ink2); font-weight: 600; }
+.swatch-body .val  { font-family: var(--mono); font-size: 10px; color: var(--ink3); margin-top: 2px; }
+.swatch-body .desc { font-size: 11px; color: var(--ink3); margin-top: 3px; font-style: italic; font-family: var(--r); }
+
+/* ─ Type ─ */
+.type-row { display: grid; grid-template-columns: 180px 1fr; column-gap: 32px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--hair); }
+.type-row:last-child { border-bottom: 0; }
+.type-meta { font-family: var(--mono); font-size: 10px; color: var(--ink3); line-height: 1.6; }
+.type-meta b { color: var(--ink2); display: block; font-size: 11px; }
+
+/* ─ Geometry ─ */
+.geo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.geo-card { background: var(--card); border: 1px solid var(--hair); padding: 20px 18px; }
+.geo-card .label { font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--ink3); letter-spacing: .14em; margin-bottom: 14px; text-transform: uppercase; }
+.geo-card .val { font-family: var(--mono); font-size: 13px; color: var(--tg); font-weight: 600; }
+.geo-card .desc { font-size: 12px; color: var(--ink3); margin-top: 4px; font-style: italic; font-family: var(--r); }
+
+/* ─ Media inventory ─ */
+.media-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+.media-card {
+  padding: 18px 18px 16px;
+  border-right: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
+  text-decoration: none; color: inherit; display: block;
+  transition: background .14s;
+}
+.media-card:hover { background: var(--card); }
+.media-card:nth-child(4n) { border-right: 0; }
+.media-card .schema { font-family: var(--mono); font-size: 9px; color: var(--ink4); letter-spacing: .12em; margin-bottom: 6px; text-transform: uppercase; }
+.media-card .name { font-family: var(--r); font-size: 17px; font-weight: 500; color: var(--ink); letter-spacing: -.01em; }
+.media-card .states { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+.state-chip { font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; padding: 3px 7px; background: var(--s); color: var(--ink3); }
+.state-chip.preview { color: var(--ink3); border: 1px solid var(--ink5); }
+.state-chip.loading { color: var(--warn); border: 1px solid var(--warn); }
+.state-chip.full    { color: var(--ok); border: 1px solid var(--ok); }
+.media-card .arrow { font-family: var(--mono); font-size: 11px; color: var(--tg); margin-top: 10px; }
+
+/* ─ Component specimens ─ */
+.specimen-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.specimen { background: var(--card); border: 1px solid var(--hair); padding: 22px; }
+.specimen .spec-label { font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink3); font-weight: 700; margin-bottom: 14px; }
+.specimen .spec-sub { font-family: var(--mono); font-size: 9px; color: var(--ink4); margin-top: 6px; }
+
+/* ─ Bubble specimens ─ */
+.bubble-in, .bubble-out {
+  max-width: 280px; padding: 10px 14px 8px;
+  border-radius: 18px;
+  box-shadow: 0 1px 3px rgba(28,24,21,.12);
+  font-family: var(--r); font-size: 15px; line-height: 1.55; position: relative;
+}
+.bubble-in  { background: #e9e4d8; color: var(--ink); }
+.bubble-out { background: rgba(176,62,27,.08); color: var(--ink); margin-left: auto; }
+.bubble-meta { font-family: var(--mono); font-size: 11px; color: var(--ink3); float: right; margin: 4px 0 0 10px; }
+.bubble-out .bubble-meta { color: var(--tg); }
+
+.passage-demo { display: grid; grid-template-columns: 100px 1fr 90px; column-gap: 18px; padding: 10px 0; border-bottom: 1px solid var(--hair); }
+.passage-speaker { text-align: right; }
+.passage-speaker .t { font-family: var(--mono); font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink3); font-weight: 700; }
+.passage-speaker .who { font-family: var(--r); font-style: italic; font-size: 13px; color: var(--ink2); margin-top: 2px; }
+.passage-body { font-family: var(--r); font-size: 15px; line-height: 1.55; }
+.passage-margin { font-family: var(--r); font-style: italic; font-size: 11px; color: var(--ink3); }
+
+/* ─ Progress ring ─ */
+.tg-progress {
+  width: 50px; height: 50px; border-radius: 50%;
+  background: rgba(0,0,0,.55);
+  display: grid; place-items: center;
+  position: relative;
+}
+.tg-progress .ring { position: absolute; inset: 4px; }
+.tg-progress .ring circle { fill: none; stroke: rgba(255,255,255,.25); stroke-width: 2.5; }
+.tg-progress .ring circle.bar { stroke: #fff; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; }
+.x-icon { width: 12px; height: 12px; position: relative; }
+.x-icon::before, .x-icon::after { content:''; position: absolute; left: 50%; top: 50%; width: 1.6px; height: 10px; background: #fff; border-radius: 1px; }
+.x-icon::before { transform: translate(-50%,-50%) rotate(45deg); }
+.x-icon::after  { transform: translate(-50%,-50%) rotate(-45deg); }
+
+/* ─ Anim tokens ─ */
+.anim-row { display: grid; grid-template-columns: 160px 80px 80px 1fr; column-gap: 20px; align-items: baseline; padding: 11px 0; border-bottom: 1px solid var(--hair); font-size: 13px; }
+.anim-row:last-child { border-bottom: 0; }
+.anim-name { font-weight: 600; }
+.anim-val  { font-family: var(--mono); font-size: 12px; color: var(--tg); }
+.anim-desc { color: var(--ink3); }
+
+@keyframes tg-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+@keyframes tg-spin { to { transform: rotate(360deg); } }
+@keyframes tg-pulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+
+.shimmer-demo {
+  height: 40px; border-radius: 4px;
+  background: linear-gradient(110deg, #c8c2b8 8%, #d4cec4 18%, #c8c2b8 33%);
+  background-size: 200% 100%; animation: tg-shimmer 1.4s linear infinite;
+}
+.spin-demo {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2.5px solid var(--tg); border-top-color: transparent;
+  animation: tg-spin 1s linear infinite;
+}
+
+/* ─ Code blocks ─ */
+pre {
+  background: var(--ink); color: #e9e4d8; padding: 16px 20px;
+  font-family: var(--mono); font-size: 12px; line-height: 1.6; overflow-x: auto;
+  margin: 0; border-radius: 0;
+}
+.code-label { font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink3); font-weight: 700; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════ -->
+<header class="page-header">
+  <div>
+    <div class="breadcrumb">Telegramito · Design Handoff · May 2026</div>
+    <h1>Developer<br/>reference <em>—</em><br/>Letters</h1>
+    <p>High-fidelity spec for the Telegramito messaging app, Letters variant. All media-type components (23 types × 3 states), design tokens, component anatomy, and animation catalogue.</p>
+  </div>
+  <div>
+    <div class="page-nav">
+      <a href="#tokens">Tokens</a>
+      <a href="#type">Typography</a>
+      <a href="#components">Components</a>
+      <a href="#media">Media types</a>
+      <a href="#animations">Animations</a>
+      <a href="#code">CSS base</a>
+    </div>
+    <div style="margin-top: 28px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--card); border: 1px solid var(--hair);">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--ok);"></div>
+        <span style="font-size: 13px; color: var(--ink2); font-style: italic; font-family: var(--r);">Design reference files — recreate in your target framework</span>
+      </div>
+      <div style="display: flex; gap: 10px; font-family: var(--mono); font-size: 11px;">
+        <a href="../app/Telegramito Redesign.html" style="color: var(--tg); text-decoration: none; padding: 8px 14px; border: 1px solid var(--tg);">Open app mockup ↗</a>
+        <a href="../preview/photo.html" style="color: var(--ink3); text-decoration: none; padding: 8px 14px; border: 1px solid var(--ink5);">Browse media cards ↗</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════ TOKENS ══════════ -->
+<section class="section" id="tokens">
+  <div class="section-head">
+    <h2>Design tokens — colour</h2>
+    <span class="no">01 / 05</span>
+  </div>
+
+  <div style="margin-bottom: 28px; font-family: var(--mono); font-size: 12px; color: var(--ink3); display: flex; align-items: center; gap: 12px;">
+    <span>All tokens are CSS custom properties on <code style="color: var(--ink2);">:root</code>.</span>
+    <span style="flex:1; height:1px; background: var(--hair);"></span>
+    <span style="color: var(--tg);">Source: <code>colors_and_type.css</code></span>
+  </div>
+
+  <div style="font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink3); font-weight: 700; margin-bottom: 14px;">Primary action</div>
+  <div class="token-grid" style="margin-bottom: 28px;">
+    <div class="swatch-card"><div class="swatch" style="background:#b03e1b;"></div><div class="swatch-body"><div class="name">--tg-blue</div><div class="val">#b03e1b</div><div class="desc">Terracotta — buttons, links, active</div></div></div>
+    <div class="swatch-card"><div class="swatch" style="background:#8b2f12;"></div><div class="swatch-body"><div class="name">--tg-blue-deep</div><div class="val">#8b2f12</div><div class="desc">Pressed / hover variant</div></div></div>
+    <div class="swatch-card"><div class="swatch" style="background:rgba(176,62,27,.10); border:1px solid var(--hair);"></div><div class="swatch-body"><div class="name">--tg-blue-soft</div><div class="val">rgba(176,62,27,.10)</div><div class="desc">Tinted wash, hover fills</div></div></div>
+    <div class="swatch-card"><div class="swatch" style="background:rgba(176,62,27,.08); border:1px solid var(--hair);"></div><div class="swatch-body"><div class="name">--bubble-out</div><div class="val">rgba(176,62,27,.08)</div><div class="desc">Outgoing bubble fill</div></div></div>
+  </div>
+
+  <div style="font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink3); font-weight: 700; margin-bottom: 14px;">Surfaces</div>
+  <div class="token-grid" style="margin-bottom: 28px;">
+    <div class="swatch-card"><div class="swatch" style="background:#e9e4d8;"></div><div class="swatch-body"><div class="name">--bubble-in</div><div class="val">#e9e4d8</div><div class="desc">Incoming bubble / card</div></div></div>
+    <div class="swatch-card"><div class="swatch" style="background:#dfdbd2;"></div><div class="swatch-body"><div class="name">--surface</div><div class="val">#dfdbd2</div><div class="desc">Page / panel bg</div></div></div>
+    <div class="swatch-card"><div class="swatch" style="background:#d4cfc3;"></div><div class="swatch-body"><div class="name">--surface-2</div><div class="val">#d4cfc3</div><div class="desc">Secondary panels, sidebars</div></div></div>
+    <div class="swatch-card"><div class="swatch" style="background:#cac5bc;"></div><div class="swatch-body"><div class="name">--chat-bg</div><div class="val">#cac5bc</div><div class="desc">Chat backdrop / wallpaper</div></div></div>
+  </div>
+
+  <div style="font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink3); font-weight: 700; margin-bottom: 14px;">Ink scale</div>
+  <div class="token-grid" style="margin-bottom: 28px;">
+    <div class="swatch-card"><div class="swatch" style="background:#1c1815;"></div><div class="swatch-body"><div class="name">--ink</div><div class="val">#1c1815</div><div class="desc">Primary text</div></div></div>
+    <div class="swatch-card"><div class="swatch" style="background:#3a322a;"></div><div class="swatch-body"><div class="name">--ink-2</div><div class="val">#3a322a</div><div class="desc">Secondary text</div></div></div>
+    <div class="swatch-card"><div class="swatch" style="background:#7a705f;"></div><div class="swatch-body"><div class="name">--ink-3</div><div class="val">#7a705f</div><div class="desc">Muted, timestamps</div></div></div>
+    <div class="swatch-card"><div class="swatch" style="background:#a89e8b;"></div><div class="swatch-body"><div class="name">--ink-4</div><div class="val">#a89e8b</div><div class="desc">Placeholder, disabled</div></div></div>
+  </div>
+
+  <div style="font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink3); font-weight: 700; margin-bottom: 14px;">Status</div>
+  <div class="token-grid">
+    <div class="swatch-card"><div class="swatch" style="background:#4a8c3f;"></div><div class="swatch-body"><div class="name">--ok</div><div class="val">#4a8c3f</div><div class="desc">Success, delivered ✓</div></div></div>
+    <div class="swatch-card"><div class="swatch" style="background:#c47b18;"></div><div class="swatch-body"><div class="name">--warn</div><div class="val">#c47b18</div><div class="desc">Warning, amber</div></div></div>
+    <div class="swatch-card"><div class="swatch" style="background:#c0331f;"></div><div class="swatch-body"><div class="name">--err</div><div class="val">#c0331f</div><div class="desc">Error, destructive</div></div></div>
+    <div class="swatch-card"><div class="swatch" style="background:#b08030;"></div><div class="swatch-body"><div class="name">--gold</div><div class="val">#b08030</div><div class="desc">Stars, premium, trophy</div></div></div>
+  </div>
+</section>
+
+<!-- ══════════ TYPOGRAPHY ══════════ -->
+<section class="section" id="type">
+  <div class="section-head"><h2>Typography</h2><span class="no">02 / 05</span></div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 36px;">
+    <div>
+      <div style="font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink3); font-weight: 700; margin-bottom: 16px;">Font families</div>
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="padding: 16px; background: var(--card); border: 1px solid var(--hair);">
+          <div style="font-family: 'Spectral', serif; font-size: 28px; font-weight: 400; margin-bottom: 4px;">Spectral — serif body</div>
+          <div style="font-family: var(--mono); font-size: 10px; color: var(--ink3);">--font-serif · Message bodies, speaker names, captions</div>
+        </div>
+        <div style="padding: 16px; background: var(--card); border: 1px solid var(--hair);">
+          <div style="font-family: 'Manrope', sans-serif; font-size: 22px; font-weight: 600; margin-bottom: 4px;">Manrope — UI sans</div>
+          <div style="font-family: var(--mono); font-size: 10px; color: var(--ink3);">--font · Timestamps, labels, section heads, chrome</div>
+        </div>
+        <div style="padding: 16px; background: var(--card); border: 1px solid var(--hair);">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 500; margin-bottom: 4px;">JetBrains Mono</div>
+          <div style="font-family: var(--mono); font-size: 10px; color: var(--ink3);">--mono · Frequencies, codes, metadata, tokens</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink3); font-weight: 700; margin-bottom: 16px;">Type scale</div>
+      <div class="type-row">
+        <div class="type-meta"><b>--t-meta · 11px</b>Manrope 600 · .2em tracked · uppercase</div>
+        <div style="font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--ink3);">TIMESTAMP · 14:32</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><b>--t-caption · 13px</b>Manrope 400 · normal</div>
+        <div style="font-size: 13px; color: var(--ink3);">Sub-text, secondary labels</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><b>--t-body · 15px</b>Spectral 400 · 1.55 line-height</div>
+        <div style="font-size: 15px; font-family: 'Spectral', serif; color: var(--ink);">Message passage text</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><b>Speaker · 13px</b>Spectral 400 italic · --ink-2</div>
+        <div style="font-size: 13px; font-family: 'Spectral', serif; font-style: italic; color: var(--ink2);">— Marina K.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><b>--t-title · 16px</b>Manrope 700</div>
+        <div style="font-size: 16px; font-weight: 700; color: var(--ink);">Section heading</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><b>Thread title · 34px</b>Spectral 500 · -.01em</div>
+        <div style="font-size: 28px; font-family: 'Spectral', serif; font-weight: 500; letter-spacing: -.01em; color: var(--ink);">Soft Start · 2026</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ GEOMETRY ══════════ -->
+<section class="section" id="geometry">
+  <div class="section-head"><h2>Geometry &amp; spacing</h2></div>
+  <div class="geo-grid">
+    <div class="geo-card"><div class="label">--r-bubble</div><div style="width: 60px; height: 30px; background: var(--card); border-radius: 18px; border: 1.5px solid var(--ink5); margin-bottom: 8px;"></div><div class="val">18px</div><div class="desc">Message bubble corners</div></div>
+    <div class="geo-card"><div class="label">--r-card</div><div style="width: 60px; height: 30px; background: var(--card); border-radius: 14px; border: 1.5px solid var(--ink5); margin-bottom: 8px;"></div><div class="val">14px</div><div class="desc">Cards, panels</div></div>
+    <div class="geo-card"><div class="label">--r-pill</div><div style="width: 60px; height: 26px; background: var(--card); border-radius: 999px; border: 1.5px solid var(--ink5); margin-bottom: 8px;"></div><div class="val">999px</div><div class="desc">Pills, badges, round buttons</div></div>
+    <div class="geo-card"><div class="label">--r-thumb</div><div style="width: 60px; height: 30px; background: var(--card); border-radius: 10px; border: 1.5px solid var(--ink5); margin-bottom: 8px;"></div><div class="val">10px</div><div class="desc">Media thumbnails</div></div>
+    <div class="geo-card"><div class="label">--bubble-shadow</div><div style="width: 60px; height: 30px; background: var(--bubble-in,#e9e4d8); border-radius: 18px; box-shadow: 0 1px 3px rgba(28,24,21,.12); margin-bottom: 8px;"></div><div class="val" style="font-size: 10px;">0 1px 3px rgba(28,24,21,.12)</div><div class="desc">Standard bubble elevation</div></div>
+    <div class="geo-card"><div class="label">Passage layout</div><div class="val" style="font-size: 11px; line-height: 1.6;">120px · 1fr · 116px<br/>col-gap: 22px</div><div class="desc">Speaker / body / margin</div></div>
+  </div>
+</section>
+
+<!-- ══════════ COMPONENTS ══════════ -->
+<section class="section" id="components">
+  <div class="section-head"><h2>Core components</h2><span class="no">03 / 05</span></div>
+
+  <div class="specimen-grid">
+
+    <!-- Bubble types -->
+    <div class="specimen">
+      <div class="spec-label">Bubbles — media messages</div>
+      <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; background: #cac5bc; border-radius: 8px;">
+        <div class="bubble-in" style="background: #e9e4d8;">Incoming text message<span class="bubble-meta">14:32</span></div>
+        <div class="bubble-out" style="background: rgba(176,62,27,.08);">Outgoing text message<span class="bubble-meta" style="color: #b03e1b;">14:33 ✓✓</span></div>
+      </div>
+      <div class="spec-sub">in: #e9e4d8 · border-radius: 18px / 6px tail<br/>out: rgba(176,62,27,.08) · right-aligned</div>
+    </div>
+
+    <!-- Passage style -->
+    <div class="specimen">
+      <div class="spec-label">Passage row — no-bubble text</div>
+      <div class="passage-demo">
+        <div class="passage-speaker"><div class="t">14:32</div><div class="who">— Marina</div></div>
+        <div class="passage-body" style="font-family: 'Spectral', serif; font-size: 15px; line-height: 1.55;">Я нашла наушники в ботинке вчера.</div>
+        <div class="passage-margin">😂 ×4</div>
+      </div>
+      <div class="spec-sub">3-col grid · 120 / 1fr / 116px · col-gap 22px</div>
+    </div>
+
+    <!-- Progress ring -->
+    <div class="specimen">
+      <div class="spec-label">Progress ring — download / upload</div>
+      <div style="display: flex; gap: 20px; align-items: center; padding: 12px; background: #888; border-radius: 8px;">
+        <div class="tg-progress">
+          <svg class="ring" viewBox="0 0 42 42" style="position:absolute; inset:4px;">
+            <circle cx="21" cy="21" r="18" />
+            <circle class="bar" cx="21" cy="21" r="18" stroke-dasharray="113.1" stroke-dashoffset="56.5" />
+          </svg>
+          <div class="x-icon"></div>
+        </div>
+        <div class="tg-progress">
+          <svg class="ring" viewBox="0 0 42 42" style="position:absolute; inset:4px;">
+            <circle cx="21" cy="21" r="18" />
+            <circle class="bar" cx="21" cy="21" r="18" stroke-dasharray="113.1" stroke-dashoffset="22" />
+          </svg>
+          <div class="x-icon"></div>
+        </div>
+      </div>
+      <div class="spec-sub">50×50px · rgba(0,0,0,.55) bg · r=18 · stroke 2.5<br/>stroke-dashoffset = 113.1 × (1 − progress)</div>
+    </div>
+
+    <!-- Skeleton -->
+    <div class="specimen">
+      <div class="spec-label">Skeleton shimmer</div>
+      <div class="shimmer-demo" style="margin-bottom: 10px;"></div>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <div class="shimmer-demo" style="width: 44px; height: 44px; border-radius: 50%;"></div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+          <div class="shimmer-demo" style="height: 12px; width: 60%;"></div>
+          <div class="shimmer-demo" style="height: 9px; width: 40%;"></div>
+        </div>
+      </div>
+      <div class="spec-sub">linear-gradient(110deg, #c8c2b8 8%, #d4cec4 18%, #c8c2b8 33%)<br/>background-size: 200% · shimmer 1.4s linear ∞</div>
+    </div>
+
+    <!-- Spinner -->
+    <div class="specimen">
+      <div class="spec-label">Loading spinner</div>
+      <div style="display: flex; gap: 20px; align-items: center; padding: 14px;">
+        <div class="spin-demo"></div>
+        <div class="spin-demo" style="border-color: var(--ok); border-top-color: transparent; width: 18px; height: 18px; border-width: 2px;"></div>
+        <div class="spin-demo" style="border-color: rgba(255,255,255,.3); border-top-color: #fff; width: 32px; height: 32px; background: rgba(0,0,0,.5);"></div>
+      </div>
+      <div class="spec-sub">border: 2.5px solid --tg-blue · border-top: transparent<br/>animation: spin 1s linear ∞</div>
+    </div>
+
+    <!-- Waveform -->
+    <div class="specimen">
+      <div class="spec-label">Voice waveform</div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--tg); display: grid; place-items: center;">
+          <div style="width:0; height:0; border-left: 8px solid #fff; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px;"></div>
+        </div>
+        <svg width="200" height="26" viewBox="0 0 200 26">
+          <rect x="0"  y="9"  width="3" height="8"  fill="#b03e1b" rx="1.5" />
+          <rect x="8"  y="5"  width="3" height="16" fill="#b03e1b" rx="1.5" />
+          <rect x="16" y="7"  width="3" height="12" fill="#b03e1b" rx="1.5" />
+          <rect x="24" y="3"  width="3" height="20" fill="#b03e1b" rx="1.5" />
+          <rect x="32" y="8"  width="3" height="10" fill="#b03e1b" rx="1.5" />
+          <rect x="40" y="6"  width="3" height="14" fill="#b03e1b" rx="1.5" />
+          <rect x="48" y="10" width="3" height="6"  fill="#7a705f" rx="1.5" />
+          <rect x="56" y="7"  width="3" height="12" fill="#7a705f" rx="1.5" />
+          <rect x="64" y="4"  width="3" height="18" fill="#7a705f" rx="1.5" />
+          <rect x="72" y="9"  width="3" height="8"  fill="#7a705f" rx="1.5" />
+          <rect x="80" y="6"  width="3" height="14" fill="#7a705f" rx="1.5" />
+          <rect x="88" y="2"  width="3" height="22" fill="#7a705f" rx="1.5" />
+          <rect x="96" y="8"  width="3" height="10" fill="#7a705f" rx="1.5" />
+        </svg>
+        <span style="font-family: var(--mono); font-size: 11px; color: var(--ink3);">0:24</span>
+      </div>
+      <div class="spec-sub">SVG rects · width 3px · gap 5px · rx 1.5px<br/>played: --tg-blue · unplayed: --ink-3</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════ MEDIA INVENTORY ══════════ -->
+<section class="section" id="media">
+  <div class="section-head"><h2>Media types — 24 components</h2><span class="no">04 / 05</span></div>
+  <div style="font-family: var(--r); font-style: italic; font-size: 14px; color: var(--ink3); margin-bottom: 24px;">Click any card to open the reference HTML. Each shows Preview · Loading · Full view.</div>
+  <div class="media-grid">
+    <a class="media-card" href="../preview/photo.html"><div class="schema">messageMediaPhoto</div><div class="name">Photo</div><div class="states"><span class="state-chip preview">Preview</span><span class="state-chip loading">Upload</span><span class="state-chip full">Viewer</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/video.html"><div class="schema">documentAttributeVideo</div><div class="name">Video</div><div class="states"><span class="state-chip preview">Thumb</span><span class="state-chip loading">Download</span><span class="state-chip full">Player</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/gif.html"><div class="schema">documentAttributeAnimated</div><div class="name">GIF</div><div class="states"><span class="state-chip preview">Auto-play</span><span class="state-chip loading">Fetch</span><span class="state-chip full">Overlay</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/sticker.html"><div class="schema">documentAttributeSticker</div><div class="name">Sticker</div><div class="states"><span class="state-chip preview">No bubble</span><span class="state-chip loading">Loading</span><span class="state-chip full">Pack picker</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/voice.html"><div class="schema">documentAttributeAudio.voice</div><div class="name">Voice</div><div class="states"><span class="state-chip preview">Waveform</span><span class="state-chip loading">Recording</span><span class="state-chip full">Transcript</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/round-video.html"><div class="schema">documentAttributeVideo.round</div><div class="name">Round video</div><div class="states"><span class="state-chip preview">Circle</span><span class="state-chip loading">Recording</span><span class="state-chip full">Expanded</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/audio.html"><div class="schema">documentAttributeAudio</div><div class="name">Audio</div><div class="states"><span class="state-chip preview">Track row</span><span class="state-chip loading">Download</span><span class="state-chip full">Player</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/document.html"><div class="schema">document</div><div class="name">Document</div><div class="states"><span class="state-chip preview">File row</span><span class="state-chip loading">Download</span><span class="state-chip full">Preview</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/geo.html"><div class="schema">messageMediaGeo</div><div class="name">Geo</div><div class="states"><span class="state-chip preview">Pin</span><span class="state-chip loading">Tiles</span><span class="state-chip full">Directions</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/geo-live.html"><div class="schema">messageMediaGeoLive</div><div class="name">Geo Live</div><div class="states"><span class="state-chip preview">Pulse pin</span><span class="state-chip loading">Duration</span><span class="state-chip full">Multi-user</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/venue.html"><div class="schema">messageMediaVenue</div><div class="name">Venue</div><div class="states"><span class="state-chip preview">Map+name</span><span class="state-chip loading">Picker</span><span class="state-chip full">Card</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/contact.html"><div class="schema">messageMediaContact</div><div class="name">Contact</div><div class="states"><span class="state-chip preview">Row</span><span class="state-chip loading">Picker</span><span class="state-chip full">Full card</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/webpage.html"><div class="schema">messageMediaWebPage</div><div class="name">Web page</div><div class="states"><span class="state-chip preview">Unfurl</span><span class="state-chip loading">Fetching</span><span class="state-chip full">Instant View</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/poll.html"><div class="schema">messageMediaPoll</div><div class="name">Poll</div><div class="states"><span class="state-chip preview">Open</span><span class="state-chip loading">Multi-choice</span><span class="state-chip full">Results</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/quiz.html"><div class="schema">poll.quiz=true</div><div class="name">Quiz</div><div class="states"><span class="state-chip preview">Unanswered</span><span class="state-chip loading">Wrong+shake</span><span class="state-chip full">Correct+confetti</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/dice.html"><div class="schema">messageMediaDice</div><div class="name">Dice</div><div class="states"><span class="state-chip preview">Settled</span><span class="state-chip loading">Rolling</span><span class="state-chip full">Bullseye</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/game.html"><div class="schema">messageMediaGame</div><div class="name">Game</div><div class="states"><span class="state-chip preview">Poster</span><span class="state-chip loading">Loading</span><span class="state-chip full">In-game</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/invoice.html"><div class="schema">messageMediaInvoice</div><div class="name">Invoice</div><div class="states"><span class="state-chip preview">Checkout</span><span class="state-chip loading">Processing</span><span class="state-chip full">Receipt</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/paid-media.html"><div class="schema">messageMediaPaidMedia</div><div class="name">Paid media</div><div class="states"><span class="state-chip preview">Blurred</span><span class="state-chip loading">Confirm</span><span class="state-chip full">Unlocked</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/story.html"><div class="schema">messageMediaStory</div><div class="name">Story</div><div class="states"><span class="state-chip preview">Stub</span><span class="state-chip loading">Expired</span><span class="state-chip full">Player</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/giveaway.html"><div class="schema">messageMediaGiveaway</div><div class="name">Giveaway</div><div class="states"><span class="state-chip preview">Invite</span><span class="state-chip loading">Submitted</span><span class="state-chip full">Rules</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/giveaway-results.html"><div class="schema">messageMediaGiveawayResults</div><div class="name">Results</div><div class="states"><span class="state-chip preview">Winners</span><span class="state-chip loading">Drawing</span><span class="state-chip full">You won</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/todo.html"><div class="schema">messageMediaToDo</div><div class="name">To-do list</div><div class="states"><span class="state-chip preview">In-progress</span><span class="state-chip loading">Adding</span><span class="state-chip full">All done</span></div><div class="arrow">Open ↗</div></a>
+    <a class="media-card" href="../preview/unsupported.html"><div class="schema">messageMediaUnsupported</div><div class="name">Unsupported</div><div class="states"><span class="state-chip preview">Notice</span><span class="state-chip loading">Checking</span><span class="state-chip full">Update</span></div><div class="arrow">Open ↗</div></a>
+  </div>
+</section>
+
+<!-- ══════════ ANIMATIONS ══════════ -->
+<section class="section" id="animations">
+  <div class="section-head"><h2>Animations</h2><span class="no">05 / 05</span></div>
+  <div class="anim-row" style="font-family: var(--mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink3); padding-bottom: 8px; font-weight: 700;"><span>Name</span><span>Duration</span><span>Easing</span><span>Used in</span></div>
+  <div class="anim-row"><span class="anim-name">shimmer</span><span class="anim-val">1.4s</span><span class="anim-val">linear ∞</span><span class="anim-desc">Photo, GIF, Document, Map loading states</span></div>
+  <div class="anim-row"><span class="anim-name">spin</span><span class="anim-val">1s</span><span class="anim-val">linear ∞</span><span class="anim-desc">Contact picker, invoice processing, unsupported check</span></div>
+  <div class="anim-row"><span class="anim-name">pulse (dots)</span><span class="anim-val">1.4s + .2s/dot</span><span class="anim-val">ease-in-out ∞</span><span class="anim-desc">"In the post…" typing indicator (opacity .55 → 1)</span></div>
+  <div class="anim-row"><span class="anim-name">pulse (dot)</span><span class="anim-val">1.3s</span><span class="anim-val">ease-in-out ∞</span><span class="anim-desc">Channel "transmitting now" status dot</span></div>
+  <div class="anim-row"><span class="anim-name">geo-pulse</span><span class="anim-val">2.4s</span><span class="anim-val">ease-out ∞</span><span class="anim-desc">Live-location ring expand (scale .4 → 2.6, opacity 0)</span></div>
+  <div class="anim-row"><span class="anim-name">shake</span><span class="anim-val">0.4s</span><span class="anim-val">ease</span><span class="anim-desc">Quiz wrong answer (translateX ±6→4px)</span></div>
+  <div class="anim-row"><span class="anim-name">tumble (dice)</span><span class="anim-val">0.9s</span><span class="anim-val">ease-in-out ∞</span><span class="anim-desc">Dice rolling (rotate ±12°, translateY −6px)</span></div>
+  <div class="anim-row"><span class="anim-name">bounce</span><span class="anim-val">1.2s + .15s ea</span><span class="anim-val">ease-in-out ∞</span><span class="anim-desc">Giveaway drawing dots (translateY −6px)</span></div>
+</section>
+
+<!-- ══════════ CSS BASE ══════════ -->
+<section class="section" id="code">
+  <div class="section-head"><h2>CSS base — copy-paste</h2></div>
+  <div class="code-label">Font import</div>
+  <pre>@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,300;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap');</pre>
+  <div class="code-label" style="margin-top: 20px;">CSS custom properties</div>
+  <pre>:root {
+  /* Primary action */
+  --tg-blue:      #b03e1b;
+  --tg-blue-deep: #8b2f12;
+  --tg-blue-soft: rgba(176,62,27,.10);
+
+  /* Bubble fills */
+  --bubble-in:    #e9e4d8;
+  --bubble-out:   rgba(176,62,27,.08);
+  --bubble-out-2: rgba(176,62,27,.15);
+  --bubble-shadow: 0 1px 3px rgba(28,24,21,.12);
+
+  /* Surfaces */
+  --surface:   #dfdbd2;
+  --surface-2: #d4cfc3;
+  --chat-bg:   #cac5bc;
+  --hairline:  rgba(28,24,21,.14);
+
+  /* Ink */
+  --ink:   #1c1815;  --ink-2: #3a322a;
+  --ink-3: #7a705f;  --ink-4: #a89e8b;  --ink-5: #ccc7b8;
+  --link:  #8b2f12;
+
+  /* Status */
+  --ok:   #4a8c3f;  --warn: #c47b18;
+  --err:  #c0331f;  --gold: #b08030;
+
+  /* Overlay */
+  --overlay:    rgba(20,14,10,.92);
+  --on-overlay: #f5f0e6;
+
+  /* Typography */
+  --font:       'Manrope', system-ui, sans-serif;
+  --font-serif: 'Spectral', Georgia, serif;
+  --mono:       'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --t-meta:   11px;  --t-caption: 13px;
+  --t-body:   15px;  --t-title:   16px;  --t-h: 18px;
+
+  /* Geometry */
+  --r-bubble: 18px;  --r-card:  14px;
+  --r-pill:   999px; --r-thumb: 10px;
+}</pre>
+</section>
+
+<footer style="padding: 32px 80px; border-top: 1px solid var(--hair); display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 11px; color: var(--ink3);">
+  <span>Telegramito Design System · Letters v2 · May 2026</span>
+  <span>24 media components · 72 states · 1 design direction</span>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="media-sticker" subtitle="Sticker: bubble-less, blob-skeleton load, pack picker" viewport="1280x480" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sticker · Telegramito</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  .sticker {
+    width: 140px; height: 140px;
+    position: relative;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,.18));
+  }
+  .sticker .ghost {
+    position:absolute; inset: 6px;
+    background: #fff;
+    border-radius: 46% 54% 42% 58% / 50% 48% 52% 50%;
+  }
+  .sticker .ghost::before, .sticker .ghost::after {
+    content:''; position:absolute; top:38%;
+    width: 16px; height: 22px; background:#1b2230; border-radius: 50%;
+  }
+  .sticker .ghost::before { left: 26%; }
+  .sticker .ghost::after  { right: 26%; }
+  .sticker .blush {
+    position:absolute; left:18%; top:54%;
+    width:14px; height:8px; border-radius:50%;
+    background: #ff9aa6; box-shadow: 80px 0 #ff9aa6;
+  }
+  .sticker .mouth {
+    position:absolute; left: 42%; top: 62%;
+    width: 18px; height: 14px;
+    border: 2.5px solid #1b2230; border-top: 0;
+    border-radius: 0 0 18px 18px;
+    background: #ff5e7e;
+  }
+
+  .sticker.small { width: 56px; height: 56px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.15)); }
+  .sticker.small .ghost::before, .sticker.small .ghost::after { width: 8px; height: 11px; }
+  .sticker.small .blush { display: none; }
+  .sticker.small .mouth { left: 40%; right: 40%; top: 60%; height: 8px; border-width: 1.6px; border-radius: 0 0 12px 12px; }
+  .sticker.large { width: 220px; height: 220px; }
+
+  .sticker-skel {
+    width: 140px; height: 140px;
+    border-radius: 46% 54% 42% 58% / 50% 48% 52% 50%;
+    position: relative;
+  }
+
+  .pack-row {
+    display: flex; gap: 10px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  }
+  .pack-row .cell {
+    width: 64px; height: 64px;
+    background: var(--surface-2);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .pack-row .cell.active {
+    background: var(--tg-blue-soft);
+  }
+</style>
+</head>
+<body>
+<div class="card-frame">
+  <header class="card-head">
+    <div>
+      <h1>Sticker</h1>
+      <p>Document with <code>documentAttributeSticker</code>. Renders without bubble background; full view opens the pack picker beneath.</p>
+    </div>
+    <div class="schema">documentAttributeSticker</div>
+  </header>
+
+  <div class="states">
+
+    <section class="state" data-kind="preview">
+      <div class="state-head"><span class="dot"></span> Preview · no bubble</div>
+      <div class="stage" data-side="in">
+        <div style="display:flex; flex-direction:column; align-items:flex-start; gap: 4px;">
+          <div class="sticker">
+            <div class="ghost"></div>
+            <div class="blush"></div>
+            <div class="mouth"></div>
+          </div>
+          <span style="font-size:11px; color: rgba(255,255,255,.85); padding: 0 6px; text-shadow:0 1px 2px rgba(0,0,0,.3);">14:42</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="loading">
+      <div class="state-head"><span class="dot"></span> Loading sticker</div>
+      <div class="stage" data-side="in">
+        <div class="sticker-skel skeleton">
+          <div class="tg-progress" style="width:40px; height:40px;">
+            <svg class="ring" viewBox="0 0 42 42">
+              <circle cx="21" cy="21" r="18" />
+              <circle class="bar" cx="21" cy="21" r="18"
+                stroke-dasharray="113.1" stroke-dashoffset="56.5" />
+            </svg>
+            <span class="x"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="full">
+      <div class="state-head"><span class="dot"></span> Full view · pack open</div>
+      <div class="stage" data-mode="surface">
+        <div style="display:flex; flex-direction:column; align-items:center; gap: 22px;">
+          <div class="sticker large">
+            <div class="ghost"></div>
+            <div class="blush"></div>
+            <div class="mouth"></div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-weight:600; font-size:14px;">Boop the Ghost</div>
+            <div style="font-size:12px; color: var(--ink-3);">28 stickers · @boopghost</div>
+          </div>
+          <div class="pack-row">
+            <div class="cell active"><div class="sticker small"><div class="ghost"></div><div class="blush"></div><div class="mouth"></div></div></div>
+            <div class="cell"><div class="sticker small" style="filter:hue-rotate(40deg);"><div class="ghost"></div><div class="mouth"></div></div></div>
+            <div class="cell"><div class="sticker small" style="filter:hue-rotate(120deg);"><div class="ghost"></div><div class="mouth"></div></div></div>
+            <div class="cell"><div class="sticker small" style="filter:hue-rotate(200deg);"><div class="ghost"></div><div class="mouth"></div></div></div>
+            <div class="cell"><div class="sticker small" style="filter:hue-rotate(280deg);"><div class="ghost"></div><div class="mouth"></div></div></div>
+          </div>
+          <button style="padding: 10px 22px; border-radius: 999px; background: var(--tg-blue); color: #fff; border: 0; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(51,144,236,.3);">Add 28 stickers</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>

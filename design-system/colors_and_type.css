@@ -1,0 +1,296 @@
+/* Telegramito — design tokens */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,300;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ── Letters v2 palette ── */
+  /* Primary action · terracotta ink */
+  --tg-blue:        #b03e1b;
+  --tg-blue-deep:   #8b2f12;
+  --tg-blue-soft:   rgba(176,62,27,.10);
+
+  /* Bubble fills */
+  --bubble-out:     rgba(176,62,27,.08);  /* outgoing — terracotta wash */
+  --bubble-out-2:   rgba(176,62,27,.15);
+  --bubble-in:      #e9e4d8;              /* incoming — newsprint card  */
+  --bubble-shadow:  0 1px 3px rgba(28,24,21,.12);
+
+  /* Chat surface — newsprint */
+  --chat-bg:        #cac5bc;
+  --chat-bg-2:      #bfbab1;
+
+  /* Ink scale — warm */
+  --ink:            #1c1815;
+  --ink-2:          #3a322a;
+  --ink-3:          #7a705f;
+  --ink-4:          #a89e8b;
+  --ink-5:          #ccc7b8;
+  --link:           #8b2f12;
+
+  /* Status */
+  --ok:             #4a8c3f;
+  --warn:           #c47b18;
+  --err:            #c0331f;
+  --gold:           #b08030;
+
+  /* Surfaces — newsprint gray */
+  --surface:        #dfdbd2;
+  --surface-2:      #d4cfc3;
+  --hairline:       rgba(28,24,21,.14);
+
+  /* Overlay */
+  --overlay:        rgba(20,14,10,.92);
+  --overlay-soft:   rgba(20,14,10,.55);
+  --on-overlay:     #f5f0e6;
+  --on-overlay-2:   rgba(245,240,230,.72);
+
+  /* Geometry */
+  --r-bubble:       18px;
+  --r-bubble-tail:  6px;
+  --r-card:         14px;
+  --r-pill:         999px;
+  --r-thumb:        10px;
+
+  /* Typography */
+  --font:           'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-serif:     'Spectral', 'Iowan Old Style', Georgia, serif;
+  --font-mono:      'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --mono:           var(--font-mono); /* @kind other */
+
+  --t-meta:         11px;
+  --t-caption:      13px;
+  --t-body:         15px;
+  --t-title:        16px;
+  --t-h:            18px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--surface);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ─────────── Card frame for design-system pages ─────────── */
+.card-frame {
+  width: 1280px;
+  padding: 40px 48px 48px;
+  background: var(--surface);
+}
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 18px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--hairline);
+}
+.card-head h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+.card-head .schema {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.card-head p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ink-3);
+  max-width: 560px;
+}
+
+.states {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.state {
+  display: flex;
+  flex-direction: column;
+}
+.state-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.state-head .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-5);
+}
+.state[data-kind="preview"] .dot  { background: var(--ink-4); }
+.state[data-kind="loading"] .dot  { background: var(--warn); }
+.state[data-kind="full"]    .dot  { background: var(--ok); }
+
+.stage {
+  flex: 1;
+  background:
+    radial-gradient(120% 120% at 30% 0%, #c9c3b8 0%, #bab3a8 100%);
+  border-radius: var(--r-card);
+  padding: 22px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  min-height: 280px;
+  position: relative;
+  overflow: hidden;
+}
+.stage[data-side="in"]   { justify-content: flex-start; }
+.stage[data-side="out"]  { justify-content: flex-end; }
+.stage[data-mode="overlay"] {
+  background: var(--overlay);
+  align-items: center;
+  justify-content: center;
+}
+.stage[data-mode="surface"] {
+  background: var(--surface-2);
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─────────── Bubble ─────────── */
+.bubble {
+  position: relative;
+  max-width: 320px;
+  background: var(--bubble-in);
+  border-radius: var(--r-bubble);
+  box-shadow: var(--bubble-shadow);
+  padding: 8px 10px 6px;
+  font-size: var(--t-body);
+  color: var(--ink);
+}
+.bubble.out {
+  background: var(--bubble-out);
+}
+.bubble .tail {
+  position: absolute;
+  bottom: 0;
+  width: 9px;
+  height: 16px;
+  background: inherit;
+}
+.bubble.in  .tail { left: -4px;  border-bottom-left-radius: 8px;
+                    clip-path: path('M9 0 C 9 10, 6 16, 0 16 L 9 16 Z'); }
+.bubble.out .tail { right: -4px; clip-path: path('M0 0 C 0 10, 3 16, 9 16 L 0 16 Z'); }
+
+.bubble .meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  float: right;
+  margin: 4px 0 0 8px;
+  user-select: none;
+}
+.bubble.out .meta { color: #5fa8d8; }
+.bubble .text { padding: 2px 4px 2px; }
+.bubble .author {
+  font-size: var(--t-caption);
+  font-weight: 600;
+  color: var(--tg-blue);
+  padding: 2px 4px 0;
+}
+
+/* Thumb wrapper inside bubble */
+.media-thumb {
+  margin: -8px -10px 0;
+  border-top-left-radius: var(--r-bubble);
+  border-top-right-radius: var(--r-bubble);
+  overflow: hidden;
+  position: relative;
+  line-height: 0;
+}
+.media-thumb.solo { /* no caption, no header */
+  margin: -8px -10px -6px;
+  border-radius: var(--r-bubble);
+}
+
+/* ─────────── Loading: Telegram-style radial progress ─────────── */
+.tg-progress {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.55);
+  display: grid;
+  place-items: center;
+  z-index: 2;
+}
+.tg-progress .ring {
+  position: absolute;
+  inset: 4px;
+}
+.tg-progress .ring circle {
+  fill: none;
+  stroke: rgba(255,255,255,.25);
+  stroke-width: 2.5;
+}
+.tg-progress .ring circle.bar {
+  stroke: #fff;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+.tg-progress .x {
+  width: 14px; height: 14px;
+  position: relative;
+}
+.tg-progress .x::before,
+.tg-progress .x::after {
+  content: '';
+  position: absolute;
+  inset: 6px 0;
+  background: #fff;
+  border-radius: 1px;
+}
+.tg-progress .x::before { transform: rotate(45deg); }
+.tg-progress .x::after  { transform: rotate(-45deg); }
+
+/* skeleton shimmer for not-yet-loaded thumbs */
+.skeleton {
+  background:
+    linear-gradient(110deg, #c8d2dd 8%, #d8e0ea 18%, #c8d2dd 33%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* play / pause / mic / file glyphs (re-used) */
+.glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--tg-blue);
+  color: #fff;
+  flex: none;
+}
+.glyph.lg { width: 48px; height: 48px; }
+.glyph.sm { width: 32px; height: 32px; }
+.glyph.outline {
+  background: transparent;
+  color: var(--tg-blue);
+  border: 1.5px solid var(--tg-blue);
+}

@@ -1,0 +1,147 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="media-contact" subtitle="Contact: row, picker, full card with call/message" viewport="1280x480" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Contact · Telegramito</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  .contact-row {
+    display: flex; align-items: center; gap: 12px;
+    min-width: 280px; padding: 4px;
+  }
+  .contact-row .avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #5b8def, #b15bef);
+    color: #fff; display: grid; place-items: center;
+    font-weight: 700; font-size: 16px; flex: none;
+  }
+  .contact-row .name { font-size: 14px; font-weight: 600; }
+  .contact-row .phone { font-size: 12px; color: var(--ink-3); margin-top: 1px; font-variant-numeric: tabular-nums; }
+
+  .contact-card {
+    width: 360px; background: #fff;
+    border-radius: 16px; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(10,18,28,.3);
+  }
+  .contact-card .head {
+    background: linear-gradient(135deg, #5b8def, #b15bef);
+    height: 120px; position: relative;
+  }
+  .contact-card .head .big-avatar {
+    position: absolute; left: 18px; bottom: -34px;
+    width: 84px; height: 84px; border-radius: 50%;
+    background: linear-gradient(135deg, #ffae3a, #c14a8b);
+    border: 4px solid #fff;
+    display: grid; place-items: center;
+    color: #fff; font-weight: 700; font-size: 28px;
+  }
+  .contact-card .body { padding: 44px 18px 18px; }
+  .contact-card .field {
+    padding: 12px 0;
+    border-top: 1px solid var(--hairline);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .contact-card .field:first-of-type { border-top: 0; }
+  .contact-card .label { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+  .contact-card .val { font-size: 14px; color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="card-frame">
+  <header class="card-head">
+    <div>
+      <h1>Contact</h1>
+      <p>Shared phone book entry. Bubble row → tappable card with call/message/save actions.</p>
+    </div>
+    <div class="schema">messageMediaContact</div>
+  </header>
+
+  <div class="states">
+
+    <section class="state" data-kind="preview">
+      <div class="state-head"><span class="dot"></span> Preview · in chat</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in">
+          <div class="contact-row">
+            <div class="avatar">DR</div>
+            <div style="flex:1; min-width:0;">
+              <div class="name">Devon Rivera</div>
+              <div class="phone">+1 (415) 555 · 0188</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="loading">
+      <div class="state-head"><span class="dot"></span> Picking from address book</div>
+      <div class="stage" data-mode="surface">
+        <div style="width: 340px; background:#fff; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.15); overflow:hidden;">
+          <div style="padding: 14px; font-weight: 600; font-size: 15px; border-bottom:1px solid var(--hairline);">Share contact</div>
+          <div style="padding: 10px 14px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--hairline); background: var(--tg-blue-soft);">
+            <div style="width:36px; height:36px; border-radius:50%; background: linear-gradient(135deg, #5b8def, #b15bef); color:#fff; display:grid; place-items:center; font-weight:700;">DR</div>
+            <div style="flex:1;"><div style="font-weight:600; font-size:14px;">Devon Rivera</div><div style="font-size:12px; color: var(--ink-3);">+1 (415) 555 · 0188</div></div>
+            <span style="width:18px; height:18px; border-radius:50%; background: var(--tg-blue); display:grid; place-items:center;">
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </div>
+          <div style="padding: 10px 14px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--hairline);">
+            <div style="width:36px; height:36px; border-radius:50%; background: linear-gradient(135deg, #4cd9c2, #5b8def); color:#fff; display:grid; place-items:center; font-weight:700;">EM</div>
+            <div style="flex:1;"><div style="font-weight:600; font-size:14px;">Eli Munro</div><div style="font-size:12px; color: var(--ink-3);">+44 7700 900 234</div></div>
+          </div>
+          <div style="padding: 10px 14px; display:flex; align-items:center; gap:12px;">
+            <div class="skeleton" style="width:36px; height:36px; border-radius:50%;"></div>
+            <div style="flex:1;">
+              <div class="skeleton" style="height:10px; width:55%; border-radius:3px;"></div>
+              <div class="skeleton" style="height:8px; width:35%; border-radius:3px; margin-top:6px;"></div>
+            </div>
+          </div>
+          <button style="margin: 12px 14px 14px; width: calc(100% - 28px); padding: 12px; border-radius: 10px; background: var(--tg-blue); color:#fff; border:0; font-weight:600;">Send · 1 contact</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="full">
+      <div class="state-head"><span class="dot"></span> Full view · contact card</div>
+      <div class="stage" data-mode="overlay">
+        <div class="contact-card">
+          <div class="head">
+            <div class="big-avatar">DR</div>
+          </div>
+          <div class="body">
+            <div style="font-size:20px; font-weight:700;">Devon Rivera</div>
+            <div style="font-size:13px; color: var(--ink-3); margin-top:2px;">last seen 12 minutes ago</div>
+            <div style="display:flex; gap:10px; margin: 16px 0;">
+              <button style="flex:1; padding:10px; border:1px solid var(--hairline); background:#fff; border-radius:10px; color:var(--tg-blue); font-weight:600; font-size:13px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 4l2-2 2 2-1.5 1.5a8 8 0 005 5L12 9l2 2-2 2c-4 0-9-5-9-9z" stroke="var(--tg-blue)" stroke-width="1.4" stroke-linejoin="round"/></svg>
+                Call
+              </button>
+              <button style="flex:1; padding:10px; border:1px solid var(--hairline); background:#fff; border-radius:10px; color:var(--tg-blue); font-weight:600; font-size:13px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12v8H6l-3 2V4z" stroke="var(--tg-blue)" stroke-width="1.4" stroke-linejoin="round"/></svg>
+                Message
+              </button>
+            </div>
+            <div class="field">
+              <div>
+                <div class="label">Mobile</div>
+                <div class="val" style="color: var(--tg-blue);">+1 (415) 555 · 0188</div>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 5l2-2 2 2-1.5 1.5a8 8 0 005 5L12 10l2 2-2 2c-4 0-9-5-9-9z" stroke="var(--ink-3)" stroke-width="1.4" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="field">
+              <div>
+                <div class="label">Username</div>
+                <div class="val">@devonr</div>
+              </div>
+            </div>
+            <button style="margin-top:8px; width:100%; padding:12px; border:0; background: var(--tg-blue-soft); border-radius:10px; color: var(--tg-blue); font-weight:600;">Add to contacts</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>

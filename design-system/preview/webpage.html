@@ -1,0 +1,142 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="media-webpage" subtitle="Webpage: rich unfurl, compact-fetch skeleton, Instant View" viewport="1280x480" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Web page · Telegramito</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  .link-preview {
+    border-left: 3px solid var(--tg-blue);
+    padding: 4px 4px 4px 10px;
+    margin: 2px 4px;
+    border-radius: 4px;
+    background: rgba(51,144,236,.05);
+  }
+  .link-preview .site { font-size: 12px; font-weight: 700; color: var(--tg-blue); }
+  .link-preview .title { font-size: 14px; font-weight: 600; line-height: 1.25; margin-top: 2px; }
+  .link-preview .desc { font-size: 13px; color: var(--ink-2); margin-top: 4px; line-height: 1.4; }
+  .link-preview .img {
+    width: 100%; aspect-ratio: 16/9;
+    background: linear-gradient(135deg, #5b8def, #b15bef);
+    border-radius: 8px;
+    margin-top: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+  .link-preview .img .dome {
+    position: absolute; left: 30%; right: 30%; bottom: 30%;
+    aspect-ratio: 1.4/1;
+    background: radial-gradient(ellipse at 50% 100%, #ffd97a 0%, #f5a623 40%, transparent 70%);
+    border-radius: 50% 50% 0 0;
+  }
+  .link-preview.compact .img {
+    aspect-ratio: 1;
+    width: 60px; height: 60px;
+    margin: 0;
+    border-radius: 8px;
+  }
+  .link-preview.compact { display: flex; gap: 10px; align-items: stretch; }
+  .link-preview.compact .col { flex: 1; min-width: 0; }
+
+  /* Instant view */
+  .iv {
+    width: 460px; max-height: 100%; background: #fff;
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(10,18,28,.3);
+  }
+  .iv .topbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--hairline);
+    font-size: 12px; color: var(--ink-3);
+  }
+  .iv .hero {
+    height: 160px;
+    background: linear-gradient(135deg, #5b8def, #b15bef);
+    position: relative;
+  }
+  .iv .hero .dome {
+    position: absolute; left: 30%; right: 30%; bottom: 25%;
+    aspect-ratio: 1.4/1;
+    background: radial-gradient(ellipse at 50% 100%, #ffd97a, #f5a623 40%, transparent 70%);
+    border-radius: 50% 50% 0 0;
+  }
+  .iv .body { padding: 18px 18px 22px; }
+  .iv .body h2 { margin: 0 0 6px; font-size: 20px; font-weight: 700; line-height: 1.2; }
+  .iv .body .byline { font-size: 12px; color: var(--ink-3); }
+  .iv .body p { margin: 14px 0 0; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+  .iv .body .pull { font-size: 16px; font-style: italic; color: var(--ink); border-left: 3px solid var(--tg-blue); padding: 4px 0 4px 12px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="card-frame">
+  <header class="card-head">
+    <div>
+      <h1>Web page preview</h1>
+      <p>Auto-generated link card. Compact while fetching, rich card with image once unfurled, Instant View if available.</p>
+    </div>
+    <div class="schema">messageMediaWebPage</div>
+  </header>
+
+  <div class="states">
+
+    <section class="state" data-kind="preview">
+      <div class="state-head"><span class="dot"></span> Preview · rich unfurl</div>
+      <div class="stage" data-side="out">
+        <div class="bubble out">
+          <div class="text" style="padding: 4px 4px 0;">Worth reading — <span style="color: var(--link);">arstechnica.com/space/…</span></div>
+          <div class="link-preview">
+            <div class="site">Ars Technica</div>
+            <div class="title">JWST captures a first look at a young exoplanet's atmosphere</div>
+            <div class="desc">The space telescope's spectroscopy reveals water vapor, methane and unexpectedly thick clouds…</div>
+            <div class="img"><div class="dome"></div></div>
+          </div>
+          <div style="display:flex; justify-content:flex-end; padding: 4px; font-size:11px; color: #5fa8d8;">15:18
+            <svg width="14" height="10" viewBox="0 0 14 10" fill="none" style="margin-left:3px;"><path d="M1 5l3 3 6-6M6 8l5-6" stroke="#5fa8d8" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="loading">
+      <div class="state-head"><span class="dot"></span> Fetching unfurl</div>
+      <div class="stage" data-side="out">
+        <div class="bubble out">
+          <div class="text" style="padding: 4px 4px 0;"><span style="color: var(--link);">arstechnica.com/space/jwst-exoplanet-atmosphere</span></div>
+          <div class="link-preview compact">
+            <div class="img skeleton" style="background: none;"></div>
+            <div class="col" style="display:flex; flex-direction:column; gap: 6px; padding: 4px 0;">
+              <div class="skeleton" style="height:10px; width:40%; border-radius:3px;"></div>
+              <div class="skeleton" style="height:12px; width:90%; border-radius:3px;"></div>
+              <div class="skeleton" style="height:8px; width:75%; border-radius:3px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="full">
+      <div class="state-head"><span class="dot"></span> Full view · Instant View</div>
+      <div class="stage" data-mode="overlay">
+        <div class="iv">
+          <div class="topbar">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M9 2l-5 5 5 5" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span style="flex:1;">arstechnica.com</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8s2.5-5 6-5 6 5 6 5-2.5 5-6 5-6-5-6-5z" stroke="var(--ink-3)" stroke-width="1.4"/><circle cx="8" cy="8" r="2" stroke="var(--ink-3)" stroke-width="1.4"/></svg>
+          </div>
+          <div class="hero"><div class="dome"></div></div>
+          <div class="body">
+            <h2>JWST captures a first look at a young exoplanet's atmosphere</h2>
+            <div class="byline">Eric Berger · 4 min read</div>
+            <p>The James Webb Space Telescope's near-infrared spectrograph has detected water vapor, methane, and an unexpectedly thick layer of silicate clouds wrapped around the gas giant.</p>
+            <div class="pull">"It's the first time we've directly probed weather on a world this young."</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>

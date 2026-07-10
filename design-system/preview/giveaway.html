@@ -1,0 +1,196 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="media-giveaway" subtitle="Giveaway: invite, submitted state, rules sheet" viewport="1280x480" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Giveaway · Telegramito</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  .gift-card { padding: 12px 4px 6px; min-width: 280px; text-align:center; }
+  .gift-card .gift {
+    width: 96px; height: 96px;
+    margin: 0 auto 12px;
+    position: relative;
+  }
+  .gift-card .gift .box {
+    position: absolute; inset: 22% 0 0;
+    background: linear-gradient(180deg, #ff7a59, #c14a8b);
+    border-radius: 6px;
+  }
+  .gift-card .gift .lid {
+    position: absolute; left:-2%; right:-2%; top: 14%; height: 22%;
+    background: linear-gradient(180deg, #ff9078, #c14a8b);
+    border-radius: 4px;
+  }
+  .gift-card .gift .ribbon-v {
+    position: absolute; left: 47%; top: 14%; bottom: 0;
+    width: 6%; background: #ffe48a;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.04);
+  }
+  .gift-card .gift .ribbon-h {
+    position: absolute; left: 0; right: 0; top: 22%;
+    height: 5%; background: #ffe48a;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.04);
+  }
+  .gift-card .gift .bow {
+    position: absolute; left: 30%; right: 30%; top: 0; height: 22%;
+    background:
+      radial-gradient(circle at 25% 60%, #ffd24c 0 26%, transparent 28%),
+      radial-gradient(circle at 75% 60%, #ffd24c 0 26%, transparent 28%);
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,.08));
+  }
+  .gift-card h3 { margin: 0; font-size: 16px; font-weight: 800; }
+  .gift-card .desc { font-size: 13px; color: var(--ink-2); margin: 6px 12px 12px; line-height: 1.4; }
+  .prize-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(90deg, #5b8def, #b15bef);
+    color: #fff;
+    padding: 6px 12px; border-radius: 999px;
+    font-weight: 700; font-size: 12px;
+    margin-bottom: 10px;
+  }
+  .channels {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    justify-content: center;
+    padding: 0 6px 6px;
+  }
+  .channels .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 8px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    font-size: 11px;
+    color: var(--ink-2);
+  }
+  .channels .chip .dot { width:10px; height:10px; border-radius:50%; }
+  .countdown {
+    display: flex; gap: 10px; justify-content: center;
+    margin: 6px 0 10px;
+  }
+  .countdown .unit {
+    background: var(--bubble-out-2);
+    border-radius: 8px;
+    padding: 6px 10px;
+    min-width: 44px;
+  }
+  .countdown .num { font-size: 18px; font-weight: 700; color: var(--tg-blue); font-variant-numeric: tabular-nums; }
+  .countdown .label { font-size: 9px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+
+  .submit-btn {
+    width: calc(100% - 8px);
+    margin: 6px 4px 4px;
+    padding: 10px;
+    border: 0;
+    background: var(--tg-blue);
+    color: #fff;
+    border-radius: 10px;
+    font-weight: 700; font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="card-frame">
+  <header class="card-head">
+    <div>
+      <h1>Giveaway</h1>
+      <p>Channel-boost giveaway invite. Bow + countdown + participate. Loading state shows submitted; full view explains rules.</p>
+    </div>
+    <div class="schema">messageMediaGiveaway</div>
+  </header>
+
+  <div class="states">
+
+    <section class="state" data-kind="preview">
+      <div class="state-head"><span class="dot"></span> Preview · invite</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in" style="padding: 4px;">
+          <div class="gift-card">
+            <div class="gift">
+              <div class="box"></div>
+              <div class="lid"></div>
+              <div class="ribbon-v"></div>
+              <div class="ribbon-h"></div>
+              <div class="bow"></div>
+            </div>
+            <div class="prize-pill">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="#fff"><path d="M5.5 0l1.4 3.4L10.5 4l-2.7 2.5.7 3.7-3-1.9-3 1.9.7-3.7L.5 4l3.6-.6z"/></svg>
+              50× Telegram Premium
+            </div>
+            <h3>One year of Premium</h3>
+            <div class="desc">@designdaily is giving away Premium subscriptions to 50 random subscribers.</div>
+            <div class="channels">
+              <span class="chip"><span class="dot" style="background:#5b8def;"></span>@designdaily</span>
+              <span class="chip"><span class="dot" style="background:#ff7a59;"></span>@inkmag</span>
+              <span class="chip"><span class="dot" style="background:#4cd9c2;"></span>@craftbits</span>
+            </div>
+            <div class="countdown">
+              <div class="unit"><div class="num">04</div><div class="label">Days</div></div>
+              <div class="unit"><div class="num">12</div><div class="label">Hours</div></div>
+              <div class="unit"><div class="num">28</div><div class="label">Mins</div></div>
+            </div>
+            <button class="submit-btn">Take part</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="loading">
+      <div class="state-head"><span class="dot"></span> Submitted · counting down</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in" style="padding: 4px;">
+          <div class="gift-card">
+            <div class="gift">
+              <div class="box"></div><div class="lid"></div><div class="ribbon-v"></div><div class="ribbon-h"></div><div class="bow"></div>
+            </div>
+            <div style="display:inline-flex; align-items:center; gap:6px; padding: 4px 10px; border-radius:999px; background: rgba(79,174,78,.15); color: var(--ok); font-size:12px; font-weight:600; margin-bottom:8px;">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="var(--ok)"/><path d="M3 6l2 2 4-4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              You're in
+            </div>
+            <h3>One year of Premium</h3>
+            <div class="desc">Winners drawn April 28. Stay subscribed to all 3 channels until then.</div>
+            <div class="countdown">
+              <div class="unit"><div class="num">04</div><div class="label">Days</div></div>
+              <div class="unit"><div class="num">12</div><div class="label">Hours</div></div>
+              <div class="unit"><div class="num">28</div><div class="label">Mins</div></div>
+            </div>
+            <button class="submit-btn" style="background: var(--surface-2); color: var(--ink-3);">Learn more</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="full">
+      <div class="state-head"><span class="dot"></span> Full view · rules sheet</div>
+      <div class="stage" data-mode="surface">
+        <div style="width:340px; background:#fff; border-radius:18px; padding: 22px; box-shadow: 0 8px 24px rgba(10,18,28,.15);">
+          <div class="gift" style="width: 80px; height: 80px; margin: 0 auto 12px; position: relative;">
+            <div class="box" style="position: absolute; inset: 22% 0 0; background: linear-gradient(180deg, #ff7a59, #c14a8b); border-radius: 6px;"></div>
+            <div class="lid" style="position:absolute; left:-2%; right:-2%; top:14%; height:22%; background: linear-gradient(180deg, #ff9078, #c14a8b); border-radius: 4px;"></div>
+            <div class="ribbon-v" style="position:absolute; left:47%; top:14%; bottom:0; width:6%; background:#ffe48a;"></div>
+            <div class="ribbon-h" style="position:absolute; left:0; right:0; top:22%; height:5%; background:#ffe48a;"></div>
+            <div class="bow" style="position:absolute; left:30%; right:30%; top:0; height:22%; background: radial-gradient(circle at 25% 60%, #ffd24c 0 26%, transparent 28%), radial-gradient(circle at 75% 60%, #ffd24c 0 26%, transparent 28%); filter: drop-shadow(0 1px 1px rgba(0,0,0,.08));"></div>
+          </div>
+          <div style="font-size:18px; font-weight:700; text-align:center;">How does it work?</div>
+          <div style="margin-top: 14px; display:flex; flex-direction:column; gap: 12px; font-size: 13px; color: var(--ink-2); line-height: 1.5;">
+            <div style="display:flex; gap: 10px;">
+              <span style="flex:none; width:22px; height:22px; border-radius:50%; background: var(--tg-blue); color:#fff; font-weight:700; font-size:11px; display:grid; place-items:center;">1</span>
+              Stay subscribed to all 3 participating channels.
+            </div>
+            <div style="display:flex; gap: 10px;">
+              <span style="flex:none; width:22px; height:22px; border-radius:50%; background: var(--tg-blue); color:#fff; font-weight:700; font-size:11px; display:grid; place-items:center;">2</span>
+              On April 28, Telegram randomly picks 50 winners.
+            </div>
+            <div style="display:flex; gap: 10px;">
+              <span style="flex:none; width:22px; height:22px; border-radius:50%; background: var(--tg-blue); color:#fff; font-weight:700; font-size:11px; display:grid; place-items:center;">3</span>
+              Winners receive a redeem link in this chat.
+            </div>
+          </div>
+          <button class="submit-btn" style="margin-top: 18px; width:100%;">Got it</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>

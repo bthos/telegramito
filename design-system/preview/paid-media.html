@@ -1,0 +1,128 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="media-paid" subtitle="Paid media: blurred lock, stars confirm, unlocked grid" viewport="1280x480" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Paid media · Telegramito</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  .paid-thumb {
+    width: 280px; aspect-ratio: 4/3;
+    background:
+      radial-gradient(80% 70% at 30% 30%, #ffd97a 0%, #ff7a59 40%, #c14a8b 80%);
+    border-radius: var(--r-bubble) var(--r-bubble) 0 0;
+    position: relative; overflow: hidden;
+    filter: blur(14px);
+    transform: scale(1.04);
+  }
+  .lock {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: #fff; text-align: center;
+    z-index: 2;
+  }
+  .lock .price-pill {
+    background: rgba(0,0,0,.55);
+    padding: 6px 14px; border-radius: 999px;
+    font-weight: 700; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .lock .stars { font-size: 18px; }
+
+  .reveal-grid {
+    width: 70%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 4px;
+    aspect-ratio: 3/2;
+  }
+  .reveal-grid > div {
+    background: linear-gradient(135deg, var(--c1), var(--c2));
+    border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="card-frame">
+  <header class="card-head">
+    <div>
+      <h1>Paid media</h1>
+      <p>Pay-to-unlock photos/videos. Blurred preview + Stars price. After payment: full media set with chrome.</p>
+    </div>
+    <div class="schema">messageMediaPaidMedia</div>
+  </header>
+
+  <div class="states">
+
+    <section class="state" data-kind="preview">
+      <div class="state-head"><span class="dot"></span> Locked · pay to view</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in">
+          <div class="media-thumb">
+            <div style="position:relative; width: 280px; aspect-ratio: 4/3; overflow:hidden;">
+              <div class="paid-thumb"></div>
+              <div style="position:absolute; inset:0; background: rgba(0,0,0,.25);"></div>
+              <div class="lock">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="6" y="14" width="20" height="14" rx="2" fill="#fff"/><path d="M11 14V9a5 5 0 0110 0v5" stroke="#fff" stroke-width="2"/></svg>
+                <div class="price-pill">
+                  <span class="stars">★</span>
+                  Unlock for 250 stars
+                </div>
+                <div style="font-size: 11px; opacity: .8;">2 photos · 1 video</div>
+              </div>
+            </div>
+          </div>
+          <div style="padding: 8px 4px 2px; font-size: 13px;">behind-the-scenes 📸</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="loading">
+      <div class="state-head"><span class="dot"></span> Confirming payment</div>
+      <div class="stage" data-mode="surface">
+        <div style="width: 320px; background:#fff; border-radius:14px; padding: 22px; box-shadow: 0 12px 40px rgba(10,18,28,.2); text-align:center;">
+          <div style="font-size: 32px;">★</div>
+          <div style="font-size: 18px; font-weight:700; margin-top: 6px;">Confirm 250 stars</div>
+          <div style="font-size: 13px; color: var(--ink-3); margin-top: 4px;">to unlock 2 photos and 1 video from <b style="color: var(--ink);">@bts_studio</b></div>
+          <div style="margin-top: 16px; padding: 10px 12px; border:1px solid var(--hairline); border-radius:10px; display:flex; justify-content:space-between; font-size:13px;">
+            <span style="color: var(--ink-3);">Your balance</span>
+            <span style="font-weight:600;"><span style="color:#e8a93b;">★</span> 1,420</span>
+          </div>
+          <div style="display:flex; gap:10px; margin-top:14px;">
+            <button style="flex:1; padding:11px; border:1px solid var(--hairline); background:#fff; border-radius:10px; font-weight:600; font-size:13px; color:var(--ink-2);">Cancel</button>
+            <button style="flex:1; padding:11px; border:0; background: linear-gradient(90deg, #e8a93b, #f5c84a); border-radius:10px; font-weight:700; font-size:13px; color:#fff;">Confirm ★ 250</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="full">
+      <div class="state-head"><span class="dot"></span> Unlocked · gallery</div>
+      <div class="stage" data-mode="overlay">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:14px;">
+          <div class="reveal-grid">
+            <div style="--c1:#ffd97a; --c2:#ff7a59;"></div>
+            <div style="--c1:#5b8def; --c2:#b15bef;"></div>
+            <div style="--c1:#4cd9c2; --c2:#5b8def; position:relative;">
+              <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,.5); display:grid; place-items:center;">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="#fff"><path d="M3 1l8 5-8 5z"/></svg>
+              </div>
+            </div>
+            <div style="--c1:#ff7a59; --c2:#c14a8b;"></div>
+            <div style="--c1:#5b3aa1; --c2:#1b1f4d;"></div>
+            <div style="--c1:#ffae3a; --c2:#e2483d;"></div>
+          </div>
+          <div style="display:inline-flex; align-items:center; gap: 8px; color: var(--on-overlay-2); font-size:12px; padding: 6px 12px; background: rgba(255,255,255,.1); border-radius:999px;">
+            <span style="color:#e8a93b;">★</span> Unlocked for 250 stars
+          </div>
+          <div style="color: var(--on-overlay); font-size: 14px;">behind-the-scenes 📸</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>

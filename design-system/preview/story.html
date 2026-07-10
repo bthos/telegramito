@@ -1,0 +1,173 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="media-story" subtitle="Story: stub bubble, expired state, vertical player" viewport="1280x480" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Story · Telegramito</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  .story-stub {
+    width: 240px;
+    border: 2px solid transparent;
+    background:
+      linear-gradient(#fff, #fff) padding-box,
+      linear-gradient(135deg, #ff7a59, #c14a8b, #5b8def) border-box;
+    border-radius: 14px;
+    padding: 4px;
+    overflow: hidden;
+  }
+  .story-stub .frame {
+    aspect-ratio: 9/14;
+    background:
+      radial-gradient(80% 60% at 60% 30%, #ffd97a 0%, #ff7a59 40%, #c14a8b 75%, #2a1b48 100%);
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .story-stub .frame .text {
+    position:absolute; left: 12%; right: 12%; top: 36%;
+    font-size: 14px; font-weight: 800; color: #fff;
+    text-shadow: 0 2px 6px rgba(0,0,0,.4);
+    letter-spacing: -.01em;
+    line-height: 1.15;
+  }
+  .story-stub .label {
+    display:flex; align-items: center; gap: 6px;
+    padding: 8px 6px 4px; font-size: 12px;
+    color: var(--ink-3);
+  }
+  .story-stub .label b { color: var(--ink); font-weight: 600; font-size: 13px; }
+
+  /* full viewer */
+  .story-full {
+    width: 280px; aspect-ratio: 9/16;
+    background:
+      radial-gradient(80% 60% at 60% 30%, #ffd97a 0%, #ff7a59 40%, #c14a8b 75%, #2a1b48 100%);
+    border-radius: 14px; overflow: hidden;
+    position: relative;
+    box-shadow: 0 18px 60px rgba(0,0,0,.5);
+  }
+  .story-full .progress-row {
+    position: absolute; left: 8px; right: 8px; top: 8px;
+    display: flex; gap: 4px;
+    z-index: 2;
+  }
+  .story-full .progress-row .seg {
+    flex: 1; height: 2px; border-radius: 2px;
+    background: rgba(255,255,255,.3);
+    overflow: hidden;
+  }
+  .story-full .progress-row .seg.done   { background: rgba(255,255,255,.9); }
+  .story-full .progress-row .seg.active::after {
+    content:''; display:block; width: 50%; height:100%; background: #fff;
+  }
+  .story-full .top-meta {
+    position: absolute; left: 12px; right: 12px; top: 22px;
+    display: flex; align-items: center; gap: 10px;
+    color: #fff; font-size: 12px;
+    z-index: 2;
+  }
+  .story-full .top-meta .av {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, #ffae3a, #c14a8b);
+    border: 2px solid #fff;
+  }
+  .story-full .text {
+    position: absolute; left: 14%; right: 14%; top: 38%;
+    font-size: 22px; font-weight: 800; color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,.4);
+    line-height: 1.1;
+  }
+  .story-full .reply {
+    position: absolute; left: 12px; right: 12px; bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .story-full .reply input {
+    flex: 1; padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.3);
+    color: #fff; font-size: 13px;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .story-full .reply input::placeholder { color: rgba(255,255,255,.7); }
+  .story-full .reply .icn { color: #fff; }
+</style>
+</head>
+<body>
+<div class="card-frame">
+  <header class="card-head">
+    <div>
+      <h1>Story (reposted)</h1>
+      <p>A reference to a Story shown inline. Tap to open the vertical story player; tap-and-hold to pause.</p>
+    </div>
+    <div class="schema">messageMediaStory</div>
+  </header>
+
+  <div class="states">
+
+    <section class="state" data-kind="preview">
+      <div class="state-head"><span class="dot"></span> Preview · stub</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in" style="padding: 6px 8px;">
+          <div class="story-stub">
+            <div class="frame"><div class="text">tonight at the harbor 🌅</div></div>
+            <div class="label">
+              <span style="display:inline-block; width:18px; height:18px; border-radius:50%; background: linear-gradient(135deg, #ffae3a, #c14a8b);"></span>
+              <b>Marina K.</b>
+              <span>· Story · 4h</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="loading">
+      <div class="state-head"><span class="dot"></span> Expired story</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in" style="padding: 6px 8px;">
+          <div class="story-stub" style="background: #f4f6f8; border: 1px dashed var(--ink-5);">
+            <div style="aspect-ratio: 9/14; border-radius:10px; background: var(--surface-2); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color: var(--ink-4); padding: 16px; text-align:center;">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1.6"/><path d="M16 8v9l5 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <div style="font-size: 13px; font-weight:600;">Story expired</div>
+              <div style="font-size: 11px;">Stories last for 24 hours</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="full">
+      <div class="state-head"><span class="dot"></span> Full view · player</div>
+      <div class="stage" data-mode="overlay">
+        <div class="story-full">
+          <div class="progress-row">
+            <div class="seg done"></div>
+            <div class="seg active"></div>
+            <div class="seg"></div>
+          </div>
+          <div class="top-meta">
+            <div class="av"></div>
+            <div style="display:flex; flex-direction:column; line-height:1.2;">
+              <b>Marina K.</b>
+              <span style="opacity:.8;">4h · Berlin</span>
+            </div>
+            <div style="margin-left:auto; opacity:.8;">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="text">tonight at the harbor 🌅</div>
+          <div class="reply">
+            <input type="text" placeholder="Reply to story…" />
+            <span class="icn">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 17s-7-4-7-9.5A4.5 4.5 0 018 3a4 4 0 013 1.5A4 4 0 0114 3a4.5 4.5 0 014 4.5C18 13 11 17 11 17z" stroke="#fff" stroke-width="1.6"/></svg>
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>

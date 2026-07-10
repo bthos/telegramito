@@ -1,0 +1,178 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="media-todo" subtitle="To-do: in-progress, adding item, all-done" viewport="1280x480" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>To-do list · Telegramito</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  .todo { padding: 6px 4px 4px; min-width: 280px; }
+  .todo .head {
+    font-size: 14px; font-weight: 700;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .todo .head .count {
+    font-size: 11px; font-weight: 600;
+    background: var(--surface-2);
+    color: var(--ink-3);
+    padding: 2px 7px; border-radius: 999px;
+  }
+  .todo-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 7px 4px;
+    border-bottom: 1px solid var(--hairline);
+    font-size: 14px;
+  }
+  .todo-item:last-child { border-bottom: 0; }
+  .todo-item .check {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1.6px solid var(--ink-5);
+    flex: none; margin-top: 1px;
+    box-sizing: border-box;
+    display: grid; place-items: center;
+  }
+  .todo-item.done .check {
+    background: var(--tg-blue); border-color: var(--tg-blue);
+  }
+  .todo-item.done .check::after {
+    content:'';
+    width: 9px; height: 5px;
+    border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+    transform: translateY(-1px) rotate(-45deg);
+  }
+  .todo-item.done .label {
+    color: var(--ink-4); text-decoration: line-through;
+  }
+  .todo-item .by {
+    font-size: 11px; color: var(--ink-3); margin-top: 1px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .todo-item .av { width:12px; height:12px; border-radius:50%; }
+
+  .progress-strip {
+    height: 4px; border-radius: 4px;
+    background: var(--surface-2);
+    margin: 6px 0 10px;
+    overflow: hidden;
+  }
+  .progress-strip .fill { height: 100%; background: var(--tg-blue); border-radius: 4px; }
+
+  .add-row {
+    display: flex; align-items:center; gap: 8px;
+    padding: 8px 4px 4px;
+  }
+  .add-row .plus {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1.6px dashed var(--ink-5);
+    color: var(--ink-3);
+    flex: none;
+    position: relative;
+  }
+  .add-row .plus::before, .add-row .plus::after {
+    content:''; position: absolute; left: 50%; top: 50%;
+    background: var(--ink-3);
+  }
+  .add-row .plus::before { width: 8px; height: 1.6px; transform: translate(-50%,-50%); }
+  .add-row .plus::after  { width: 1.6px; height: 8px; transform: translate(-50%,-50%); }
+  .add-row input {
+    flex:1; border:0; outline:0;
+    font-family: inherit; font-size: 14px;
+    color: var(--ink-3);
+    background: transparent;
+  }
+</style>
+</head>
+<body>
+<div class="card-frame">
+  <header class="card-head">
+    <div>
+      <h1>To-do list</h1>
+      <p>Shared checklist message. Items can be ticked off by anyone (per the appended_by/completed_by fields).</p>
+    </div>
+    <div class="schema">messageMediaToDo</div>
+  </header>
+
+  <div class="states">
+
+    <section class="state" data-kind="preview">
+      <div class="state-head"><span class="dot"></span> Preview · 2 of 5 done</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in">
+          <div class="todo">
+            <div class="head">Trip to Lisbon <span class="count">2 / 5</span></div>
+            <div class="progress-strip"><div class="fill" style="width:40%;"></div></div>
+            <div class="todo-item done">
+              <span class="check"></span>
+              <div style="flex:1;"><div class="label">Book flights</div><div class="by"><span class="av" style="background: linear-gradient(135deg, #5b8def, #b15bef);"></span>You · 2 days ago</div></div>
+            </div>
+            <div class="todo-item done">
+              <span class="check"></span>
+              <div style="flex:1;"><div class="label">Pick neighborhood</div><div class="by"><span class="av" style="background: linear-gradient(135deg, #ffae3a, #c14a8b);"></span>Marina · yesterday</div></div>
+            </div>
+            <div class="todo-item">
+              <span class="check"></span>
+              <div style="flex:1;"><div class="label">Reserve airbnb</div></div>
+            </div>
+            <div class="todo-item">
+              <span class="check"></span>
+              <div style="flex:1;"><div class="label">Tram pass for the week</div></div>
+            </div>
+            <div class="todo-item">
+              <span class="check"></span>
+              <div style="flex:1;"><div class="label">Pastéis de Belém — Saturday morning</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="loading">
+      <div class="state-head"><span class="dot"></span> Adding item</div>
+      <div class="stage" data-side="in">
+        <div class="bubble in">
+          <div class="todo">
+            <div class="head">Trip to Lisbon <span class="count">2 / 5</span></div>
+            <div class="progress-strip"><div class="fill" style="width:40%;"></div></div>
+            <div class="todo-item done"><span class="check"></span><div style="flex:1;"><div class="label">Book flights</div></div></div>
+            <div class="todo-item done"><span class="check"></span><div style="flex:1;"><div class="label">Pick neighborhood</div></div></div>
+            <div class="todo-item"><span class="check"></span><div style="flex:1;"><div class="label">Reserve airbnb</div></div></div>
+            <div class="todo-item"><span class="check"></span><div style="flex:1;"><div class="label">Tram pass for the week</div></div></div>
+            <div class="todo-item"><span class="check"></span><div style="flex:1;"><div class="label">Pastéis de Belém — Saturday morning</div></div></div>
+            <div class="add-row">
+              <span class="plus"></span>
+              <input value="Sunset spot at Miradouro|" />
+              <button style="border:0; background: var(--tg-blue); color:#fff; padding: 5px 12px; border-radius: 999px; font-weight:600; font-size:12px;">Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state" data-kind="full">
+      <div class="state-head"><span class="dot"></span> Full view · all done</div>
+      <div class="stage" data-mode="surface">
+        <div style="width:340px; background:#fff; border-radius:18px; padding: 18px; box-shadow: 0 8px 24px rgba(10,18,28,.15);">
+          <div class="todo" style="padding:0;">
+            <div class="head" style="font-size: 16px;">
+              Trip to Lisbon
+              <span class="count" style="background: var(--ok); color: #fff;">5 / 5 ✓</span>
+            </div>
+            <div class="progress-strip" style="background: rgba(79,174,78,.15);"><div class="fill" style="width:100%; background: var(--ok);"></div></div>
+            <div class="todo-item done"><span class="check"></span><div style="flex:1;"><div class="label">Book flights</div></div></div>
+            <div class="todo-item done"><span class="check"></span><div style="flex:1;"><div class="label">Pick neighborhood</div></div></div>
+            <div class="todo-item done"><span class="check"></span><div style="flex:1;"><div class="label">Reserve airbnb</div><div class="by"><span class="av" style="background: linear-gradient(135deg, #4cd9c2, #5b8def);"></span>Devon · today</div></div></div>
+            <div class="todo-item done"><span class="check"></span><div style="flex:1;"><div class="label">Tram pass for the week</div></div></div>
+            <div class="todo-item done"><span class="check"></span><div style="flex:1;"><div class="label">Pastéis de Belém — Saturday morning</div></div></div>
+            <div style="margin-top: 10px; padding: 10px; background: rgba(79,174,78,.1); border-radius: 10px; color: #266b29; font-size: 12px; font-weight: 600; text-align: center;">
+              All checked — have a great trip ✈️
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>
