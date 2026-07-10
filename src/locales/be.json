@@ -2,7 +2,7 @@
   "appName": "Telegramito",
   "error": "Памылка",
   "apiMissing": "Пазначце VITE_TELEGRAM_API_ID і VITE_TELEGRAM_API_HASH у файле .env (дэталі — на my.telegram.org).",
-  "common": { "cancel": "Скасаваць", "back": "Назад" },
+  "common": { "cancel": "Скасаваць", "back": "Назад", "close": "Закрыць" },
   "loading": "Загрузка…",
   "signOut": "Выйсці",
   "chats": "Чаты",
@@ -330,6 +330,23 @@
       "returned": "Архіў"
     },
     "write": "Пісаць ↗",
+    "writeFab": "Пісаць ✎",
+    "mobileTabBarAria": "Навігацыя «Пісьмы»",
+    "mobileTab": {
+      "letters": "Пісьмы",
+      "dayMail": "Пошта дня",
+      "circles": "Кружкі",
+      "desk": "Стол"
+    },
+    "mobileTabGlyph": {
+      "letters": "✉",
+      "dayMail": "☙",
+      "circles": "◫",
+      "desk": "❦"
+    },
+    "deskSheetAria": "Стол — налады і ўліковы запіс",
+    "deskSheetTitle": "Стол",
+    "deskPendingRequests": "{{count}} новых",
     "dayMailTitle": "Пошта дня",
     "dayMailSubtitle": "Што прыйшло, пакуль вас не было.",
     "dayMailEmpty": "Нічога новага за вашай адсутнасці.",

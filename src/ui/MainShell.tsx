@@ -1,11 +1,13 @@
 import { Api } from "telegram"
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react"
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useParentalSettings } from "../context/ParentalContext"
 import { useTelegram } from "../context/TelegramContext"
+import { useMaxWidth } from "../hooks/useMaxWidth"
 import { useMinWidth } from "../hooks/useMinWidth"
 import { useNarrowView } from "../hooks/useNarrowView"
 import { usePeriodicTick } from "../hooks/usePeriodicTick"
+import { useScrollChromeHide } from "../hooks/useScrollChromeHide"
 import { BP } from "../layout/breakpoints"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import { getPendingRequests } from "../parental/storage"
@@ -22,9 +24,15 @@ import {
 import { formatLiteraryDateLine } from "../util/literaryDate"
 import { ChatView, THREAD_HEADER_ACTIONS_ID, THREAD_HEADER_CENTER_ID } from "./ChatView"
 import { ChatsListPanel } from "./ChatsListPanel"
+import { DayMailRail } from "./DayMailRail"
+import { LettersCorrespondenceSeg } from "./LettersCorrespondenceSeg"
+import { LettersDayMailSlideOver } from "./LettersDayMailSlideOver"
+import { LettersDeskSheet } from "./LettersDeskSheet"
 import { LettersMasthead } from "./LettersMasthead"
 import { LettersChatRailProvider } from "./LettersChatRailContext"
+import { LettersMobileTabBar, type MobileShellTab } from "./LettersMobileTabBar"
 import { LettersRightRailColumn } from "./LettersRightRailColumn"
+import { LettersWriteFab } from "./LettersWriteFab"
 import { SettingsView } from "./SettingsView"
 import { PinDialog } from "./PinDialog"
 import { RequestsView } from "./RequestsView"
@@ -47,6 +55,19 @@ function filterDialogs(
   })
 }
 
+function countDayMailBadge(dialogs: Dialog[]): number {
+  let n = 0
+  for (const d of dialogs) {
+    const m = d.message
+    const ts = m && typeof m.date === "number" ? m.date : 0
+    if ((d.unreadCount ?? 0) >= 1 && ts > 0) {
+      n++
+      if (n >= 14) break
+    }
+  }
+  return n
+}
+
 export function MainShell() {
   const { t, i18n } = useTranslation()
   const { settings, setSettings, parentUnlocked, setParentUnlocked } = useParentalSettings()
@@ -54,7 +75,6 @@ export function MainShell() {
   const [tab, setTab] = useState<Tab>("chats")
   const [correspondenceTab, setCorrespondenceTab] = useState<CorrespondenceTab>("letters")
   const [selected, setSelected] = useState<Dialog | null>(null)
-  /** Desktop day mail: scroll `ChatView` to this message id once opened. */
   const [lettersDayMailFocusMessageId, setLettersDayMailFocusMessageId] = useState<number | null>(
     null,
   )
@@ -65,9 +85,17 @@ export function MainShell() {
   const [deniedPeerIds, setDeniedPeerIds] = useState<ReadonlySet<string>>(
     () => new Set()
   )
-  /** Same breakpoint intent as `PAGE_WIDTH_SMALL` (960) in telegram-react for “small page”. */
-  const narrow = useNarrowView(BP.narrowMax)
+  const [pendingRequestCount, setPendingRequestCount] = useState(0)
+  const [mobileTab, setMobileTab] = useState<MobileShellTab>("letters")
+  const [deskSheetOpen, setDeskSheetOpen] = useState(false)
+  const [searchExpanded, setSearchExpanded] = useState(false)
+  const [dayMailSlideOpen, setDayMailSlideOpen] = useState(false)
+  const mobilePanelRef = useRef<HTMLDivElement>(null)
+
+  const mobileCompact = useMaxWidth(BP.mobileCompactMax)
+  const mobileStack = useNarrowView(BP.mobileCompactMax)
   const lettersThreeCol = useMinWidth(BP.lettersThreeColMin)
+  const showTabletDayMailBtn = !mobileCompact && !lettersThreeCol
 
   const literaryDateLine = formatLiteraryDateLine(new Date(), i18n.language)
 
@@ -158,6 +186,7 @@ export function MainShell() {
           rq.filter((r) => r.status === "denied").map((r) => r.targetId)
         )
       )
+      setPendingRequestCount(rq.filter((r) => r.status === "pending").length)
     })()
   }, [settings])
 
@@ -166,7 +195,6 @@ export function MainShell() {
     [dialogs, correspondenceTab],
   )
 
-  /** Correspondence rail + parental rules; excludes masthead search (search must not collapse the thread). */
   const dialogsEligibleToRetainSelection = useMemo(() => {
     if (settings.appMode !== "child") {
       return dialogsForCorrespondence
@@ -215,6 +243,7 @@ export function MainShell() {
     [childListDialogs, selected, handleDayMailSelect],
   )
   const lettersRailSelectedKey = selected ? getPeerInfo(selected).key : null
+  const dayMailBadgeCount = useMemo(() => countDayMailBadge(dialogs), [dialogs])
 
   useEffect(() => {
     if (!selected) {
@@ -285,30 +314,140 @@ export function MainShell() {
       setSelected((s) => (s != null ? null : s))
     })
   }, [nightHidden, settings.appMode])
+
+  const showMobileTabBar =
+    mobileCompact && tab === "chats" && !selected && !deskSheetOpen
+  const showCompactMasthead =
+    mobileCompact && tab === "chats" && !selected
+  const mastheadChromeHidden = useScrollChromeHide(
+    mobilePanelRef,
+    showCompactMasthead && (mobileTab === "letters" || mobileTab === "dayMail"),
+  )
+
+  const handleMobileTabSelect = useCallback((next: MobileShellTab) => {
+    if (next === "desk") {
+      setDeskSheetOpen(true)
+      return
+    }
+    setMobileTab(next)
+    setDeskSheetOpen(false)
+  }, [])
+
+  const listPanelCommon = {
+    search,
+    onSearchChange: setSearch,
+    nightListHidden: nightHidden,
+    nightWindow: nightHidden ? { start: settings.nightMode.start, end: settings.nightMode.end } as const : undefined,
+    selected,
+    onSelect: handleSelectChat,
+    onRequestForHidden: handleRequestForHidden,
+    settings,
+    hasMoreDialogs,
+    loadMoreDialogs,
+    dialogsLoadingMore,
+    loadedDialogCount: dialogs.length,
+    client,
+    lettersMode: true as const,
+    showSearch: !mobileCompact,
+    correspondentsDialogs: lettersCorrespondentsDialogs,
+    circlesDialogs: lettersCirclesDialogs,
+    bulletinChannelPeers: bulletinPeers,
+    onSelectBulletinPeer: handleBulletinSelect,
+  }
+
+  const mobileListBody = (
+    <div
+      ref={mobilePanelRef}
+      className="letters-mobile-panel"
+      role="tabpanel"
+      id={`letters-mobile-panel-${mobileTab}`}
+      aria-labelledby={`letters-mobile-tab-${mobileTab}`}
+    >
+      {mobileTab === "letters" ? (
+        <>
+          <LettersCorrespondenceSeg value={correspondenceTab} onChange={setCorrespondenceTab} />
+          <div className="letters-mobile-panel-scroll chats-narrow-list">
+            <ChatsListPanel {...listPanelCommon} dialogs={childListDialogs} />
+          </div>
+          <LettersWriteFab onClick={focusComposer} />
+        </>
+      ) : null}
+      {mobileTab === "dayMail" ? (
+        <div className="letters-mobile-panel-scroll letters-mobile-day-mail">
+          <DayMailRail
+            dialogs={childListDialogs}
+            selectedKey={lettersRailSelectedKey}
+            onSelect={handleDayMailSelect}
+            client={client}
+          />
+        </div>
+      ) : null}
+      {mobileTab === "circles" ? (
+        <div className="letters-mobile-panel-scroll chats-narrow-list">
+          <ChatsListPanel
+            {...listPanelCommon}
+            dialogs={lettersCirclesDialogs}
+            circlesOnly
+          />
+        </div>
+      ) : null}
+    </div>
+  )
+
   return (
     <div
-      className={`app-root app-root--main app-root--mode-${settings.appMode}${tab === "chats" ? " app-root--letters-chats" : ""}`}
+      className={`app-root app-root--main app-root--mode-${settings.appMode}${tab === "chats" ? " app-root--letters-chats" : ""}${mobileCompact ? " app-root--letters-mobile" : ""}`}
     >
-      <LettersMasthead
-        dateLine={literaryDateLine}
-        correspondenceTab={correspondenceTab}
-        onCorrespondenceTab={setCorrespondenceTab}
-        search={search}
-        onSearchChange={setSearch}
-        onWrite={focusComposer}
-        shellTab={tab}
-        onShellTab={setTab}
-        showParentShellNav={settings.appMode === "parent"}
-        appMode={settings.appMode}
-        onAppMode={setAppMode}
-        onSignOut={() => {
-          void logOut()
-        }}
-      />
+      {showCompactMasthead ? (
+        <LettersMasthead
+          dateLine={literaryDateLine}
+          correspondenceTab={correspondenceTab}
+          onCorrespondenceTab={setCorrespondenceTab}
+          search={search}
+          onSearchChange={setSearch}
+          onWrite={focusComposer}
+          shellTab={tab}
+          onShellTab={setTab}
+          showParentShellNav={settings.appMode === "parent"}
+          appMode={settings.appMode}
+          onAppMode={setAppMode}
+          onSignOut={() => {
+            void logOut()
+          }}
+          compact
+          searchExpanded={searchExpanded}
+          onSearchExpandedChange={setSearchExpanded}
+          onOpenDesk={() => {
+            setDeskSheetOpen(true)
+          }}
+          chromeHidden={mastheadChromeHidden}
+        />
+      ) : tab === "chats" && !(mobileCompact && selected) ? (
+        <LettersMasthead
+          dateLine={literaryDateLine}
+          correspondenceTab={correspondenceTab}
+          onCorrespondenceTab={setCorrespondenceTab}
+          search={search}
+          onSearchChange={setSearch}
+          onWrite={focusComposer}
+          shellTab={tab}
+          onShellTab={setTab}
+          showParentShellNav={settings.appMode === "parent"}
+          appMode={settings.appMode}
+          onAppMode={setAppMode}
+          onSignOut={() => {
+            void logOut()
+          }}
+          showDayMailButton={showTabletDayMailBtn}
+          onOpenDayMail={() => {
+            setDayMailSlideOpen(true)
+          }}
+        />
+      ) : null}
 
       <div className="app-body app-body--fill">
         {tab === "chats" ? (
-          narrow ? (
+          mobileStack ? (
             selected ? (
               <div className="chats-narrow">
                 <div className="thread-header thread-header--mobile">
@@ -340,29 +479,7 @@ export function MainShell() {
                 </div>
               </div>
             ) : (
-              <div className="chats-narrow-list">
-                <ChatsListPanel
-                  search={search}
-                  onSearchChange={setSearch}
-                  nightListHidden={nightHidden}
-                  nightWindow={nightHidden ? { start: settings.nightMode.start, end: settings.nightMode.end } : undefined}
-                  dialogs={childListDialogs}
-                  selected={selected}
-                  onSelect={handleSelectChat}
-                  onRequestForHidden={handleRequestForHidden}
-                  settings={settings}
-                  hasMoreDialogs={hasMoreDialogs}
-                  loadMoreDialogs={loadMoreDialogs}
-                  dialogsLoadingMore={dialogsLoadingMore}
-                  loadedDialogCount={dialogs.length}
-                  client={client}
-                  lettersMode
-                  correspondentsDialogs={lettersCorrespondentsDialogs}
-                  circlesDialogs={lettersCirclesDialogs}
-                  bulletinChannelPeers={bulletinPeers}
-                  onSelectBulletinPeer={handleBulletinSelect}
-                />
-              </div>
+              mobileListBody
             )
           ) : (
             <LettersChatRailProvider
@@ -374,26 +491,9 @@ export function MainShell() {
               >
                 <aside className="chat-aside letters-correspondents-aside" aria-label={t("letters.correspondentsAria")}>
                   <ChatsListPanel
-                    search={search}
-                    onSearchChange={setSearch}
-                    nightListHidden={nightHidden}
-                    nightWindow={nightHidden ? { start: settings.nightMode.start, end: settings.nightMode.end } : undefined}
+                    {...listPanelCommon}
                     dialogs={childListDialogs}
-                    selected={selected}
-                    onSelect={handleSelectChat}
-                    onRequestForHidden={handleRequestForHidden}
-                    settings={settings}
-                    hasMoreDialogs={hasMoreDialogs}
-                    loadMoreDialogs={loadMoreDialogs}
-                    dialogsLoadingMore={dialogsLoadingMore}
-                    loadedDialogCount={dialogs.length}
-                    client={client}
-                    lettersMode
                     showSearch={false}
-                    correspondentsDialogs={lettersCorrespondentsDialogs}
-                    circlesDialogs={lettersCirclesDialogs}
-                    bulletinChannelPeers={bulletinPeers}
-                    onSelectBulletinPeer={handleBulletinSelect}
                   />
                 </aside>
                 <div className="chat-main chat-main--letters">
@@ -430,6 +530,19 @@ export function MainShell() {
 
         {tab === "settings" ? (
           <div className="one-col one-col--scroll">
+            {mobileCompact ? (
+              <div className="letters-mobile-subpage-bar">
+                <Button
+                  variant="ghost"
+                  type="button"
+                  onClick={() => {
+                    setTab("chats")
+                  }}
+                >
+                  {t("common.back")}
+                </Button>
+              </div>
+            ) : null}
             <SettingsView
               canEdit={canEditSettings}
               onRequestPin={() => {
@@ -440,10 +553,63 @@ export function MainShell() {
         ) : null}
         {tab === "requests" ? (
           <div className="one-col one-col--scroll">
+            {mobileCompact ? (
+              <div className="letters-mobile-subpage-bar">
+                <Button
+                  variant="ghost"
+                  type="button"
+                  onClick={() => {
+                    setTab("chats")
+                  }}
+                >
+                  {t("common.back")}
+                </Button>
+              </div>
+            ) : null}
             <RequestsView dialogs={dialogs} />
           </div>
         ) : null}
       </div>
+
+      {showMobileTabBar ? (
+        <LettersMobileTabBar
+          active={mobileTab}
+          onSelect={handleMobileTabSelect}
+          dayMailBadge={dayMailBadgeCount}
+        />
+      ) : null}
+
+      <LettersDeskSheet
+        open={deskSheetOpen}
+        onClose={() => {
+          setDeskSheetOpen(false)
+        }}
+        appMode={settings.appMode}
+        onAppMode={setAppMode}
+        showParentRows={settings.appMode === "parent"}
+        pendingRequestCount={pendingRequestCount}
+        onOpenSettings={() => {
+          setTab("settings")
+        }}
+        onOpenRequests={() => {
+          setTab("requests")
+        }}
+        onSignOut={() => {
+          void logOut()
+        }}
+      />
+
+      <LettersDayMailSlideOver
+        open={dayMailSlideOpen}
+        onClose={() => {
+          setDayMailSlideOpen(false)
+        }}
+        dialogs={childListDialogs}
+        selectedKey={lettersRailSelectedKey}
+        onSelect={handleDayMailSelect}
+        client={client}
+      />
+
       <PinDialog
         open={showPin}
         onClose={closePin}

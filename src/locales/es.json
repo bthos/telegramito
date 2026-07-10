@@ -2,7 +2,7 @@
   "appName": "Telegramito",
   "error": "Error",
   "apiMissing": "Configure VITE_TELEGRAM_API_ID y VITE_TELEGRAM_API_HASH en .env (vea my.telegram.org).",
-  "common": { "cancel": "Cancelar", "back": "Atrás" },
+  "common": { "cancel": "Cancelar", "back": "Atrás", "close": "Cerrar" },
   "loading": "Cargando…",
   "signOut": "Cerrar sesión",
   "chats": "Chats",
@@ -330,6 +330,23 @@
       "returned": "Archivados"
     },
     "write": "Escribir ↗",
+    "writeFab": "Escribir ✎",
+    "mobileTabBarAria": "Navegación de Cartas",
+    "mobileTab": {
+      "letters": "Cartas",
+      "dayMail": "Correo del día",
+      "circles": "Círculos",
+      "desk": "Escritorio"
+    },
+    "mobileTabGlyph": {
+      "letters": "✉",
+      "dayMail": "☙",
+      "circles": "◫",
+      "desk": "❦"
+    },
+    "deskSheetAria": "Escritorio — ajustes y cuenta",
+    "deskSheetTitle": "Escritorio",
+    "deskPendingRequests": "{{count}} nuevas",
     "dayMailTitle": "El correo del día",
     "dayMailSubtitle": "Lo que llegó mientras no estaba.",
     "dayMailEmpty": "Nada nuevo en su ausencia.",

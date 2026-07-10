@@ -22,6 +22,8 @@ export const BP = {
    * `PAGE_WIDTH_SMALL` intent.
    */
   narrowMax: 960,
+  /** Letters mobile compact chrome (52px masthead + tab bar): width ≤ `mobileCompactMax`. */
+  mobileCompactMax: 700,
   /** Letters third column (day-mail rail): width ≥ `lettersThreeColMin`. */
   lettersThreeColMin: 1280,
 } as const
@@ -34,6 +36,8 @@ export const BP_PAIR = {
   tabletPortraitMax: BP.lg - 1,
   /** `(max-width: …)` — hide Letters rail below three-col threshold. */
   lettersBelowThreeColMax: BP.lettersThreeColMin - 1,
+  /** `(min-width: …)` — tablet/desktop Letters above compact band. */
+  mobileCompactDesktopMin: BP.mobileCompactMax + 1,
 } as const
 
 /** `matchMedia` query strings for hooks and non-CSS checks. */

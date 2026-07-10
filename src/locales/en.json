@@ -2,7 +2,7 @@
   "appName": "Telegramito",
   "error": "Error",
   "apiMissing": "Set VITE_TELEGRAM_API_ID and VITE_TELEGRAM_API_HASH in .env (see my.telegram.org).",
-  "common": { "cancel": "Cancel", "back": "Back" },
+  "common": { "cancel": "Cancel", "back": "Back", "close": "Close" },
   "loading": "Loading…",
   "signOut": "Sign out",
   "chats": "Chats",
@@ -330,6 +330,23 @@
       "returned": "Returned"
     },
     "write": "Write ↗",
+    "writeFab": "Write ✎",
+    "mobileTabBarAria": "Letters navigation",
+    "mobileTab": {
+      "letters": "Letters",
+      "dayMail": "Day mail",
+      "circles": "Circles",
+      "desk": "Desk"
+    },
+    "mobileTabGlyph": {
+      "letters": "✉",
+      "dayMail": "☙",
+      "circles": "◫",
+      "desk": "❦"
+    },
+    "deskSheetAria": "Desk — settings and account",
+    "deskSheetTitle": "Desk",
+    "deskPendingRequests": "{{count}} new",
     "dayMailTitle": "The day’s mail",
     "dayMailSubtitle": "What arrived while you were away.",
     "dayMailEmpty": "Nothing new in your absence.",

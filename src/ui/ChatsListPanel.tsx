@@ -35,6 +35,8 @@ type Props = {
   lettersMode?: boolean
   /** When false, omit list search field (search lives in masthead). */
   showSearch?: boolean
+  /** Mobile circles tab: groups + channels only (no correspondents accordion). */
+  circlesOnly?: boolean
   /** Letters: private dialogs only — correspondents accordion ChatList (defaults from `dialogs` if omitted). */
   correspondentsDialogs?: Dialog[]
   /** Letters: groups + channels except broadcasts — split into group / channel accordions (defaults derived if omitted). */
@@ -75,6 +77,7 @@ export function ChatsListPanel({
   client,
   lettersMode = false,
   showSearch = true,
+  circlesOnly = false,
   correspondentsDialogs: correspondentsDialogsProp,
   circlesDialogs: circlesDialogsProp,
   bulletinChannelPeers,
@@ -142,12 +145,15 @@ export function ChatsListPanel({
     !nightListHidden &&
     (hasLettersGroupsSection || hasLettersChannelsSection)
 
+  const showCorrespondentsSection = lettersMode && !circlesOnly
+
   const sidebarSectionsOrdered = useMemo((): LettersSidebarSection[] => {
-    const list: LettersSidebarSection[] = ["correspondents"]
+    const list: LettersSidebarSection[] = []
+    if (showCorrespondentsSection) list.push("correspondents")
     if (hasLettersGroupsSection) list.push("groups")
     if (hasLettersChannelsSection) list.push("channels")
-    return list
-  }, [hasLettersGroupsSection, hasLettersChannelsSection])
+    return list.length > 0 ? list : ["correspondents"]
+  }, [showCorrespondentsSection, hasLettersGroupsSection, hasLettersChannelsSection])
 
   useEffect(() => {
     if (!lettersMode) {
@@ -156,7 +162,10 @@ export function ChatsListPanel({
     if (!sidebarSectionsOrdered.includes(openSection)) {
       setOpenSection(sidebarSectionsOrdered[0] ?? "correspondents")
     }
-  }, [lettersMode, openSection, sidebarSectionsOrdered])
+    if (circlesOnly && openSection === "correspondents") {
+      setOpenSection(sidebarSectionsOrdered.find((s) => s !== "correspondents") ?? "groups")
+    }
+  }, [lettersMode, openSection, sidebarSectionsOrdered, circlesOnly])
 
   const onLettersSectionHeaderClick = useCallback((section: LettersSidebarSection) => {
     if (!sidebarSectionsOrdered.includes(section)) {
@@ -204,47 +213,51 @@ export function ChatsListPanel({
     <>
       {lettersMode ? (
         <div className="letters-sidebar-accordions">
-          <button
-            type="button"
-            id={corrHeadId}
-            className="letters-aside-accordion__trigger letters-aside-accordion__trigger--correspondents"
-            aria-expanded={openSection === "correspondents"}
-            aria-controls={corrPanelId}
-            onClick={() => {
-              onLettersSectionHeaderClick("correspondents")
-            }}
-          >
-            <span className="letters-correspondents-h">{t("letters.correspondents")}</span>
-            <ChevronDownIcon
-              className={`letters-aside-accordion__chev${openSection === "correspondents" ? " is-expanded" : ""}`}
-              aria-hidden
-            />
-          </button>
-          <div
-            id={corrPanelId}
-            role="region"
-            aria-labelledby={corrHeadId}
-            className="letters-aside-accordion__panel"
-            hidden={openSection !== "correspondents"}
-          >
-            {showSearch ? (
-              <div className="chat-list-toolbar">
-                <TextField
-                  type="search"
-                  variant="search"
-                  name="q"
-                  value={search}
-                  onChange={(e) => {
-                    onSearchChange(e.target.value)
-                  }}
-                  placeholder={t("chat.search")}
-                  aria-label={t("chat.search")}
-                  autoComplete="off"
+          {showCorrespondentsSection ? (
+            <>
+              <button
+                type="button"
+                id={corrHeadId}
+                className="letters-aside-accordion__trigger letters-aside-accordion__trigger--correspondents"
+                aria-expanded={openSection === "correspondents"}
+                aria-controls={corrPanelId}
+                onClick={() => {
+                  onLettersSectionHeaderClick("correspondents")
+                }}
+              >
+                <span className="letters-correspondents-h">{t("letters.correspondents")}</span>
+                <ChevronDownIcon
+                  className={`letters-aside-accordion__chev${openSection === "correspondents" ? " is-expanded" : ""}`}
+                  aria-hidden
                 />
+              </button>
+              <div
+                id={corrPanelId}
+                role="region"
+                aria-labelledby={corrHeadId}
+                className="letters-aside-accordion__panel"
+                hidden={openSection !== "correspondents"}
+              >
+                {showSearch ? (
+                  <div className="chat-list-toolbar">
+                    <TextField
+                      type="search"
+                      variant="search"
+                      name="q"
+                      value={search}
+                      onChange={(e) => {
+                        onSearchChange(e.target.value)
+                      }}
+                      placeholder={t("chat.search")}
+                      aria-label={t("chat.search")}
+                      autoComplete="off"
+                    />
+                  </div>
+                ) : null}
+                {correspondentsChatList}
               </div>
-            ) : null}
-            {correspondentsChatList}
-          </div>
+            </>
+          ) : null}
           {showLettersCirclesStack && hasLettersGroupsSection ? (
             <>
               <button

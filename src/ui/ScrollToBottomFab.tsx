@@ -1,4 +1,6 @@
 /** Inspired by telegram-react’s ScrollDownButton — jump to latest messages when scrolled up. */
+import { formatUnreadBadge } from "../util/formatUnreadBadge"
+
 export function ScrollToBottomFab({
   visible,
   onClick,
@@ -13,7 +15,8 @@ export function ScrollToBottomFab({
 }) {
   const n = unreadBadge ?? 0
   const showBadge = visible && n > 0
-  const aria = showBadge ? `${label} (${String(n)})` : label
+  const badgeLabel = showBadge ? formatUnreadBadge(n) : ""
+  const aria = showBadge ? `${label} (${badgeLabel})` : label
   return (
     <button
       type="button"
@@ -38,7 +41,7 @@ export function ScrollToBottomFab({
         <path d="M6 9l6 6 6-6" />
       </svg>
       {showBadge ? (
-        <span className="message-scroll__fab-badge">{n}</span>
+        <span className="message-scroll__fab-badge">{badgeLabel}</span>
       ) : null}
     </button>
   )

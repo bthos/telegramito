@@ -1,4 +1,4 @@
-import { type ComponentType, type SVGProps } from "react"
+import { type ComponentType, type SVGProps, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useTheme } from "../context/ThemeContext"
 import type { AppMode } from "../parental/types"
@@ -33,6 +33,34 @@ type Props = {
   appMode: AppMode
   onAppMode: (m: AppMode) => void
   onSignOut: () => void
+  /** ≤700px: one-row compact chrome; shell nav + tools move to desk sheet. */
+  compact?: boolean
+  /** Compact: search icon expanded to full-width field. */
+  searchExpanded?: boolean
+  onSearchExpandedChange?: (open: boolean) => void
+  onOpenDesk?: () => void
+  /** Tablet band: ☙ opens day-mail slide-over (not shown when `compact`). */
+  showDayMailButton?: boolean
+  onOpenDayMail?: () => void
+  /** Scroll-hide on list / day-mail screens. */
+  chromeHidden?: boolean
+}
+
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="1.25rem" height="1.25rem" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20 20l-4-4" />
+    </svg>
+  )
+}
+
+function MenuIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="1.35rem" height="1.35rem" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  )
 }
 
 export function LettersMasthead({
@@ -48,13 +76,112 @@ export function LettersMasthead({
   appMode,
   onAppMode,
   onSignOut,
+  compact = false,
+  searchExpanded = false,
+  onSearchExpandedChange,
+  onOpenDesk,
+  showDayMailButton = false,
+  onOpenDayMail,
+  chromeHidden = false,
 }: Props) {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
   const chatsChrome = shellTab === "chats"
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (compact && searchExpanded) {
+      searchInputRef.current?.focus()
+    }
+  }, [compact, searchExpanded])
+
+  if (compact) {
+    const rootClass = [
+      "letters-masthead",
+      "letters-masthead--compact",
+      searchExpanded ? "letters-masthead--search-open" : "",
+      chromeHidden ? "letters-masthead--chrome-hidden" : "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+
+    return (
+      <header className={rootClass} role="banner" aria-label={t("letters.mastheadAria")}>
+        {searchExpanded ? (
+          <div className="letters-masthead__compact-search">
+            <TextField
+              ref={searchInputRef}
+              type="search"
+              variant="search"
+              name="letters-q-mobile"
+              value={search}
+              onChange={(e) => {
+                onSearchChange(e.target.value)
+              }}
+              placeholder={t("chat.search")}
+              aria-label={t("chat.search")}
+              autoComplete="off"
+            />
+            <Button
+              variant="ghostIcon"
+              type="button"
+              className="letters-masthead__icon-btn"
+              aria-label={t("common.close")}
+              title={t("common.close")}
+              onClick={() => {
+                onSearchChange("")
+                onSearchExpandedChange?.(false)
+              }}
+            >
+              ×
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="letters-masthead__compact-lead">
+              <h1 className="letters-masthead__wordmark" translate="no">
+                {t("appName")}
+              </h1>
+              <p className="letters-masthead__dateline">{dateLine}</p>
+            </div>
+            <div className="letters-masthead__compact-actions">
+              <Button
+                variant="ghostIcon"
+                type="button"
+                className="letters-masthead__icon-btn"
+                aria-label={t("chat.search")}
+                title={t("chat.search")}
+                onClick={() => {
+                  onSearchExpandedChange?.(true)
+                }}
+              >
+                <SearchIcon />
+              </Button>
+              <Button
+                variant="ghostIcon"
+                type="button"
+                className="letters-masthead__icon-btn"
+                aria-label={t("letters.deskSheetTitle")}
+                title={t("letters.deskSheetTitle")}
+                onClick={() => {
+                  onOpenDesk?.()
+                }}
+              >
+                <MenuIcon />
+              </Button>
+            </div>
+          </>
+        )}
+      </header>
+    )
+  }
 
   return (
-    <header className="letters-masthead" role="banner" aria-label={t("letters.mastheadAria")}>
+    <header
+      className={`letters-masthead${chromeHidden ? " letters-masthead--chrome-hidden" : ""}`.trim()}
+      role="banner"
+      aria-label={t("letters.mastheadAria")}
+    >
       <div className="letters-masthead__lead">
         <div className="letters-masthead__brandmark">
           <h1 className="letters-masthead__wordmark" translate="no">
@@ -153,6 +280,20 @@ export function LettersMasthead({
           ) : null}
         </div>
         <div className="letters-masthead__tools">
+          {showDayMailButton && chatsChrome ? (
+            <Button
+              variant="ghostIcon"
+              type="button"
+              className="letters-masthead__day-mail-btn"
+              aria-label={t("letters.dayMailAria")}
+              title={t("letters.dayMailAria")}
+              onClick={() => {
+                onOpenDayMail?.()
+              }}
+            >
+              ☙
+            </Button>
+          ) : null}
           <div className="app-mode-toggle" role="group" aria-label={t("mode.headerToggle")}>
             <button
               type="button"
