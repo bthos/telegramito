@@ -55,13 +55,14 @@ function stubDialog(opts: {
 function stubBroadcastChannel(
   name: string,
   message: Api.Message,
+  channelId = 100,
 ): Dialog {
   return stubDialog({
     isUser: false,
     name,
     entity: {
       className: "Channel",
-      id: BigInt(100),
+      id: BigInt(channelId),
       accessHash: BigInt(1),
       title: name,
       broadcast: true,
@@ -322,6 +323,162 @@ describe("evening awaiting detection", () => {
     const refined = await refineAwaitingReplyTier2(base, [d], client, now, { enabled: true })
     expect(getEveningTier2FetchCount()).toBe(1)
     expect(refined.awaitingReply).toEqual([])
+  })
+})
+
+describe("evening channel Tier 2 refine (AC-C1..C4)", () => {
+  const now = new Date("2026-07-10T20:00:00")
+  const today = Math.floor(now.getTime() / 1000)
+
+  beforeEach(() => {
+    _resetEveningTier2FetchCountForTest()
+  })
+
+  function inboundChannelMsg(id: number, ts = today): Api.Message {
+    return new Api.Message({
+      id,
+      peerId: { className: "PeerChannel", channelId: BigInt(id) } as unknown as Api.TypePeer,
+      date: ts,
+      message: "News",
+      out: false,
+    })
+  }
+
+  it("shares the 5-peer cap private-first, leaving the remainder for channels (AC-C1)", async () => {
+    const privateDialogs = Array.from({ length: 3 }, (_, i) =>
+      stubPrivateDialog(
+        `Peer ${i}`,
+        new Api.Message({
+          id: 1,
+          peerId: { className: "PeerUser", userId: BigInt(i + 10) } as unknown as Api.TypePeer,
+          date: today,
+          message: "?",
+          out: true,
+        }),
+        i + 10,
+      ),
+    )
+    const channelDialogs = Array.from({ length: 4 }, (_, i) =>
+      stubBroadcastChannel(`Channel ${i}`, inboundChannelMsg(200 + i), 200 + i),
+    )
+    const dialogs = [...privateDialogs, ...channelDialogs]
+    const getMessages = vi.fn().mockResolvedValue([])
+    const client = { getMessages } as unknown as TelegramClient
+    const base = buildEveningSummary(dialogs, now)
+    expect(base.awaitingReply).toHaveLength(3)
+    expect(base.broadcastToday).toHaveLength(4)
+
+    await refineAwaitingReplyTier2(base, dialogs, client, now, { enabled: true })
+
+    expect(getMessages).toHaveBeenCalledTimes(TIER2_AWAITING_PEER_CAP)
+  })
+
+  it("fetches no channel peers when private awaiting already fills the cap (AC-C1)", async () => {
+    const privateDialogs = Array.from({ length: 5 }, (_, i) =>
+      stubPrivateDialog(
+        `Peer ${i}`,
+        new Api.Message({
+          id: 1,
+          peerId: { className: "PeerUser", userId: BigInt(i + 10) } as unknown as Api.TypePeer,
+          date: today,
+          message: "?",
+          out: true,
+        }),
+        i + 10,
+      ),
+    )
+    const channelDialog = stubBroadcastChannel("Channel 0", inboundChannelMsg(300), 300)
+    const dialogs = [...privateDialogs, channelDialog]
+    const getMessages = vi.fn().mockResolvedValue([])
+    const client = { getMessages } as unknown as TelegramClient
+    const base = buildEveningSummary(dialogs, now)
+
+    const refined = await refineAwaitingReplyTier2(base, dialogs, client, now, { enabled: true })
+
+    expect(getMessages).toHaveBeenCalledTimes(TIER2_AWAITING_PEER_CAP)
+    expect(refined.broadcastToday.map((x) => x.name)).toEqual(["Channel 0"])
+  })
+
+  it("drops a broadcastToday row when history has no inbound post today (AC-C2)", async () => {
+    const channelDialog = stubBroadcastChannel("Stale News", inboundChannelMsg(400), 400)
+    const getMessages = vi.fn().mockResolvedValue([
+      new Api.Message({
+        id: 1,
+        peerId: { className: "PeerChannel", channelId: BigInt(400) } as unknown as Api.TypePeer,
+        date: today - 90000,
+        message: "Yesterday's post",
+        out: false,
+      }),
+    ])
+    const client = { getMessages } as unknown as TelegramClient
+    const base = buildEveningSummary([channelDialog], now)
+    expect(base.broadcastToday.map((x) => x.name)).toEqual(["Stale News"])
+
+    const refined = await refineAwaitingReplyTier2(base, [channelDialog], client, now, {
+      enabled: true,
+    })
+
+    expect(refined.broadcastToday).toEqual([])
+  })
+
+  it("keeps a broadcastToday row when history confirms an inbound post today (AC-C2)", async () => {
+    const channelDialog = stubBroadcastChannel("Live News", inboundChannelMsg(500), 500)
+    const getMessages = vi.fn().mockResolvedValue([inboundChannelMsg(500)])
+    const client = { getMessages } as unknown as TelegramClient
+    const base = buildEveningSummary([channelDialog], now)
+
+    const refined = await refineAwaitingReplyTier2(base, [channelDialog], client, now, {
+      enabled: true,
+    })
+
+    expect(refined.broadcastToday.map((x) => x.name)).toEqual(["Live News"])
+  })
+
+  it("does not touch postedToChannelsToday (outbound, preview-only) (AC-C2)", async () => {
+    const outboundChannelMsg = new Api.Message({
+      id: 1,
+      peerId: { className: "PeerChannel", channelId: BigInt(600) } as unknown as Api.TypePeer,
+      date: today,
+      message: "My post",
+      out: true,
+    })
+    const channelDialog = stubBroadcastChannel("My Channel", outboundChannelMsg, 600)
+    const getMessages = vi.fn().mockResolvedValue([])
+    const client = { getMessages } as unknown as TelegramClient
+    const base = buildEveningSummary([channelDialog], now)
+    expect(base.postedToChannelsToday.map((x) => x.name)).toEqual(["My Channel"])
+
+    const refined = await refineAwaitingReplyTier2(base, [channelDialog], client, now, {
+      enabled: true,
+    })
+
+    expect(getMessages).not.toHaveBeenCalled()
+    expect(refined.postedToChannelsToday).toEqual(base.postedToChannelsToday)
+  })
+
+  it("does not fetch channel history when precise mode is off (AC-C3)", async () => {
+    const channelDialog = stubBroadcastChannel("Channel 0", inboundChannelMsg(700), 700)
+    const getMessages = vi.fn().mockResolvedValue([])
+    const client = { getMessages } as unknown as TelegramClient
+    const base = buildEveningSummary([channelDialog], now)
+
+    const refined = await refineAwaitingReplyTier2(base, [channelDialog], client, now, {
+      enabled: false,
+    })
+
+    expect(getMessages).not.toHaveBeenCalled()
+    expect(refined).toEqual(base)
+  })
+
+  it("counts channel fetches toward the shared eveningTier2FetchCount telemetry (AC-C4)", async () => {
+    const channelDialog = stubBroadcastChannel("Channel 0", inboundChannelMsg(800), 800)
+    const getMessages = vi.fn().mockResolvedValue([inboundChannelMsg(800)])
+    const client = { getMessages } as unknown as TelegramClient
+    const base = buildEveningSummary([channelDialog], now)
+
+    await refineAwaitingReplyTier2(base, [channelDialog], client, now, { enabled: true })
+
+    expect(getEveningTier2FetchCount()).toBe(1)
   })
 })
 

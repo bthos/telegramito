@@ -289,8 +289,15 @@ export function buildEveningSummary(
   return { wroteToday, awaitingReply, broadcastToday, postedToChannelsToday }
 }
 
+function hasInboundMessageToday(messages: readonly Api.Message[], now: Date): boolean {
+  return messages.some(
+    (m) => m.className === "Message" && !(m as Api.Message).out && isMessageFromToday(m as Api.Message, now),
+  )
+}
+
 /**
  * Tier 2: for peers still awaiting after Tier 1, fetch recent history (capped) and re-check.
+ * Also refines broadcastToday channel rows using the shared fetch budget remainder.
  * No-op when `enabled` is false or client is missing.
  */
 export async function refineAwaitingReplyTier2(
@@ -300,7 +307,7 @@ export async function refineAwaitingReplyTier2(
   now: Date = new Date(),
   opts?: { enabled?: boolean; onFetch?: (count: number) => void },
 ): Promise<EveningSummary> {
-  if (!opts?.enabled || !client || summary.awaitingReply.length === 0) {
+  if (!opts?.enabled || !client || (summary.awaitingReply.length === 0 && summary.broadcastToday.length === 0)) {
     return summary
   }
   const dialogByKey = new Map(dialogs.map((d) => [getPeerInfo(d).key, d]))
@@ -330,6 +337,32 @@ export async function refineAwaitingReplyTier2(
     }
   }
 
+  const remainingBudget = TIER2_AWAITING_PEER_CAP - fetchCount
+  const stillBroadcast = [...summary.broadcastToday]
+  if (remainingBudget > 0 && summary.broadcastToday.length > 0) {
+    const channelPeersToCheck = summary.broadcastToday.slice(0, remainingBudget)
+    for (const peer of channelPeersToCheck) {
+      const d = dialogByKey.get(peer.key)
+      if (!d?.entity) {
+        continue
+      }
+      fetchCount++
+      eveningTier2FetchCount++
+      try {
+        const raw = await client.getMessages(d.entity as never, { limit: 50 })
+        const messages = toMessageList(raw)
+        if (!hasInboundMessageToday(messages, now)) {
+          const idx = stillBroadcast.findIndex((x) => x.key === peer.key)
+          if (idx >= 0) {
+            stillBroadcast.splice(idx, 1)
+          }
+        }
+      } catch {
+        // Keep Tier 0 broadcast verdict on fetch failure.
+      }
+    }
+  }
+
   opts.onFetch?.(fetchCount)
-  return { ...summary, awaitingReply: stillAwaiting }
+  return { ...summary, awaitingReply: stillAwaiting, broadcastToday: stillBroadcast }
 }
