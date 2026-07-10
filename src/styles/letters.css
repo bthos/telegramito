@@ -1,11 +1,52 @@
 /**
  * Letters v2 — layout & surfaces (tokens: tokens-letters.css).
  * Chat-only selectors stay scoped under `.app-root--letters-chats`.
- * `@media` px thresholds: keep in sync with `src/layout/breakpoints.ts` (see `BP.*` / `BP_PAIR.*` comments).
+ *
+ * @media sync — numeric literals must match `src/layout/breakpoints.ts`:
+ * | Layout band | Range | TS constant |
+ * |-------------|-------|-------------|
+ * | Mobile stack + tab bar | ≤700px | `BP.mobileCompactMax` |
+ * | List + thread (day mail slide-over) | 701–1279px | `BP_PAIR.mobileCompactDesktopMin` … `BP_PAIR.lettersBelowThreeColMax` |
+ * | Three columns (day-mail rail) | ≥1280px | `BP.lettersThreeColMin` |
+ *
+ * `@media` px thresholds below reference `BP.*` / `BP_PAIR.*` by name.
  */
 
 .app-root--letters-chats.app-root--main {
   font-family: var(--letters-serif);
+}
+
+/* Component variable contract — reactions pilot (AC-H4). Set theme vars on shell; components consume via var(). */
+.app-root--letters-chats {
+  --letters-reaction-bg: transparent;
+  --letters-reaction-border: none;
+  --letters-reaction-outline: none;
+  --letters-reaction-hover-bg: color-mix(in srgb, var(--letters-terra) 10%, transparent);
+  --letters-reaction-mine-hover-bg: color-mix(in srgb, var(--letters-terra) 14%, transparent);
+}
+
+/* Container-query roots (AC-H9) — panel width drives local layout, not viewport alone. */
+.app-root--letters-chats .letters-correspondents-aside,
+.app-root--letters-chats .chats-narrow-list {
+  container-type: inline-size;
+  container-name: letters-list;
+}
+
+.app-root--letters-chats .chat-main--letters {
+  container-type: inline-size;
+  container-name: letters-thread;
+}
+
+.letters-day-mail-aside {
+  container-type: inline-size;
+  container-name: letters-day-mail;
+}
+
+/* AC-H10 pilot: hide list timestamps when correspondents column is very narrow. */
+@container letters-list (max-width: 359px) {
+  .app-root--letters-chats .chat-row__time {
+    display: none;
+  }
 }
 
 /* List + day-mail columns: `--surface` / paper; both side rails share ruled paper feel. */
@@ -1510,10 +1551,10 @@ html[data-theme="dark"] .thread.thread--letters .letters-passage__body--out {
   padding: 0;
   margin: 0;
   border-radius: 0;
-  background: transparent !important;
-  border: none !important;
+  background: var(--letters-reaction-bg);
+  border: var(--letters-reaction-border);
   box-shadow: none;
-  outline: none;
+  outline: var(--letters-reaction-outline);
 }
 
 .thread.thread--letters .letters-passage__reactions button.msg-reaction {
@@ -1526,27 +1567,27 @@ html[data-theme="dark"] .thread.thread--letters .letters-passage__body--out {
   padding: 0.2rem 0.5rem 0.2rem 0.1rem;
   min-height: 2.2rem;
   border-radius: 10px;
-  border: none !important;
-  background: transparent !important;
+  border: var(--letters-reaction-border);
+  background: var(--letters-reaction-bg);
   box-shadow: none;
-  outline: none;
+  outline: var(--letters-reaction-outline);
   transition: background 0.12s ease;
 }
 
 .thread.thread--letters .letters-passage__reactions button.msg-reaction--mine {
-  outline: none !important;
-  background: transparent !important;
+  outline: var(--letters-reaction-outline);
+  background: var(--letters-reaction-bg);
 }
 
 .thread.thread--letters .letters-passage__reactions button.msg-reaction:hover:not(:disabled),
 .thread.thread--letters .letters-passage__reactions button.msg-reaction:focus-visible {
-  background: rgba(90, 160, 255, 0.1) !important;
-  outline: none !important;
+  background: var(--letters-reaction-hover-bg);
+  outline: var(--letters-reaction-outline);
 }
 
 .thread.thread--letters .letters-passage__reactions button.msg-reaction--mine:hover:not(:disabled),
 .thread.thread--letters .letters-passage__reactions button.msg-reaction--mine:focus-visible {
-  background: rgba(90, 160, 255, 0.14) !important;
+  background: var(--letters-reaction-mine-hover-bg);
 }
 
 .thread.thread--letters .letters-passage__reactions .msg-reaction-count {
@@ -2453,6 +2494,7 @@ button.letters-insights__cal-cell {
 
 /* BP_PAIR.lettersBelowThreeColMax — no day-mail rail in two-pane */
 @media (max-width: 1279px) {
+  /* BP_PAIR.lettersBelowThreeColMax (= BP.lettersThreeColMin - 1) */
   .letters-day-mail-aside {
     display: none;
   }
@@ -2466,8 +2508,9 @@ button.letters-insights__cal-cell {
   }
 }
 
-/* —— Mobile compact shell (BP.mobileCompactMax) —— */
+/* —— Mobile compact shell —— */
 @media (max-width: 700px) {
+  /* BP.mobileCompactMax */
   .app-root--letters-mobile {
     --letters-mobile-tabbar-h: calc(52px + env(safe-area-inset-bottom, 0px));
   }

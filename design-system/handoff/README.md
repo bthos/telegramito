@@ -259,6 +259,55 @@ Rendered as SVG `<rect>` elements; heights from a normalised `float[]` array. Pl
 
 ---
 
+## App implementation — CSS hygiene
+
+Cross-reference: `design-system/docs/Ревью Telegramito.html` (Section IV, Step 4).
+
+### Canonical tokens
+
+- **`--ds-*`** is the canonical dialect (`src/styles/tokens.css`).
+- Letters desk overrides terracotta on `.app-root--main` via `src/styles/tokens-letters.css`.
+- Legacy aliases (`--acc`, `--tg-blue`, …) are deprecated — use `var(--ds-*)` or scoped `--letters-*` in new rules.
+
+CI gate: `npm run lint:css-tokens` — fails if `#3390ec` or `#b03e1b` appear outside `design-system/`, `tokens.css`, and `tokens-letters.css`.
+
+### Component variable contract (reactions pilot)
+
+Set theme variables on the layout shell; component rules consume them (no `!important` wars):
+
+```css
+.app-root--letters-chats {
+  --letters-reaction-bg: transparent;
+  --letters-reaction-hover-bg: color-mix(in srgb, var(--letters-terra) 10%, transparent);
+}
+
+.thread--letters .letters-passage__reactions button.msg-reaction {
+  background: var(--letters-reaction-bg);
+}
+```
+
+Apply the same pattern file-by-file: shell sets `--letters-<component>-*`, leaf selectors read `var()`.
+
+### Layout breakpoints
+
+| Range | Layout | Day mail | TS constant |
+|-------|--------|----------|-------------|
+| <700px | stack + tab bar | tab | `BP.mobileCompactMax` |
+| 700–1279px | list + thread | ☙ slide-over | `BP_PAIR.mobileCompactDesktopMin` … `lettersBelowThreeColMax` |
+| ≥1280px | three columns | rail column | `BP.lettersThreeColMin` |
+
+`@media` literals in CSS must stay in sync with `src/layout/breakpoints.ts` (custom properties inside `@media` are unreliable).
+
+### Container queries (pilot)
+
+| Panel | `container-name` | Follow-up |
+|-------|------------------|-----------|
+| Correspondents list | `letters-list` | Hide auxiliary chrome when panel &lt;360px (timestamps pilot shipped) |
+| Thread | `letters-thread` | Compact passage margins, reaction density |
+| Day-mail rail | `letters-day-mail` | Truncate headlines, collapse summary |
+
+---
+
 ## Files in this bundle
 
 ```

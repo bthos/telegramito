@@ -14,6 +14,7 @@
     "check:telegram-layer": "node scripts/check-telegram-layer.mjs",
     "lint": "eslint .",
     "lint:ds-refs": "node scripts/check-ds-refs.mjs",
+    "lint:css-tokens": "node scripts/lint-css-tokens.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "postinstall": "patch-package"

@@ -1,6 +1,18 @@
 /**
  * Telegramito design system (CSS custom properties).
- * Prefer `--ds-*` for new styles; short aliases (`--bg`, `--card`, `--acc`, …) map to `--ds-*`.
+ *
+ * ## Canonical dialect
+ * **`--ds-*` is canonical** — define primitives on `:root` and theme overrides on
+ * `html[data-theme]`. Letters desk scopes terracotta via `tokens-letters.css` on
+ * `.app-root--main` (see design-system-css-hygiene AC-H1).
+ *
+ * ## Legacy aliases (@deprecated — migrate to `--ds-*` or scoped `--letters-*`)
+ * | Alias | Target |
+ * |-------|--------|
+ * | `--acc` | `var(--ds-color-primary)` — terracotta on Letters (`tokens-letters.css`) |
+ * | `--acc-dim` | `var(--ds-color-primary-dim)` |
+ * | `--tg-blue` | `var(--ds-chat-accent)` |
+ * | `--tg-blue-deep` | `var(--ds-color-primary-dim)` |
  *
  * Layering: tokens.css (global) → tokens-letters.css (Letters desk vars on .app-root--main)
  * → placeholders / media-states → message-media-states → app.css → letters.css (Letters only).
@@ -107,7 +119,9 @@
   --ds-r-bubble-tail: 6px;
 
   /* —— UX-analysis semantic aliases (design-system-media DS-01 … DS-03) —— */
+  /** @deprecated Use `var(--ds-chat-accent)` — terracotta on Letters. */
   --tg-blue: var(--ds-chat-accent);
+  /** @deprecated Use `var(--ds-color-primary-dim)`. */
   --tg-blue-deep: var(--ds-color-primary-dim);
   --tg-blue-soft: rgba(51, 144, 236, 0.14);
   --ink: var(--ds-color-fg);

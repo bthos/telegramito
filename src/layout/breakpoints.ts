@@ -5,6 +5,13 @@
  * media queries are unreliable across targets. When you change a value here,
  * update matching rules in `app.css`, `letters.css`, etc. Comments there reference
  * these names (`BP.*`).
+ *
+ * ## Letters layout bands (design-system-css-hygiene AC-H6)
+ * | Range | Layout | Day mail |
+ * |-------|--------|----------|
+ * | <700px | stack + tab bar | tab |
+ * | 700–1279px | list + thread | ☙ slide-over |
+ * | ≥1280px | three columns | rail column |
  */
 
 /** Narrow / phone-first shell (list + thread stack): width ≤ `narrowMax`. */
