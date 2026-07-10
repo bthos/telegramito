@@ -414,7 +414,8 @@
     "waxSealPending": "Sellado — envío en {{seconds}} s",
     "waxSealUndo": "Desellar",
     "coReadingAction": "Comentar en la cena",
-    "coReadingDeskTitle": "Para comentar juntos"
+    "coReadingDeskTitle": "Para comentar juntos",
+    "coReadingDeviceOnlyHint": "Los marcadores permanecen solo en este dispositivo. La importación estará disponible en una actualización futura."
   },
   "mode": {
     "label": "Perfil",

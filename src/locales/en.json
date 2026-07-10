@@ -414,7 +414,8 @@
     "waxSealPending": "Sealed — sending in {{seconds}}s",
     "waxSealUndo": "Unseal",
     "coReadingAction": "Discuss at dinner",
-    "coReadingDeskTitle": "To discuss together"
+    "coReadingDeskTitle": "To discuss together",
+    "coReadingDeviceOnlyHint": "Bookmarks stay on this device only. Import will be available in a future update."
   },
   "mode": {
     "label": "Profile",

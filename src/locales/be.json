@@ -414,7 +414,8 @@
     "waxSealPending": "Запячатана — адпраўка праз {{seconds}} с",
     "waxSealUndo": "Распячатаць",
     "coReadingAction": "Абмеркаваць за вячэрай",
-    "coReadingDeskTitle": "На абмеркаванне разам"
+    "coReadingDeskTitle": "На абмеркаванне разам",
+    "coReadingDeviceOnlyHint": "Закладкі захоўваюцца толькі на гэтай прыладзе. Імпарт з'явіцца ў будучым абнаўленні."
   },
   "mode": {
     "label": "Рэжым",

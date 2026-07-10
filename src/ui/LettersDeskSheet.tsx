@@ -210,28 +210,33 @@ export function LettersDeskSheet({
             </div>
           ) : null}
 
-          {showParentRows && coReadingBookmarks.length > 0 ? (
+          {showParentRows ? (
             <div className="letters-desk-sheet__bookmarks">
               <h3 className="letters-desk-sheet__bookmarks-title">{t("letters.coReadingDeskTitle")}</h3>
-              <ul className="letters-desk-sheet__bookmarks-list" role="list">
-                {coReadingBookmarks.map((b) => (
-                  <li key={b.id}>
-                    <button
-                      type="button"
-                      className="letters-desk-sheet__bookmark"
-                      onClick={() => {
-                        onCoReadingNavigate?.(b)
-                        onClose()
-                      }}
-                    >
-                      <span className="letters-desk-sheet__bookmark-chat">{b.chatTitle}</span>
-                      <span className="letters-desk-sheet__bookmark-preview muted small">
-                        {b.preview}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              {coReadingBookmarks.length > 0 ? (
+                <ul className="letters-desk-sheet__bookmarks-list" role="list">
+                  {coReadingBookmarks.map((b) => (
+                    <li key={b.id}>
+                      <button
+                        type="button"
+                        className="letters-desk-sheet__bookmark"
+                        onClick={() => {
+                          onCoReadingNavigate?.(b)
+                          onClose()
+                        }}
+                      >
+                        <span className="letters-desk-sheet__bookmark-chat">{b.chatTitle}</span>
+                        <span className="letters-desk-sheet__bookmark-preview muted small">
+                          {b.preview}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <p className="letters-desk-sheet__bookmarks-hint" role="status">
+                {t("letters.coReadingDeviceOnlyHint")}
+              </p>
             </div>
           ) : null}
 

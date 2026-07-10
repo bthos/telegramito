@@ -43,6 +43,8 @@ async function miniI18n() {
             deskSheetTitle: "Desk",
             deskPendingRequests: "{{count}} new",
             deskEveningPrecise: "Sharper evening edition",
+            coReadingDeskTitle: "To discuss together",
+            coReadingDeviceOnlyHint: "Bookmarks stay on this device only.",
           },
         },
       },
@@ -114,5 +116,65 @@ describe("LettersDeskSheet", () => {
     expect(toggle.getAttribute("aria-checked")).toBe("false")
     fireEvent.click(toggle)
     expect(onEvening).toHaveBeenCalledWith(true)
+  })
+
+  it("shows device-only hint for co-reading in parent mode (AC-S1)", async () => {
+    const inst = await miniI18n()
+    render(
+      <I18nextProvider i18n={inst}>
+        <ThemeProvider>
+          <LettersDeskSheet
+            open
+            onClose={vi.fn()}
+            appMode="parent"
+            onAppMode={vi.fn()}
+            showParentRows
+            pendingRequestCount={0}
+            onOpenSettings={vi.fn()}
+            onOpenRequests={vi.fn()}
+            onSignOut={vi.fn()}
+            coReadingBookmarks={[]}
+          />
+        </ThemeProvider>
+      </I18nextProvider>,
+    )
+
+    const hint = screen.getByRole("status")
+    expect(hint.textContent).toBe("Bookmarks stay on this device only.")
+    expect(screen.getByRole("heading", { level: 3, name: "To discuss together" })).toBeTruthy()
+  })
+
+  it("hides co-reading section in child mode", async () => {
+    const inst = await miniI18n()
+    render(
+      <I18nextProvider i18n={inst}>
+        <ThemeProvider>
+          <LettersDeskSheet
+            open
+            onClose={vi.fn()}
+            appMode="child"
+            onAppMode={vi.fn()}
+            showParentRows={false}
+            pendingRequestCount={0}
+            onOpenSettings={vi.fn()}
+            onOpenRequests={vi.fn()}
+            onSignOut={vi.fn()}
+            coReadingBookmarks={[
+              {
+                id: "1",
+                chatId: "u:1",
+                messageId: 9,
+                chatTitle: "Ada",
+                preview: "Hello",
+                createdAt: 1,
+              },
+            ]}
+          />
+        </ThemeProvider>
+      </I18nextProvider>,
+    )
+
+    expect(screen.queryByText("To discuss together")).toBeNull()
+    expect(screen.queryByText("Bookmarks stay on this device only.")).toBeNull()
   })
 })

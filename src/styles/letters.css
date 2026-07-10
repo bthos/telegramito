@@ -815,6 +815,13 @@ html[data-theme="dark"] .letters-day-mail__item.is-active {
   max-width: 100%;
 }
 
+.letters-desk-sheet__bookmarks-hint {
+  margin: 0.35rem 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--letters-ink-3, var(--muted));
+}
+
 .letters-correspondents-h {
   margin: 0;
   padding: 0;
