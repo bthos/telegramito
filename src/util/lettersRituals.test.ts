@@ -1,19 +1,35 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi, beforeEach } from "vitest"
 import { Api } from "telegram"
 import type { Dialog } from "telegram/tl/custom/dialog"
+import type { TelegramClient } from "telegram"
+import { getPeerInfo } from "../telegram/dialogUtils"
 import { getDialogDraftPreviewLine, getDialogDraftText } from "./dialogDraft"
 import {
+  _resetEveningTier2FetchCountForTest,
   buildEveningSummary,
+  getEveningTier2FetchCount,
+  isClosingOutbound,
+  isEveningSummaryChannelDialog,
   isInEveningEditionPeriod,
   localCalendarDayKey,
   minutesUntilNightLock,
+  peerAwaitingFromThreadMessages,
+  refineAwaitingReplyTier2,
   resolveMorningMobileTab,
+  TIER2_AWAITING_PEER_CAP,
 } from "./lettersRituals"
+import {
+  _clearEveningThreadCacheForTest,
+  getEveningThreadMessages,
+  rememberEveningThreadMessages,
+} from "./eveningThreadCache"
 
 function stubDialog(opts: {
   draft?: Api.TypeDraftMessage
   message?: Api.Message
   name?: string
+  isUser?: boolean
+  entity?: Dialog["entity"]
 }): Dialog {
   const dr = {
     className: "Dialog" as const,
@@ -28,11 +44,50 @@ function stubDialog(opts: {
     draft: opts.draft,
   } as Api.Dialog
   return {
-    isUser: true,
+    isUser: opts.isUser ?? true,
     name: opts.name ?? "Ada",
+    entity: opts.entity,
     message: opts.message,
     dialog: dr,
   } as unknown as Dialog
+}
+
+function stubBroadcastChannel(
+  name: string,
+  message: Api.Message,
+): Dialog {
+  return stubDialog({
+    isUser: false,
+    name,
+    entity: {
+      className: "Channel",
+      id: BigInt(100),
+      accessHash: BigInt(1),
+      title: name,
+      broadcast: true,
+      megagroup: false,
+    } as unknown as Api.Channel,
+    message,
+  })
+}
+
+function stubSidebarChannel(
+  name: string,
+  message: Api.Message,
+): Dialog {
+  return stubDialog({
+    isUser: false,
+    name,
+    entity: {
+      className: "Channel",
+      id: BigInt(101),
+      accessHash: BigInt(1),
+      title: name,
+      broadcast: false,
+      megagroup: false,
+    } as unknown as Api.Channel,
+    message,
+  })
 }
 
 describe("dialogDraft", () => {
@@ -81,6 +136,196 @@ describe("lettersRituals morning tab", () => {
   })
 })
 
+function stubPrivateDialog(
+  name: string,
+  message: Api.Message,
+  userId = 2,
+): Dialog {
+  return stubDialog({
+    name,
+    message,
+    entity: {
+      className: "User",
+      id: BigInt(userId),
+      accessHash: BigInt(1),
+      firstName: name,
+    } as unknown as Api.User,
+  })
+}
+
+describe("evening awaiting detection", () => {
+  const now = new Date("2026-07-10T20:00:00")
+  const today = Math.floor(now.getTime() / 1000)
+
+  beforeEach(() => {
+    _clearEveningThreadCacheForTest()
+    _resetEveningTier2FetchCountForTest()
+  })
+
+  it("excludes terminal closing outbound from awaiting (AC-U3)", () => {
+    const closing = stubPrivateDialog(
+      "Ada",
+      new Api.Message({
+        id: 1,
+        peerId: { className: "PeerUser", userId: BigInt(2) } as unknown as Api.TypePeer,
+        date: today,
+        message: "ok, thanks.",
+        out: true,
+      }),
+    )
+    const summary = buildEveningSummary([closing], now)
+    expect(summary.awaitingReply).toEqual([])
+  })
+
+  it("excludes awaiting when cache has inbound after last outbound today (AC-U1)", () => {
+    const preview = stubPrivateDialog(
+      "Bob",
+      new Api.Message({
+        id: 3,
+        peerId: { className: "PeerUser", userId: BigInt(2) } as unknown as Api.TypePeer,
+        date: today,
+        message: "Follow-up?",
+        out: true,
+      }),
+      2,
+    )
+    const { key } = getPeerInfo(preview)
+    rememberEveningThreadMessages(key, [
+      new Api.Message({
+        id: 1,
+        peerId: { className: "PeerUser", userId: BigInt(2) } as unknown as Api.TypePeer,
+        date: today - 3600,
+        message: "Hi",
+        out: true,
+      }),
+      new Api.Message({
+        id: 2,
+        peerId: { className: "PeerUser", userId: BigInt(2) } as unknown as Api.TypePeer,
+        date: today - 1800,
+        message: "Sure",
+        out: false,
+      }),
+      preview.message as Api.Message,
+    ])
+    const summary = buildEveningSummary([preview], now, {
+      getThreadMessages: getEveningThreadMessages,
+    })
+    expect(summary.awaitingReply).toEqual([])
+  })
+
+  it("keeps awaiting when cache confirms no inbound after last outbound", () => {
+    const preview = stubPrivateDialog(
+      "Cara",
+      new Api.Message({
+        id: 2,
+        peerId: { className: "PeerUser", userId: BigInt(3) } as unknown as Api.TypePeer,
+        date: today,
+        message: "Still waiting?",
+        out: true,
+      }),
+      3,
+    )
+    rememberEveningThreadMessages(getPeerInfo(preview).key, [
+      new Api.Message({
+        id: 1,
+        peerId: { className: "PeerUser", userId: BigInt(3) } as unknown as Api.TypePeer,
+        date: today - 7200,
+        message: "Morning",
+        out: false,
+      }),
+      preview.message as Api.Message,
+    ])
+    const summary = buildEveningSummary([preview], now, {
+      getThreadMessages: getEveningThreadMessages,
+    })
+    expect(summary.awaitingReply.map((x) => x.name)).toEqual(["Cara"])
+  })
+
+  it("peerAwaitingFromThreadMessages returns null without outbound today", () => {
+    const msgs = [
+      new Api.Message({
+        id: 1,
+        peerId: { className: "PeerUser", userId: BigInt(1) } as unknown as Api.TypePeer,
+        date: today,
+        message: "Hi",
+        out: false,
+      }),
+    ]
+    expect(peerAwaitingFromThreadMessages(msgs, now)).toBeNull()
+  })
+
+  it("isClosingOutbound matches short thanks without question mark", () => {
+    const m = new Api.Message({
+      id: 1,
+      peerId: { className: "PeerUser", userId: BigInt(1) } as unknown as Api.TypePeer,
+      date: today,
+      message: "спасибо",
+      out: true,
+    })
+    expect(isClosingOutbound(m)).toBe(true)
+  })
+
+  it("refineAwaitingReplyTier2 fetches at most 5 peers (AC-U4)", async () => {
+    const peers = Array.from({ length: 7 }, (_, i) => ({
+      key: `u:${i + 10}`,
+      name: `Peer ${i}`,
+    }))
+    const dialogs = peers.map((p, i) =>
+      stubPrivateDialog(
+        p.name,
+        new Api.Message({
+          id: 1,
+          peerId: { className: "PeerUser", userId: BigInt(i + 10) } as unknown as Api.TypePeer,
+          date: today,
+          message: "?",
+          out: true,
+        }),
+        i + 10,
+      ),
+    )
+    const getMessages = vi.fn().mockResolvedValue([])
+    const client = { getMessages } as unknown as TelegramClient
+    const base = {
+      wroteToday: [],
+      awaitingReply: peers,
+      broadcastToday: [],
+      postedToChannelsToday: [],
+    }
+    await refineAwaitingReplyTier2(base, dialogs, client, now, { enabled: true })
+    expect(getMessages).toHaveBeenCalledTimes(TIER2_AWAITING_PEER_CAP)
+  })
+
+  it("refineAwaitingReplyTier2 records fetch count (AC-U5)", async () => {
+    const d = stubPrivateDialog(
+      "Zed",
+      new Api.Message({
+        id: 1,
+        peerId: { className: "PeerUser", userId: BigInt(99) } as unknown as Api.TypePeer,
+        date: today,
+        message: "Ping",
+        out: true,
+      }),
+      99,
+    )
+    const client = {
+      getMessages: vi.fn().mockResolvedValue([
+        new Api.Message({
+          id: 2,
+          peerId: { className: "PeerUser", userId: BigInt(99) } as unknown as Api.TypePeer,
+          date: today + 60,
+          message: "Reply",
+          out: false,
+        }),
+      ]),
+    } as unknown as TelegramClient
+    const base = buildEveningSummary([d], now)
+    expect(base.awaitingReply).toHaveLength(1)
+    const refined = await refineAwaitingReplyTier2(base, [d], client, now, { enabled: true })
+    expect(refined.awaitingReply).toEqual([])
+    expect(getEveningTier2FetchCount()).toBe(1)
+  })
+})
+
 describe("evening edition", () => {
   const night = { enabled: true, start: "22:00", end: "07:00" }
 
@@ -117,5 +362,100 @@ describe("evening edition", () => {
     const summary = buildEveningSummary([wrote, waiting], new Date("2026-07-10T20:00:00"))
     expect(summary.wroteToday.map((x) => x.name)).toEqual(["Bob"])
     expect(summary.awaitingReply.map((x) => x.name)).toEqual(["Cara"])
+    expect(summary.broadcastToday).toEqual([])
+    expect(summary.postedToChannelsToday).toEqual([])
+  })
+
+  it("includes broadcast channel with inbound post today", () => {
+    const today = Math.floor(new Date("2026-07-10T12:00:00").getTime() / 1000)
+    const bulletin = stubBroadcastChannel(
+      "News FM",
+      new Api.Message({
+        id: 10,
+        peerId: { className: "PeerChannel", channelId: BigInt(100) } as unknown as Api.TypePeer,
+        date: today,
+        message: "Headline",
+        out: false,
+      }),
+    )
+    expect(isEveningSummaryChannelDialog(bulletin)).toBe(true)
+    const summary = buildEveningSummary([bulletin], new Date("2026-07-10T20:00:00"))
+    expect(summary.broadcastToday.map((x) => x.name)).toEqual(["News FM"])
+    expect(summary.postedToChannelsToday).toEqual([])
+  })
+
+  it("includes sidebar channel list peer with today activity", () => {
+    const today = Math.floor(new Date("2026-07-10T12:00:00").getTime() / 1000)
+    const channel = stubSidebarChannel(
+      "Discussion",
+      new Api.Message({
+        id: 11,
+        peerId: { className: "PeerChannel", channelId: BigInt(101) } as unknown as Api.TypePeer,
+        date: today,
+        message: "Thread",
+        out: false,
+      }),
+    )
+    const summary = buildEveningSummary([channel], new Date("2026-07-10T20:00:00"))
+    expect(summary.broadcastToday.map((x) => x.name)).toEqual(["Discussion"])
+  })
+
+  it("lists outbound channel posts separately from broadcast consumption", () => {
+    const today = Math.floor(new Date("2026-07-10T12:00:00").getTime() / 1000)
+    const posted = stubBroadcastChannel(
+      "My Channel",
+      new Api.Message({
+        id: 12,
+        peerId: { className: "PeerChannel", channelId: BigInt(100) } as unknown as Api.TypePeer,
+        date: today,
+        message: "Admin note",
+        out: true,
+      }),
+    )
+    const summary = buildEveningSummary([posted], new Date("2026-07-10T20:00:00"))
+    expect(summary.postedToChannelsToday.map((x) => x.name)).toEqual(["My Channel"])
+    expect(summary.broadcastToday).toEqual([])
+  })
+
+  it("ignores stale channel preview (not today)", () => {
+    const yesterday = Math.floor(new Date("2026-07-09T12:00:00").getTime() / 1000)
+    const stale = stubBroadcastChannel(
+      "Old News",
+      new Api.Message({
+        id: 13,
+        peerId: { className: "PeerChannel", channelId: BigInt(100) } as unknown as Api.TypePeer,
+        date: yesterday,
+        message: "Yesterday",
+        out: false,
+      }),
+    )
+    const summary = buildEveningSummary([stale], new Date("2026-07-10T20:00:00"))
+    expect(summary.broadcastToday).toEqual([])
+  })
+
+  it("excludes megagroups from evening channel summary", () => {
+    const today = Math.floor(new Date("2026-07-10T12:00:00").getTime() / 1000)
+    const group = stubDialog({
+      isUser: false,
+      name: "Mega",
+      entity: {
+        className: "Channel",
+        id: BigInt(200),
+        accessHash: BigInt(1),
+        title: "Mega",
+        broadcast: false,
+        megagroup: true,
+      } as unknown as Api.Channel,
+      message: new Api.Message({
+        id: 14,
+        peerId: { className: "PeerChannel", channelId: BigInt(200) } as unknown as Api.TypePeer,
+        date: today,
+        message: "Hi",
+        out: false,
+      }),
+    })
+    const summary = buildEveningSummary([group], new Date("2026-07-10T20:00:00"))
+    expect(summary.broadcastToday).toEqual([])
+    expect(summary.postedToChannelsToday).toEqual([])
   })
 })

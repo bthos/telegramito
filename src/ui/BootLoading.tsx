@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next"
 import { TelegramMark } from "./TelegramMark"
 
 type Props = {
-  /** e.g. `app-root--main app-boot` for Telegram boot (theme tokens on root). */
+  /** e.g. `app-root app-root--peripheral app-boot` for first paint newsprint shell. */
   className?: string
 }
 

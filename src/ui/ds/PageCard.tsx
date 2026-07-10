@@ -4,12 +4,12 @@ import { cn } from "../../util/cn"
 type LayoutProps = { children: ReactNode } & HTMLAttributes<HTMLDivElement>
 
 /**
- * Centered full-viewport auth / login area (radial + `--bg` already on `:root`).
+ * Centered full-viewport auth / login area (newsprint envelope via `.app-root--peripheral`).
  */
 export function AuthLayout({ className, children, ...rest }: LayoutProps) {
   return (
-    <div className={cn("auth-screen", className)} {...rest}>
-      {children}
+    <div className={cn("app-root app-root--peripheral", className)} {...rest}>
+      <div className="auth-screen">{children}</div>
     </div>
   )
 }

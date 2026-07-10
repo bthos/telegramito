@@ -3,9 +3,11 @@
  * Depends on tokens.css (`--ds-font-sans`, `--ds-font-mono`, `--ds-font-serif` on :root).
  *
  * DS v2 palette (design-system/colors_and_type.css) is scoped to `.app-root--main`
- * so legacy :root blues stay available outside the Letters shell until full hygiene.
+ * and `.app-root--peripheral` (auth/boot envelope) so legacy :root blues stay
+ * available outside the Letters shell until full hygiene.
  */
-.app-root--main {
+.app-root--main,
+.app-root--peripheral {
   --letters-serif: var(--ds-font-serif);
   --letters-ui: var(--ds-font-sans);
   --letters-mono: var(--ds-font-mono);
@@ -25,7 +27,8 @@
 }
 
 /* Letters light — newsprint + terracotta (design-system/colors_and_type.css) */
-html[data-theme="light"] .app-root--main {
+html[data-theme="light"] .app-root--main,
+html[data-theme="light"] .app-root--peripheral {
   --ds-chat-accent: #b03e1b;
   --ds-color-primary: #b03e1b;
   --ds-color-primary-dim: #8b2f12;
@@ -80,7 +83,8 @@ html[data-theme="light"] .app-root--main {
   --ds-media-preview-shade: radial-gradient(120% 120% at 30% 0%, #c9c3b8 0%, #bab3a8 100%);
 }
 
-html[data-theme="dark"] .app-root--main {
+html[data-theme="dark"] .app-root--main,
+html[data-theme="dark"] .app-root--peripheral {
   --letters-paper: #1a1816;
   --letters-panel: #23211e;
   --letters-chat-field: #1c1a17;
@@ -146,3 +150,71 @@ html[data-theme="dark"] .app-root--main {
   --placeholder-shimmer: rgba(232, 228, 220, 0.14);
   --ds-media-preview-shade: radial-gradient(120% 120% at 30% 0%, #2a2724 0%, #1f1d1a 100%);
 }
+
+/* Settings in-desk — terracotta accents, no legacy blue chrome (AC-P3). */
+.app-root--main .settings {
+  border-color: var(--letters-hairline);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--letters-panel) 96%, #000) 0%, var(--card) 52%);
+  box-shadow:
+    0 0.4rem 2.5rem rgba(28, 24, 21, 0.14),
+    0 0 0 1px color-mix(in srgb, var(--letters-terra) 6%, transparent) inset;
+}
+
+html[data-theme="light"] .app-root--main .settings {
+  border-color: color-mix(in srgb, var(--letters-ink) 10%, transparent);
+  background: linear-gradient(160deg, var(--letters-panel) 0%, var(--letters-paper) 100%);
+  box-shadow:
+    0 0.4rem 2rem rgba(28, 24, 21, 0.08),
+    0 0 0 1px color-mix(in srgb, var(--letters-ink) 4%, transparent) inset;
+}
+
+.app-root--main .settings__section {
+  border-top-color: var(--letters-hairline);
+}
+
+.app-root--main .settings__section--pin {
+  background: color-mix(in srgb, var(--letters-ink) 6%, transparent);
+  border-color: var(--letters-hairline);
+}
+
+.app-root--main .settings__row-inline {
+  background: color-mix(in srgb, var(--letters-ink) 5%, transparent);
+  border-color: var(--letters-hairline);
+}
+
+.app-root--main select.settings__select:hover,
+.app-root--main .settings__select:hover {
+  border-color: color-mix(in srgb, var(--letters-terra) 35%, var(--letters-lines));
+}
+
+.app-root--main select.settings__select:focus,
+.app-root--main .settings__select:focus {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--acc) 22%, transparent);
+}
+
+.app-root--main .settings__reset:hover {
+  background: color-mix(in srgb, var(--letters-terra) 10%, transparent);
+  border-color: color-mix(in srgb, var(--letters-terra) 28%, var(--letters-lines));
+}
+
+.app-root--main .settings__field {
+  border-bottom-color: var(--letters-hairline);
+}
+
+.app-root--main button.switch[aria-checked="true"] .switch__track {
+  background: linear-gradient(135deg, var(--acc-dim), var(--acc));
+  border-color: color-mix(in srgb, var(--acc) 42%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--acc) 24%, transparent) inset,
+    0 0.1rem 0.5rem color-mix(in srgb, var(--acc) 28%, transparent);
+}
+
+.app-root--main button.switch:focus-visible {
+  outline-color: var(--acc);
+}
+
+.app-root--main button.switch:focus-visible .switch__track {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--acc) 34%, transparent);
+}
+

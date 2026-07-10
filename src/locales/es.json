@@ -401,6 +401,12 @@
     "eveningSummaryAria": "Resumen del día",
     "eveningWroteToday": "Escribieron hoy:",
     "eveningAwaitingReply": "Esperan su respuesta:",
+    "evening": {
+      "wroteToYou": "Le escribieron:",
+      "awaitingReply": "Esperan su respuesta:",
+      "broadcastToday": "Transmitieron hoy:",
+      "postedToChannels": "Publicó hoy en:"
+    },
     "deskMorningMail": "Correo matutino del día",
     "deskWaxSeal": "Envío con sello (pulsación larga)",
     "waxSealHint": "Mantenga pulsado para sellar — 5 s para deshacer",

@@ -1,0 +1,37 @@
+/**
+ * Auth + boot layout surfaces for `.app-root--peripheral`.
+ * Feature: letters-peripheral-shell-theme AC-P2, AC-P4.
+ */
+
+.app-root--peripheral .auth-screen {
+  flex: 1 1 0;
+  min-height: 0;
+  background:
+    radial-gradient(120% 80% at 50% -20%, var(--letters-accent-soft, rgba(176, 62, 27, 0.12)), transparent 55%),
+    var(--bg);
+}
+
+html[data-theme="dark"] .app-root--peripheral .auth-screen {
+  background:
+    radial-gradient(120% 80% at 50% -20%, var(--letters-accent-soft, rgba(224, 120, 80, 0.1)), transparent 55%),
+    var(--bg);
+}
+
+.app-root--peripheral .app-boot {
+  color: var(--muted);
+  background: var(--bg);
+}
+
+.app-root--peripheral .auth-card__title {
+  font-family: var(--letters-ui, var(--ds-font-sans));
+}
+
+.app-root--peripheral .auth-card__product {
+  font-family: var(--letters-ui, var(--ds-font-sans));
+  letter-spacing: 0.14em;
+}
+
+.app-root--peripheral .auth-card__form .btn {
+  font-family: var(--letters-ui, var(--ds-font-sans));
+  letter-spacing: 0.06em;
+}

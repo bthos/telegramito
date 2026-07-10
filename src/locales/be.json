@@ -401,6 +401,12 @@
     "eveningSummaryAria": "Падсумаванне дня",
     "eveningWroteToday": "Сёння пісалі:",
     "eveningAwaitingReply": "Чакаюць вашага адказу:",
+    "evening": {
+      "wroteToYou": "Пісалі вам:",
+      "awaitingReply": "Чакаюць вашага адказу:",
+      "broadcastToday": "Перадавалі сёння:",
+      "postedToChannels": "Вы размясцілі сёння:"
+    },
     "deskMorningMail": "Ранішняя пошта дня",
     "deskWaxSeal": "Адпраўка з пячаткай (доўгі націск)",
     "waxSealHint": "Утрымлівайце, каб запячатаць — 5 с на адмену",

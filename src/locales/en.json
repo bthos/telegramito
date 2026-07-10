@@ -401,6 +401,12 @@
     "eveningSummaryAria": "Day summary",
     "eveningWroteToday": "Wrote today:",
     "eveningAwaitingReply": "Awaiting your reply:",
+    "evening": {
+      "wroteToYou": "Wrote to you:",
+      "awaitingReply": "Awaiting your reply:",
+      "broadcastToday": "On the air today:",
+      "postedToChannels": "You posted today:"
+    },
     "deskMorningMail": "Morning day mail",
     "deskWaxSeal": "Wax-seal send (long-press)",
     "waxSealHint": "Long-press to seal — 5s to undo",

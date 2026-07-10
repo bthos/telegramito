@@ -2795,6 +2795,13 @@ button.letters-insights__cal-cell {
     color: var(--letters-ink);
   }
 
+  .letters-desk-sheet__theme-hint {
+    margin: -4px 0 8px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--letters-ink-3);
+  }
+
   .letters-desk-sheet__seg {
     display: inline-flex;
     border: 1px solid var(--letters-lines);

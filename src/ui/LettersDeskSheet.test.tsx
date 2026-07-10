@@ -30,7 +30,13 @@ async function miniI18n() {
           settings: "Settings",
           requestsTab: "Requests",
           signOut: "Sign out",
-          theme: { label: "Theme", light: "Light", system: "System", dark: "Dark" },
+          theme: {
+            label: "Theme",
+            hint: "Newsprint desk; system follows device.",
+            light: "Light (newsprint)",
+            system: "System (device)",
+            dark: "Dark (newsprint)",
+          },
           mode: { child: "Child", parent: "Parent", headerToggle: "Mode", label: "Profile" },
           letters: {
             deskSheetAria: "Desk sheet",

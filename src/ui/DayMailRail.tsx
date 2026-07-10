@@ -14,7 +14,10 @@ import {
   buildEveningSummary,
   isInEveningEditionPeriod,
   minutesUntilNightLock,
+  refineAwaitingReplyTier2,
+  type EveningSummary,
 } from "../util/lettersRituals"
+import { getEveningThreadMessages } from "../util/eveningThreadCache"
 
 type Props = {
   dialogs: Dialog[]
@@ -253,10 +256,36 @@ export function DayMailRail({
 
   const eveningEdition =
     nightMode != null && isInEveningEditionPeriod(nightMode, now)
-  const eveningSummary = useMemo(
-    () => (eveningEdition ? buildEveningSummary(dialogs, now) : null),
+  const baseEveningSummary = useMemo(
+    () =>
+      eveningEdition
+        ? buildEveningSummary(dialogs, now, { getThreadMessages: getEveningThreadMessages })
+        : null,
     [dialogs, eveningEdition, now],
   )
+  const [tier2EveningSummary, setTier2EveningSummary] = useState<EveningSummary | null>(null)
+  const eveningPrecise =
+    settings.appMode === "parent" && settings.eveningSummaryPreciseEnabled === true
+
+  useEffect(() => {
+    if (!baseEveningSummary || !eveningPrecise || !client) {
+      setTier2EveningSummary(null)
+      return
+    }
+    let cancelled = false
+    void refineAwaitingReplyTier2(baseEveningSummary, dialogs, client, now, {
+      enabled: true,
+    }).then((refined) => {
+      if (!cancelled) {
+        setTier2EveningSummary(refined)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [baseEveningSummary, client, dialogs, eveningPrecise, now])
+
+  const eveningSummary = tier2EveningSummary ?? baseEveningSummary
   const lockMinutes = nightMode != null ? minutesUntilNightLock(nightMode, now) : null
 
   return (
@@ -273,12 +302,15 @@ export function DayMailRail({
         </p>
       ) : null}
       {eveningSummary &&
-      (eveningSummary.wroteToday.length > 0 || eveningSummary.awaitingReply.length > 0) ? (
+      (eveningSummary.wroteToday.length > 0 ||
+        eveningSummary.awaitingReply.length > 0 ||
+        eveningSummary.broadcastToday.length > 0 ||
+        eveningSummary.postedToChannelsToday.length > 0) ? (
         <section className="letters-day-mail__summary" aria-label={t("letters.eveningSummaryAria")}>
           {eveningSummary.wroteToday.length > 0 ? (
             <p className="letters-day-mail__summary-line small">
               <span className="letters-day-mail__summary-label">
-                {t("letters.eveningWroteToday")}
+                {t("letters.evening.wroteToYou")}
               </span>{" "}
               {eveningSummary.wroteToday.map((x) => x.name).join(", ")}
             </p>
@@ -286,9 +318,25 @@ export function DayMailRail({
           {eveningSummary.awaitingReply.length > 0 ? (
             <p className="letters-day-mail__summary-line small">
               <span className="letters-day-mail__summary-label">
-                {t("letters.eveningAwaitingReply")}
+                {t("letters.evening.awaitingReply")}
               </span>{" "}
               {eveningSummary.awaitingReply.map((x) => x.name).join(", ")}
+            </p>
+          ) : null}
+          {eveningSummary.broadcastToday.length > 0 ? (
+            <p className="letters-day-mail__summary-line small">
+              <span className="letters-day-mail__summary-label">
+                {t("letters.evening.broadcastToday")}
+              </span>{" "}
+              {eveningSummary.broadcastToday.map((x) => x.name).join(", ")}
+            </p>
+          ) : null}
+          {eveningSummary.postedToChannelsToday.length > 0 ? (
+            <p className="letters-day-mail__summary-line small">
+              <span className="letters-day-mail__summary-label">
+                {t("letters.evening.postedToChannels")}
+              </span>{" "}
+              {eveningSummary.postedToChannelsToday.map((x) => x.name).join(", ")}
             </p>
           ) : null}
         </section>

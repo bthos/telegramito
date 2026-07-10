@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="theme-color" content="#0c1218" />
+    <meta name="theme-color" content="#dfdbd2" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,6 +12,14 @@
     />
     <title>Telegramito</title>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <style>
+      html[data-theme="light"] {
+        background: #dfdbd2;
+      }
+      html[data-theme="dark"] {
+        background: #1a1816;
+      }
+    </style>
     <script>
       try {
         var k = "telegramito-theme",
@@ -21,6 +29,8 @@
           r = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         document.documentElement.setAttribute("data-theme", r);
         document.documentElement.style.colorScheme = r;
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", r === "dark" ? "#1a1816" : "#dfdbd2");
       } catch (e) {}
     </script>
   </head>

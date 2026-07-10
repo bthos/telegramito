@@ -1,0 +1,24 @@
+/**
+ * Peripheral envelope — auth + boot (feature: letters-peripheral-shell-theme).
+ * Shares desk palette vars with `.app-root--main` via tokens-letters.css;
+ * maps generic shell aliases (`--bg`, `--acc`, …) for shared components.
+ */
+.app-root--peripheral {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 100%;
+  font-family: var(--letters-ui, var(--ds-font-sans));
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-root--peripheral {
+  --bg: var(--letters-paper, var(--ds-color-page));
+  --card: var(--letters-panel, var(--ds-color-raised));
+  --text: var(--letters-ink, var(--ds-color-fg));
+  --muted: var(--letters-ink-3, var(--ds-color-muted));
+  --line: var(--letters-lines, var(--ds-color-line));
+}

@@ -1,8 +1,10 @@
 @import "./styles/tokens.css";
 @import "./styles/tokens-letters.css";
+@import "./styles/tokens-peripheral.css";
 @import "./styles/placeholders.css";
 @import "./styles/design-system-media.css";
 @import "./styles/media-states.css";
 @import "./styles/message-media-states.css";
 @import "./styles/app.css";
+@import "./styles/peripheral-shell.css";
 @import "./styles/letters.css";
