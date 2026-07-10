@@ -692,6 +692,37 @@ export function UxUnsupportedCard({
   t: MessageMediaTranslateFn
 }) {
   const [open, setOpen] = useState(false)
+  const [checking, setChecking] = useState(false)
+
+  const startCheck = () => {
+    setChecking(true)
+    window.setTimeout(() => {
+      setChecking(false)
+      setOpen(true)
+    }, 700)
+  }
+
+  if (checking) {
+    return (
+      <div
+        data-media-state="loading"
+        className="msg-media msg-media--card msg-media--unsupported"
+        role="status"
+        aria-busy="true"
+        data-testid="MessageMediaUnsupportedLoading"
+      >
+        <div className="msg-media-unsupported-row">
+          <span className="msg-media-unsupported-icon msg-media-unsupported-icon--busy" aria-hidden>
+            ↓
+          </span>
+          <div>
+            <span className="msg-media-card__title">{t("chat.uxUnsupportedCheckingTitle")}</span>
+            <p className="msg-media-card__muted msg-media-card__hint">{t("chat.uxUnsupportedCheckingDesc")}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div data-media-state="preview" className="msg-media msg-media--card msg-media--unsupported" role="status" data-testid="MessageMediaUnsupported">
@@ -702,7 +733,7 @@ export function UxUnsupportedCard({
           <p className="msg-media-card__muted msg-media-card__hint">{t("chat.mediaUnsupportedHint")}</p>
         </div>
       </div>
-      <button type="button" className="msg-media-paid__btn" style={{ marginTop: "0.45rem" }} onClick={() => setOpen(true)}>
+      <button type="button" className="msg-media-paid__btn" style={{ marginTop: "0.45rem" }} onClick={startCheck}>
         {t("chat.uxUnsupportedCheck")}
       </button>
 

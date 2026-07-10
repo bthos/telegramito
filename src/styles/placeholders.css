@@ -94,8 +94,12 @@ html[data-theme="light"] .msg-bubble--in .media-placeholder__video-play-center {
 
 .media-placeholder--visual {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 280 / 200;
   border-radius: var(--ds-radius-lg);
+}
+
+.media-placeholder--gif.media-placeholder--visual {
+  aspect-ratio: 240 / 200;
 }
 
 /* Video fetch: same frame as photo but with a small play affordance (design-system-media preview state) */
@@ -163,7 +167,7 @@ html[data-theme="light"] .msg-bubble--in .media-placeholder__video-play-center {
   width: 112px;
   height: 112px;
   aspect-ratio: 1 / 1;
-  border-radius: var(--ds-radius-md);
+  border-radius: 46% 54% 42% 58% / 50% 48% 52% 50%;
 }
 
 .media-placeholder--audio {

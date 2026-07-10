@@ -637,6 +637,28 @@
   flex-shrink: 0;
 }
 
+.msg-media-unsupported-icon--busy {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bubble-out-2, var(--ds-bubble-out-grad-1));
+  color: var(--tg-blue, #3390ec);
+  display: grid;
+  place-items: center;
+  font-size: 0.95rem;
+}
+
+.msg-media-unsupported-icon--busy::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 2px solid var(--tg-blue, #3390ec);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: ux-spin 1s linear infinite;
+}
+
 /* Modal chrome helpers */
 .ux-mock-sheet {
   padding: 0.35rem 0.15rem 0.15rem;

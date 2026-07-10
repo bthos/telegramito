@@ -96,6 +96,7 @@ function AudioFullModal({
 export function AudioTrackInline({
   src,
   doc,
+  viewerContext,
 }: {
   src: string
   doc: Api.Document
@@ -112,19 +113,24 @@ export function AudioTrackInline({
 
   return (
     <>
-      <button type="button" className="msg-audio-track" data-media-state="preview" onClick={() => setFull(true)}>
-        <span className="msg-audio-track__cover" aria-hidden>
-          <svg width="22" height="22" viewBox="0 0 20 20" fill="none" aria-hidden>
-            <path d="M7 14V4l9-1v10" stroke="#fff" strokeWidth="1.6" strokeLinejoin="round" />
-            <circle cx="6" cy="14" r="2.5" fill="#fff" />
-            <circle cx="15" cy="13" r="2.5" fill="#fff" />
-          </svg>
-        </span>
-        <span className="msg-audio-track__text">
-          <span className="msg-audio-track__title">{displayTitle}</span>
-          {line2 ? <span className="msg-audio-track__sub">{line2}</span> : null}
-        </span>
-      </button>
+      <div className="msg-audio-track-wrap">
+        <button type="button" className="msg-audio-track" data-media-state="preview" onClick={() => setFull(true)}>
+          <span className="msg-audio-track__cover" aria-hidden>
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" aria-hidden>
+              <path d="M7 14V4l9-1v10" stroke="#fff" strokeWidth="1.6" strokeLinejoin="round" />
+              <circle cx="6" cy="14" r="2.5" fill="#fff" />
+              <circle cx="15" cy="13" r="2.5" fill="#fff" />
+            </svg>
+          </span>
+          <span className="msg-audio-track__text">
+            <span className="msg-audio-track__title">{displayTitle}</span>
+            {line2 ? <span className="msg-audio-track__sub">{line2}</span> : null}
+          </span>
+        </button>
+        {viewerContext?.sentAtLabel ? (
+          <div className="media-inline-meta-foot">{viewerContext.sentAtLabel}</div>
+        ) : null}
+      </div>
       {full ? (
         <AudioFullModal
           src={src}

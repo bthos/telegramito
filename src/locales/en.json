@@ -235,6 +235,8 @@
     "uxTodoProgress": "{{done}} / {{total}}",
     "uxTodoAllDone": "All tasks complete",
     "uxUnsupportedCheck": "Check for update",
+    "uxUnsupportedCheckingTitle": "Checking for update…",
+    "uxUnsupportedCheckingDesc": "We're seeing if a newer version supports this message.",
     "uxUnsupportedUpdateTitle": "Client vs server",
     "uxUnsupportedThisClient": "This web client",
     "uxUnsupportedExpectedLayer": "Expected API layer",

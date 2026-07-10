@@ -27,10 +27,10 @@ import { MessageMediaStatic } from "./MessageMediaStatic"
 import { PhotoMediaViewer } from "./PhotoMediaViewer"
 import { VideoFullViewer } from "./VideoFullViewer"
 import { getVideoDurationSeconds, formatVideoDuration } from "../telegram/documentVideoMeta"
-import { getAudioDurationSeconds } from "../telegram/documentAudioMeta"
+import { getAudioDurationSeconds, getAudioTrackMeta } from "../telegram/documentAudioMeta"
 import { MediaPlaceholder, resolveMediaPlaceholderType } from "./MediaPlaceholder"
 import { TgProgressIndeterminate } from "./TgProgressIndeterminate"
-import { VoiceMessageInline } from "./VoiceMessageInline"
+import { VoiceMessageInline, VoiceMessageLoadingRow } from "./VoiceMessageInline"
 import { AudioTrackInline } from "./AudioTrackInline"
 import { DocumentAttachmentInline } from "./DocumentAttachmentInline"
 import { StickerInline } from "./StickerInline"
@@ -74,7 +74,7 @@ function useBlob(
   m: Api.Message,
   c: TelegramClient | null,
   filterGifs: boolean,
-): [MediaBlobState, () => void] {
+): [MediaBlobState, () => void, () => void] {
   const loadRequestedRef = useRef(false)
   const fetchGenRef = useRef(0)
   const [loadNonce, setLoadNonce] = useState(0)
@@ -92,6 +92,12 @@ function useBlob(
   const requestLoad = useCallback(() => {
     loadRequestedRef.current = true
     setLoadNonce((n) => n + 1)
+  }, [])
+
+  const cancelLoad = useCallback(() => {
+    fetchGenRef.current += 1
+    loadRequestedRef.current = false
+    setS({ k: "w" })
   }, [])
 
   useEffect(() => {
@@ -318,7 +324,7 @@ function useBlob(
       }
     }
   }, [c, filterGifs, m.id, loadNonce, mediaCn, docIdKey, peerKeyStr])
-  return [s, requestLoad]
+  return [s, requestLoad, cancelLoad]
 }
 
 function PaidBundlePreviewRow({
@@ -411,32 +417,69 @@ function DocumentAttachmentDeferredRow({
   )
 }
 
-function DocumentAttachmentLoadingRow({
+export function AudioTrackLoadingRow({
+  doc,
+  hint,
+  onCancel,
+  cancelLabel,
+}: {
+  doc: Api.Document
+  hint: string
+  onCancel?: () => void
+  cancelLabel?: string
+}) {
+  const { t } = useTranslation()
+  const { title, performer } = getAudioTrackMeta(doc)
+  const displayTitle = title || t("chat.previewAudio")
+  const line2 = performer || ""
+
+  return (
+    <div className="msg-audio-track msg-audio-track--loading" data-media-state="loading">
+      <span className="msg-audio-track__cover msg-audio-track__cover--busy" aria-hidden>
+        <TgProgressIndeterminate onCancel={onCancel} cancelLabel={cancelLabel} />
+      </span>
+      <span className="msg-audio-track__text">
+        <span className="msg-audio-track__title">{displayTitle}</span>
+        <span className="msg-audio-track__sub msg-audio-track__sub--progress">
+          {line2 ? `${line2} · ` : ""}
+          {hint}
+        </span>
+      </span>
+    </div>
+  )
+}
+
+export function DocumentAttachmentLoadingRow({
   name,
   sizeStr,
   hint,
   timeLabel,
+  onCancel,
+  cancelLabel,
 }: {
   name: string
   sizeStr: string
   hint: string
   timeLabel: string | null
+  onCancel?: () => void
+  cancelLabel?: string
 }) {
+  const subLine = [sizeStr, hint].filter(Boolean).join(sizeStr && hint ? " · " : "")
   return (
     <div className="msg-media msg-media--doc-fetch" data-media-state="loading">
       <div className="msg-doc-row msg-doc-row--loading">
         <div className="msg-doc-row__loading-inner">
           <div className="msg-doc-row__icon msg-doc-row__icon--busy">
-            <TgProgressIndeterminate />
+            <TgProgressIndeterminate onCancel={onCancel} cancelLabel={cancelLabel} />
           </div>
           <div className="msg-doc-row__body">
             <div className="msg-doc-row__title">{name}</div>
-            {sizeStr ? <div className="msg-doc-row__sub">{sizeStr}</div> : null}
+            {subLine ? <div className="msg-doc-row__sub">{subLine}</div> : null}
           </div>
         </div>
       </div>
       <div className="media-loading-foot" role="status">
-        <span className="media-loading-foot__hint">{hint}</span>
+        <span className="media-loading-foot__hint" aria-hidden />
         {timeLabel ? (
           <span className="media-loading-foot__time">{timeLabel}</span>
         ) : (
@@ -498,10 +541,14 @@ function PhotoDeferredLoading({
   hint,
   timeLabel,
   thumbDataUrl,
+  onCancel,
+  cancelLabel,
 }: {
   hint: string
   timeLabel: string | null
   thumbDataUrl?: string
+  onCancel?: () => void
+  cancelLabel?: string
 }) {
   return (
     <div className="msg-media msg-media--photo-fetch" data-media-state="loading">
@@ -513,7 +560,7 @@ function PhotoDeferredLoading({
         <span className="msg-photo-deferred__horizon" />
         <span className="msg-photo-deferred__ridge" />
         <div className="msg-photo-deferred__progress">
-          <TgProgressIndeterminate />
+          <TgProgressIndeterminate onCancel={onCancel} cancelLabel={cancelLabel} />
         </div>
       </div>
       <div className="media-loading-foot" role="status">
@@ -578,10 +625,14 @@ function GifDeferredLoading({
   hint,
   timeLabel,
   thumbDataUrl,
+  onCancel,
+  cancelLabel,
 }: {
   hint: string
   timeLabel: string | null
   thumbDataUrl?: string
+  onCancel?: () => void
+  cancelLabel?: string
 }) {
   return (
     <div className="msg-media msg-media--gif-fetch" data-media-state="loading">
@@ -593,7 +644,7 @@ function GifDeferredLoading({
         <span className="msg-gif-deferred__streaks" />
         <span className="msg-gif-deferred__tag">GIF</span>
         <div className="msg-gif-deferred__progress">
-          <TgProgressIndeterminate />
+          <TgProgressIndeterminate onCancel={onCancel} cancelLabel={cancelLabel} />
         </div>
       </div>
       <div className="media-loading-foot" role="status">
@@ -698,15 +749,24 @@ function VideoDeferredLoading({
   timeLabel,
   round = false,
   thumbDataUrl,
+  durationLabel,
+  sizeStr,
+  onCancel,
+  cancelLabel,
 }: {
   hint: string
   timeLabel: string | null
   round?: boolean
   thumbDataUrl?: string
+  durationLabel?: string | null
+  sizeStr?: string | null
+  onCancel?: () => void
+  cancelLabel?: string
 }) {
   const frameClass = round
     ? "msg-video-deferred__frame msg-video-deferred__frame--busy msg-video-deferred__frame--round"
     : "msg-video-deferred__frame msg-video-deferred__frame--busy"
+  const pillLabel = [durationLabel, sizeStr].filter(Boolean).join(durationLabel && sizeStr ? " · " : "")
   return (
     <div
       className={
@@ -718,7 +778,21 @@ function VideoDeferredLoading({
         {thumbDataUrl ? (
           <img src={thumbDataUrl} className="msg-media-stripped-thumb" aria-hidden alt="" />
         ) : null}
-        <TgProgressIndeterminate />
+        {pillLabel ? (
+          <span
+            className={
+              round
+                ? "msg-video-thumb__duration msg-video-thumb__duration--round"
+                : "msg-video-thumb__duration"
+            }
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="#fff" aria-hidden>
+              <path d="M2 1l7 4-7 4z" />
+            </svg>
+            {pillLabel}
+          </span>
+        ) : null}
+        <TgProgressIndeterminate onCancel={onCancel} cancelLabel={cancelLabel} />
       </div>
       <div className="media-loading-foot" role="status">
         <span className="media-loading-foot__hint">{hint}</span>
@@ -736,7 +810,7 @@ function mediaLoadingIsCompact(type: ReturnType<typeof resolveMediaPlaceholderTy
   return type === "audio" || type === "voice"
 }
 
-function VideoInlinePlayer({
+export function VideoInlinePlayer({
   src,
   loop,
   autoPlay,
@@ -744,7 +818,6 @@ function VideoInlinePlayer({
   playLabel,
   round,
   durationLabel,
-  expandLabel,
   onExpand,
   showGifTag,
 }: {
@@ -755,7 +828,6 @@ function VideoInlinePlayer({
   playLabel: string
   round?: boolean
   durationLabel?: string | null
-  expandLabel: string
   onExpand: () => void
   /** GIF badge (animated video). */
   showGifTag?: boolean
@@ -769,7 +841,7 @@ function VideoInlinePlayer({
       className={wrapClass}
       data-media-state="preview"
       onDoubleClick={(e) => {
-        if (round && !showGifTag) {
+        if (!showGifTag) {
           e.stopPropagation()
           onExpand()
         }
@@ -816,24 +888,6 @@ function VideoInlinePlayer({
           )}
           {durationLabel}
         </span>
-      ) : null}
-      {!showGifTag && !round ? (
-        <button
-          type="button"
-          className="msg-video-thumb__expand"
-          aria-label={expandLabel}
-          onClick={(e) => {
-            e.stopPropagation()
-            onExpand()
-          }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-            <path
-              fill="currentColor"
-              d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"
-            />
-          </svg>
-        </button>
       ) : null}
       {!autoPlay && !started && !round ? (
         <button
@@ -907,11 +961,12 @@ export function MessageMediaView({
   }, [message, paidBundleSlots, renderPaidAsBundle])
 
   const wpPreview = useWpPreview(resolved, client, noPreview)
-  const [s, requestLoad] = useBlob(blobSourceMessage, client, filterGifs)
+  const [s, requestLoad, cancelLoad] = useBlob(blobSourceMessage, client, filterGifs)
   const inlineThumb = useInlineThumb(blobSourceMessage.media)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [videoFullOpen, setVideoFullOpen] = useState(false)
   const errLabel = te("error")
+  const cancelLabel = te("common.cancel")
 
   const imagePreviewUrl = s.k === "i" ? s.u : null
   const videoPreviewUrl = s.k === "v" ? s.u : null
@@ -1117,6 +1172,8 @@ export function MessageMediaView({
             sizeStr={docMeta.sizeStr}
             hint={te("chat.mediaDownloadProgress")}
             timeLabel={viewerContext?.sentAtLabel ?? null}
+            onCancel={cancelLoad}
+            cancelLabel={cancelLabel}
           />
         )
       }
@@ -1124,12 +1181,19 @@ export function MessageMediaView({
     if (placeholderType === "video") {
       const dV = getMessageDocument(resolved)
       const roundV = dV ? isRoundVideoDoc(dV) : false
+      const durSec = getVideoDurationSeconds(dV)
+      const durationLabel = durSec != null ? formatVideoDuration(durSec) : null
+      const sizeStr = dV ? formatDocumentSize(dV.size) : null
       return (
         <VideoDeferredLoading
           hint={te("chat.mediaDownloadProgress")}
           timeLabel={viewerContext?.sentAtLabel ?? null}
           round={roundV}
           thumbDataUrl={inlineThumb?.dataUrl}
+          durationLabel={durationLabel}
+          sizeStr={sizeStr}
+          onCancel={cancelLoad}
+          cancelLabel={cancelLabel}
         />
       )
     }
@@ -1139,6 +1203,8 @@ export function MessageMediaView({
           hint={te("chat.mediaDownloadProgress")}
           timeLabel={viewerContext?.sentAtLabel ?? null}
           thumbDataUrl={inlineThumb?.dataUrl}
+          onCancel={cancelLoad}
+          cancelLabel={cancelLabel}
         />
       )
     }
@@ -1148,6 +1214,33 @@ export function MessageMediaView({
           hint={te("chat.mediaDownloadProgress")}
           timeLabel={viewerContext?.sentAtLabel ?? null}
           thumbDataUrl={inlineThumb?.dataUrl}
+          onCancel={cancelLoad}
+          cancelLabel={cancelLabel}
+        />
+      )
+    }
+    if (placeholderType === "audio") {
+      const dA = getMessageDocument(resolved)
+      if (dA) {
+        return (
+          <AudioTrackLoadingRow
+            doc={dA}
+            hint={te("chat.mediaDownloadProgress")}
+            onCancel={cancelLoad}
+            cancelLabel={cancelLabel}
+          />
+        )
+      }
+    }
+    if (placeholderType === "voice") {
+      const dV = getMessageDocument(resolved)
+      const durSec = getAudioDurationSeconds(dV)
+      return (
+        <VoiceMessageLoadingRow
+          durationSec={durSec}
+          hint={te("chat.mediaDownloadProgress")}
+          onCancel={cancelLoad}
+          cancelLabel={cancelLabel}
         />
       )
     }
@@ -1161,7 +1254,7 @@ export function MessageMediaView({
         data-media-state="loading"
       >
         <MediaPlaceholder type={placeholderType} shimmer />
-        <TgProgressIndeterminate />
+        <TgProgressIndeterminate onCancel={cancelLoad} cancelLabel={cancelLabel} />
         {!compact ? (
           <div className="media-loading-foot" role="status">
             <span className="media-loading-foot__hint">{te("chat.mediaDownloadProgress")}</span>
@@ -1242,7 +1335,6 @@ export function MessageMediaView({
           playLabel={te("chat.playVideo")}
           round={round}
           durationLabel={gifStyle ? null : durationLabel}
-          expandLabel={te("chat.expandVideo")}
           onExpand={() => setVideoFullOpen(true)}
           showGifTag={gifStyle}
         />
@@ -1270,7 +1362,12 @@ export function MessageMediaView({
     if (s.voice) {
       return (
         <div className="msg-media msg-media--audio msg-media--voice" data-media-state="preview">
-          <VoiceMessageInline src={s.u} durationSec={dur} viewerContext={viewerContext} />
+          <VoiceMessageInline
+            src={s.u}
+            durationSec={dur}
+            viewerContext={viewerContext}
+            unplayed={!message.out && Boolean(message.mediaUnread)}
+          />
         </div>
       )
     }
@@ -1291,7 +1388,13 @@ export function MessageMediaView({
   if (s.k === "at") {
     const d = getMessageDocument(resolved)
     return (
-      <DocumentAttachmentInline url={s.u} name={s.name} sizeStr={s.sizeStr} doc={d} />
+      <DocumentAttachmentInline
+        url={s.u}
+        name={s.name}
+        sizeStr={s.sizeStr}
+        doc={d}
+        viewerContext={viewerContext}
+      />
     )
   }
   if (s.k === "z") {

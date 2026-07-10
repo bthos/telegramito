@@ -235,6 +235,8 @@
     "uxTodoProgress": "{{done}} / {{total}}",
     "uxTodoAllDone": "Todas las tareas listas",
     "uxUnsupportedCheck": "Buscar actualización",
+    "uxUnsupportedCheckingTitle": "Buscando actualización…",
+    "uxUnsupportedCheckingDesc": "Comprobamos si una versión más reciente admite este mensaje.",
     "uxUnsupportedUpdateTitle": "Cliente y servidor",
     "uxUnsupportedThisClient": "Este cliente web",
     "uxUnsupportedExpectedLayer": "Capa API esperada",

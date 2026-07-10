@@ -118,6 +118,14 @@
   --surface-2: var(--ds-color-raised);
   --chat-bg: var(--ds-color-canvas-main);
   --chat-bg-2: var(--ds-color-canvas-list);
+  --overlay: var(--ds-overlay);
+  --overlay-soft: var(--ds-overlay-soft);
+  --on-overlay: var(--ds-on-overlay);
+  --on-overlay-2: var(--ds-on-overlay-2);
+  --font: var(--ds-font-sans);
+  --mono: var(--ds-font-mono);
+  --r-pill: var(--ds-radius-pill);
+  --t-h: var(--ds-t-heading);
 
   /* —— Elevation & chrome —— */
   --ds-shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.2);

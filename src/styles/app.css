@@ -1676,6 +1676,25 @@ button.switch:active .switch__thumb {
   margin-left: auto;
 }
 
+/* Sticker-only messages: no bubble fill (ux-analysis preview/sticker.html) */
+.msg-bubble:has(> .msg-media-thumb .msg-media--sticker):has(> .msg-text:empty) {
+  background: transparent;
+  box-shadow: none;
+  padding: 0.15rem 0;
+}
+
+.msg-bubble:has(> .msg-media-thumb .msg-media--sticker):has(> .msg-text:empty) .msg-media-thumb {
+  margin: 0;
+  border-radius: 0;
+  max-width: none;
+}
+
+.msg-bubble:has(> .msg-media-thumb .msg-media--sticker):has(> .msg-text:empty).msg-bubble--in,
+.msg-bubble:has(> .msg-media-thumb .msg-media--sticker):has(> .msg-text:empty).msg-bubble--out {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
 /* Media flush to bubble edges (ux-analysis .media-thumb); solo when caption is absent */
 .msg-media-thumb {
   align-self: stretch;
@@ -2258,7 +2277,7 @@ button.msg-img-link {
   border-radius: 0.25rem;
 }
 .msg-video {
-  max-width: min(100%, 20rem);
+  max-width: min(100%, 280px);
   max-height: 20rem;
   border-radius: 0.3rem;
   background: #000;
@@ -2270,12 +2289,11 @@ button.msg-img-link {
 .msg-video-wrap {
   position: relative;
   display: block;
-  width: fit-content;
   max-width: 100%;
 }
 
 .msg-video-wrap--round {
-  width: min(13.75rem, 100%);
+  width: min(12.5rem, 100%);
   aspect-ratio: 1 / 1;
   border-radius: 50%;
   overflow: hidden;
@@ -2304,10 +2322,23 @@ button.msg-img-link {
   justify-content: center;
 }
 .msg-media--audio {
-  min-width: min(100%, 20rem);
+  min-width: min(100%, 280px);
   max-width: 100%;
-  padding: 0.2rem 0.15rem 0.35rem;
-  line-height: 0;
+  padding: 0;
+  line-height: normal;
+}
+
+.msg-media--voice {
+  min-width: min(100%, 240px);
+  padding: 0;
+}
+
+/* Hide bubble corner time when media row shows inline sent time (voice/audio/document mock) */
+.msg-bubble:has(.msg-voice-inline__sent) > .msg-time,
+.msg-bubble:has(.msg-voice-inline__sent) > .msg-time-row,
+.msg-bubble:has(.media-inline-meta-foot) > .msg-time,
+.msg-bubble:has(.media-inline-meta-foot) > .msg-time-row {
+  display: none;
 }
 .msg-media--voice .msg-audio {
   min-height: 2.25rem;

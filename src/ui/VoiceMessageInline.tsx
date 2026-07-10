@@ -4,6 +4,44 @@ import { formatVideoDuration } from "../telegram/documentVideoMeta"
 import { waveformHeights } from "./mediaWaveform"
 import type { MediaViewerContext } from "./mediaViewerContext"
 import { ModalChrome } from "./ModalChrome"
+import { TgProgressIndeterminate } from "./TgProgressIndeterminate"
+
+/** Incoming voice fetch — mirrors audio loading row per ux-analysis preview/voice.html */
+export function VoiceMessageLoadingRow({
+  durationSec,
+  hint,
+  onCancel,
+  cancelLabel,
+}: {
+  durationSec: number | null
+  hint: string
+  onCancel?: () => void
+  cancelLabel?: string
+}) {
+  const durLabel = durationSec != null && durationSec > 0
+    ? formatVideoDuration(Math.floor(durationSec))
+    : "—:—"
+  const bars = waveformHeights(36, 13)
+
+  return (
+    <div className="msg-voice-inline msg-voice-inline--loading" data-media-state="loading">
+      <span className="msg-voice-inline__play msg-voice-inline__play--busy" aria-hidden>
+        <TgProgressIndeterminate onCancel={onCancel} cancelLabel={cancelLabel} />
+      </span>
+      <div className="msg-voice-inline__col">
+        <div className="msg-voice-wave" aria-hidden>
+          {bars.map((h, i) => (
+            <i key={i} className="msg-voice-wave__bar" style={{ height: `${h}px` }} />
+          ))}
+        </div>
+        <div className="msg-voice-inline__meta">
+          <span className="msg-voice-inline__elapsed">{durLabel}</span>
+          <span className="msg-voice-inline__sub--progress">{hint}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function VoiceFullModal({
   src,
@@ -40,7 +78,7 @@ function VoiceFullModal({
         <div className="voice-full-modal__player">
           <button
             type="button"
-            className="voice-full-modal__play"
+            className="ds-glyph voice-full-modal__play"
             aria-label={playing ? t("chat.voicePause") : t("chat.voicePlay")}
             onClick={() => {
               const a = audioRef.current
@@ -99,7 +137,13 @@ function VoiceFullModal({
             <div className="voice-full-modal__transcript-body">{caption}</div>
           </div>
         ) : (
-          <p className="voice-full-modal__transcript-hint msg-media-card__muted">{t("chat.voiceTranscriptPlaceholder")}</p>
+          <div className="voice-full-modal__transcript">
+            <div className="voice-full-modal__transcript-label">
+              <span className="voice-full-modal__transcript-spinner" aria-hidden />
+              {t("chat.voiceTranscriptLabel")}
+            </div>
+            <p className="voice-full-modal__transcript-hint msg-media-card__muted">{t("chat.voiceTranscriptPlaceholder")}</p>
+          </div>
         )}
       </div>
     </ModalChrome>
@@ -110,16 +154,20 @@ export function VoiceMessageInline({
   src,
   durationSec,
   viewerContext,
+  unplayed = false,
 }: {
   src: string
   durationSec: number | null
   viewerContext?: MediaViewerContext | null
+  /** Incoming voice not yet listened — blue dot per ux-analysis preview/voice.html */
+  unplayed?: boolean
 }) {
   const { t } = useTranslation()
   const audioRef = useRef<HTMLAudioElement>(null)
   const [playing, setPlaying] = useState(false)
   const [tcur, setTcur] = useState(0)
   const [full, setFull] = useState(false)
+  const [showUnplayed, setShowUnplayed] = useState(unplayed)
   const seed = (viewerContext?.sentAtLabel.length ?? 1) * 17 + 3
   const bars = waveformHeights(36, seed)
   const total = durationSec ?? 0
@@ -161,6 +209,7 @@ export function VoiceMessageInline({
             if (playing) {
               a.pause()
             } else {
+              setShowUnplayed(false)
               void a.play()
             }
           }}
@@ -195,6 +244,9 @@ export function VoiceMessageInline({
             <span className="msg-voice-inline__elapsed">
               {playing ? formatVideoDuration(Math.floor(tcur)) : durLabel}
             </span>
+            {showUnplayed && !playing ? (
+              <span className="msg-voice-inline__unplayed" aria-hidden />
+            ) : null}
             {playing ? (
               <span className="msg-voice-inline__slash" aria-hidden>
                 {" "}
@@ -204,15 +256,6 @@ export function VoiceMessageInline({
             {viewerContext?.sentAtLabel ? (
               <span className="msg-voice-inline__sent">{viewerContext.sentAtLabel}</span>
             ) : null}
-            <button
-              type="button"
-              className="msg-voice-inline__transcript"
-              onClick={() => {
-                setFull(true)
-              }}
-            >
-              {t("chat.readTranscript")}
-            </button>
           </div>
         </div>
       </div>

@@ -235,6 +235,8 @@
     "uxTodoProgress": "{{done}} / {{total}}",
     "uxTodoAllDone": "Усе задачы выкананы",
     "uxUnsupportedCheck": "Праверыць абнаўленне",
+    "uxUnsupportedCheckingTitle": "Праверка абнаўлення…",
+    "uxUnsupportedCheckingDesc": "Глядзіце, ці падтрымлівае новая версія гэта паведамленне.",
     "uxUnsupportedUpdateTitle": "Кліент і сервер",
     "uxUnsupportedThisClient": "Гэты вэб-кліент",
     "uxUnsupportedExpectedLayer": "Чаканы слой API",
