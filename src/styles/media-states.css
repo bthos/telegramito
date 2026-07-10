@@ -484,7 +484,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 
 .msg-voice-inline__play--busy {
   position: relative;
-  background: color-mix(in srgb, var(--tg-blue, #3390ec) 85%, #000) !important;
+  background: color-mix(in srgb, var(--tg-blue) 85%, #000) !important;
   overflow: hidden;
 }
 
@@ -505,7 +505,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 
 .msg-voice-inline__sub--progress {
   margin-left: auto;
-  color: var(--tg-blue, #3390ec);
+  color: var(--tg-blue);
 }
 
 /* Voice inline */
@@ -523,7 +523,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   border-radius: 50%;
   border: none;
   flex-shrink: 0;
-  background: var(--tg-blue, #3390ec);
+  background: var(--tg-blue);
   color: #fff;
   display: grid;
   place-items: center;
@@ -546,16 +546,16 @@ button.msg-video-play.msg-video-thumb-play-fab {
   display: block;
   width: 2px;
   border-radius: 2px;
-  background: color-mix(in srgb, var(--tg-blue, #3390ec) 45%, transparent);
+  background: color-mix(in srgb, var(--tg-blue) 45%, transparent);
 }
 
 .msg-voice-wave__bar--played {
-  background: var(--tg-blue, #3390ec);
+  background: var(--tg-blue);
 }
 
 .msg-voice-wave__bar--head {
   width: 3px;
-  background: var(--tg-blue, #3390ec);
+  background: var(--tg-blue);
 }
 
 .msg-voice-wave--lg {
@@ -585,7 +585,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--tg-blue, #3390ec);
+  background: var(--tg-blue);
   flex-shrink: 0;
 }
 
@@ -626,7 +626,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   border-radius: 50%;
   border: none;
   flex-shrink: 0;
-  background: var(--tg-blue, #3390ec);
+  background: var(--tg-blue);
   color: #fff;
   cursor: pointer;
 }
@@ -661,7 +661,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--tg-blue, #3390ec);
+  color: var(--tg-blue);
   margin-bottom: 6px;
 }
 
@@ -669,7 +669,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  border: 1.5px solid var(--tg-blue, #3390ec);
+  border: 1.5px solid var(--tg-blue);
   border-top-color: transparent;
   animation: ds-transcript-spin 1s linear infinite;
   flex-shrink: 0;
@@ -737,7 +737,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 }
 
 .msg-audio-track__sub--progress {
-  color: var(--tg-blue, #3390ec) !important;
+  color: var(--tg-blue) !important;
 }
 
 .msg-audio-track__cover {
@@ -828,7 +828,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 .audio-full-modal__scrub-fill {
   height: 100%;
   border-radius: 3px;
-  background: var(--tg-blue, #3390ec);
+  background: var(--tg-blue);
 }
 
 .audio-full-modal__knob {
@@ -837,7 +837,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: var(--tg-blue, #3390ec);
+  background: var(--tg-blue);
   transform: translate(-50%, -50%);
 }
 
@@ -861,7 +861,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   height: 56px;
   border-radius: 50%;
   border: none;
-  background: var(--tg-blue, #3390ec);
+  background: var(--tg-blue);
   color: #fff;
   font-size: 18px;
   cursor: pointer;
@@ -892,7 +892,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   height: 44px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: var(--tg-blue, #3390ec);
+  background: var(--tg-blue);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -924,7 +924,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 }
 
 .msg-doc-row--loading .msg-doc-row__sub {
-  color: var(--tg-blue, #3390ec);
+  color: var(--tg-blue);
 }
 
 .msg-doc-row__dl {
@@ -1440,8 +1440,8 @@ button.msg-video-play.msg-video-thumb-play-fab {
 
 .msg-webpage-iv {
   border: none;
-  background: color-mix(in srgb, var(--tg-blue, #3390ec) 14%, transparent);
-  color: var(--tg-blue, #3390ec);
+  background: color-mix(in srgb, var(--tg-blue) 14%, transparent);
+  color: var(--tg-blue);
   font-size: 11px;
   font-weight: 700;
   padding: 4px 10px;
@@ -1552,7 +1552,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 .web-iv__pull {
   margin: 16px 0 0;
   padding-left: 12px;
-  border-left: 3px solid var(--tg-blue, #3390ec);
+  border-left: 3px solid var(--tg-blue);
   font-style: italic;
   font-size: 15px;
 }
@@ -1563,7 +1563,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   text-align: center;
   font-weight: 600;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
-  color: var(--tg-blue, #3390ec);
+  color: var(--tg-blue);
   text-decoration: none;
 }
 .web-iv__open:hover {

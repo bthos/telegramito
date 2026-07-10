@@ -114,7 +114,7 @@ html[data-theme="light"] .msg-bubble--in .tg-progress__track {
 }
 
 html[data-theme="light"] .msg-bubble--in .tg-progress__bar {
-  stroke: var(--ds-chat-accent, #3390ec);
+  stroke: var(--tg-blue);
 }
 
 .tg-progress__svg {

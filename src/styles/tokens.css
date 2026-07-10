@@ -26,6 +26,12 @@
     "SF Mono",
     Consolas,
     monospace;
+  --ds-font-serif:
+    "Spectral",
+    "Iowan Old Style",
+    Georgia,
+    "Times New Roman",
+    serif;
   --ds-font-emoji: system-ui, "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
   --ds-line-tight: 1.2;
@@ -47,6 +53,7 @@
   --ds-color-fg-2: #e8ebf0;
   --ds-color-fg-tint: #f0f4fa;
   --ds-color-muted: #8b95a3;
+  /** @deprecated Legacy Telegram blue — migrate to `--ds-chat-accent` / `--tg-blue`. */
   --ds-color-primary: #5aa0ff;
   --ds-color-primary-mid: #1c2633;
   --ds-color-primary-dim: #3a7ad2;
@@ -123,6 +130,7 @@
   --on-overlay: var(--ds-on-overlay);
   --on-overlay-2: var(--ds-on-overlay-2);
   --font: var(--ds-font-sans);
+  --font-serif: var(--ds-font-serif);
   --mono: var(--ds-font-mono);
   --r-pill: var(--ds-radius-pill);
   --t-h: var(--ds-t-heading);
@@ -145,7 +153,10 @@
   --ds-overlay-soft: rgba(10, 18, 28, 0.55);
   --ds-on-overlay: #ffffff;
   --ds-on-overlay-2: rgba(255, 255, 255, 0.72);
-  /** Accent aligned with UX mockups (Telegramito); use for link previews, media glyphs */
+  /**
+   * Legacy Telegram-blue accent (pre–Letters v2). Prefer terracotta on `.app-root--main`
+   * (see tokens-letters.css). Full canonicalization: design-system-css-hygiene AC-H1–H3.
+   */
   --ds-chat-accent: #3390ec;
   --ds-link: #5aa0ff;
   --ds-color-ok: #4fae4e;
@@ -188,7 +199,9 @@
   --line: var(--ds-color-line);
   --text: var(--ds-color-fg);
   --muted: var(--ds-color-muted);
+  /** @deprecated Legacy alias — migrate to `--tg-blue` / `--ds-chat-accent`; terracotta on Letters. */
   --acc: var(--ds-color-primary);
+  /** @deprecated Legacy alias — migrate to `--tg-blue-deep`. */
   --acc-dim: var(--ds-color-primary-dim);
   --bubble-in: var(--ds-bubble-in);
   --bubble-out: var(--ds-bubble-out);
@@ -222,6 +235,7 @@ html[data-theme="light"] {
   --ds-color-fg-2: #0f1319;
   --ds-color-fg-tint: #0a0d12;
   --ds-color-muted: #5a6570;
+  /** @deprecated Legacy Telegram blue — terracotta on `.app-root--main` (tokens-letters.css). */
   --ds-color-primary: #3390ec;
   --ds-color-primary-mid: #dde8f7;
   --ds-color-primary-dim: #1c7ad6;
