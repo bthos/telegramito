@@ -112,6 +112,7 @@ export function LettersDeskSheet({
               })}
             </div>
           </div>
+          <p className="letters-desk-sheet__theme-hint">{t("theme.hint")}</p>
 
           <div className="letters-desk-sheet__row">
             <span className="letters-desk-sheet__row-label">{t("mode.label")}</span>
