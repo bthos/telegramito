@@ -16,9 +16,9 @@ import {
   setPeerMuted,
 } from "../telegram/peerMute"
 import { PeerAvatar } from "./PeerAvatar"
-import { usePeerRecentMedia } from "../hooks/usePeerRecentMedia"
+import { usePeerSharedMedia, type MediaTab } from "../hooks/usePeerSharedMedia"
 import { makeBlobUrl } from "./messageMediaBlobUtils"
-import { getMessageDocument } from "../telegram/documentFile"
+import { getMessageDocument, getDocumentFileName, formatDocumentSize } from "../telegram/documentFile"
 import { isAnimatedDoc, isVideoDoc } from "../telegram/documentMediaKind"
 import { resolveMessageMediaForDisplay } from "../telegram/messageMediaUnwrap"
 
@@ -175,6 +175,102 @@ function MediaThumbCell({
   )
 }
 
+/** Extract the first URL from a message (entities → fallback to raw text). */
+function extractUrlFromMessage(msg: Api.Message): string | null {
+  const text = typeof msg.message === "string" ? msg.message : ""
+  if (Array.isArray(msg.entities)) {
+    for (const e of msg.entities) {
+      if (e.className === "MessageEntityUrl") {
+        const url = text.slice(
+          (e as { offset: number }).offset,
+          (e as { offset: number; length: number }).offset + (e as { length: number }).length,
+        )
+        if (url) return url
+      }
+      if (e.className === "MessageEntityTextUrl") {
+        const tu = e as Api.MessageEntityTextUrl
+        if (typeof tu.url === "string" && tu.url) return tu.url
+      }
+    }
+  }
+  if (text.startsWith("http://") || text.startsWith("https://")) return text.split(/\s/)[0] ?? text
+  return null
+}
+
+/** Extract domain from a URL string, or return the URL itself as fallback. */
+function urlDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "")
+  } catch {
+    return url
+  }
+}
+
+/** Single row in the Files tab. */
+function FileRow({ message }: { message: Api.Message }) {
+  const doc = getMessageDocument(message)
+  const name = doc ? (getDocumentFileName(doc) ?? "file") : "file"
+  const size = doc ? formatDocumentSize(doc.size) : ""
+  const mime = doc?.mimeType ?? ""
+  const ext = name.includes(".")
+    ? name.slice(name.lastIndexOf(".") + 1).toUpperCase().slice(0, 5)
+    : "FILE"
+
+  return (
+    <div className="context-panel__file-row">
+      <span className="context-panel__file-ext" aria-hidden="true">{ext}</span>
+      <div className="context-panel__file-info">
+        <span className="context-panel__file-name" title={name}>{name}</span>
+        {(size || mime) ? (
+          <span className="context-panel__file-meta muted">
+            {[size, mime].filter(Boolean).join(" · ")}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+/** Single row in the Links tab. */
+function LinkRow({ message }: { message: Api.Message }) {
+  const url = extractUrlFromMessage(message)
+  if (!url) return null
+  const domain = urlDomain(url)
+  const text = typeof message.message === "string" && message.message.trim()
+    ? message.message.trim()
+    : url
+
+  return (
+    <div className="context-panel__link-row">
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="context-panel__link-anchor"
+      >
+        <span className="context-panel__link-domain">{domain}</span>
+        <span className="context-panel__link-text" title={text}>{text}</span>
+      </a>
+    </div>
+  )
+}
+
+const TABS: MediaTab[] = ["photos", "videos", "files", "links"]
+
+const TAB_I18N_KEY: Record<MediaTab, string> = {
+  photos: "chat.sharedMediaTabPhotos",
+  videos: "chat.sharedMediaTabVideos",
+  files: "chat.sharedMediaTabFiles",
+  links: "chat.sharedMediaTabLinks",
+}
+
+const EMPTY_I18N_KEY: Record<MediaTab, string> = {
+  photos: "chat.noSharedPhotos",
+  videos: "chat.noSharedVideos",
+  files: "chat.noSharedFiles",
+  links: "chat.noSharedLinks",
+}
+
 export function ChatContextPanel({
   entity,
   peerName,
@@ -192,9 +288,13 @@ export function ChatContextPanel({
 }: Props) {
   const { t } = useTranslation()
   const panelRef = useRef<HTMLDivElement | null>(null)
-  const { items, loading } = usePeerRecentMedia(
+
+  const [activeTab, setActiveTab] = useState<MediaTab>("photos")
+
+  const { items, loading } = usePeerSharedMedia(
     entity as Api.User | Api.Chat | Api.Channel | null | undefined,
     client,
+    activeTab,
   )
 
   useHardwareBackLayer(isOpen, onClose)
@@ -298,8 +398,9 @@ export function ChatContextPanel({
     }
   }
 
+  const isGridTab = activeTab === "photos" || activeTab === "videos"
   // Placeholder cells to fill grid up to 6 when fewer items are available
-  const placeholderCount = Math.max(0, 6 - items.length)
+  const placeholderCount = isGridTab ? Math.max(0, 6 - items.length) : 0
 
   const isRail = presentation === "lettersRail"
 
@@ -319,22 +420,56 @@ export function ChatContextPanel({
           <h3 className="context-panel__name">{peerName}</h3>
         </div>
 
-        {/* Shared media grid */}
+        {/* Shared media section with tabs */}
         <section className="context-panel__section" aria-label={t("chat.sharedMedia")}>
           <h4 className="context-panel__section-title">{t("chat.sharedMedia")}</h4>
+
+          {/* Tab bar */}
+          <div
+            className="context-panel__media-tabs"
+            role="tablist"
+            aria-label={t("chat.sharedMedia")}
+          >
+            {TABS.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab}
+                className={`context-panel__media-tab${activeTab === tab ? " context-panel__media-tab--active" : ""}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {t(TAB_I18N_KEY[tab])}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content */}
           {loading ? (
-            <div className="context-panel__media-grid" aria-busy="true">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="context-panel__media-cell context-panel__media-cell--loading"
-                  aria-hidden="true"
-                />
-              ))}
-            </div>
+            isGridTab ? (
+              <div className="context-panel__media-grid" aria-busy="true">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="context-panel__media-cell context-panel__media-cell--loading"
+                    aria-hidden="true"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="context-panel__list-skeleton" aria-busy="true">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="context-panel__list-skeleton-row context-panel__media-cell--loading"
+                    aria-hidden="true"
+                  />
+                ))}
+              </div>
+            )
           ) : items.length === 0 ? (
-            <p className="context-panel__empty muted">{t("chat.noSharedMedia")}</p>
-          ) : (
+            <p className="context-panel__empty muted">{t(EMPTY_I18N_KEY[activeTab])}</p>
+          ) : isGridTab ? (
             <div className="context-panel__media-grid">
               {items.map((msg) => (
                 <MediaThumbCell key={msg.id} message={msg} client={client} />
@@ -345,6 +480,18 @@ export function ChatContextPanel({
                   className="context-panel__media-cell context-panel__media-cell--placeholder"
                   aria-hidden="true"
                 />
+              ))}
+            </div>
+          ) : activeTab === "files" ? (
+            <div className="context-panel__file-list">
+              {items.map((msg) => (
+                <FileRow key={msg.id} message={msg} />
+              ))}
+            </div>
+          ) : (
+            <div className="context-panel__link-list">
+              {items.map((msg) => (
+                <LinkRow key={msg.id} message={msg} />
               ))}
             </div>
           )}
