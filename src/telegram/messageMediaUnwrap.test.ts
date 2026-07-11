@@ -3,6 +3,7 @@ import { Api } from "telegram"
 import {
   collectPaidInnerMedias,
   deepResolveSingleMedia,
+  extractStoryInnerMedia,
   getMessageDocumentResolved,
   isNonBlobVisualMedia,
   listPaidBundleSlots,
@@ -249,6 +250,83 @@ describe("messageMediaUnwrap", () => {
         cn,
       ).toBe(true)
     }
+  })
+})
+
+describe("extractStoryInnerMedia", () => {
+  it("returns null for non-story media", () => {
+    expect(
+      extractStoryInnerMedia({ className: "MessageMediaPhoto" } as Api.TypeMessageMedia),
+    ).toBeNull()
+  })
+
+  it("returns null when story.story is absent", () => {
+    const storyMedia = {
+      className: "MessageMediaStory" as const,
+      peer: { className: "PeerUser" as const, userId: 1 },
+      id: 5,
+    } as unknown as Api.TypeMessageMedia
+    expect(extractStoryInnerMedia(storyMedia)).toBeNull()
+  })
+
+  it("returns null when story.story is StoryItemDeleted", () => {
+    const storyMedia = {
+      className: "MessageMediaStory" as const,
+      peer: { className: "PeerChannel" as const, channelId: 123 },
+      id: 7,
+      story: { className: "StoryItemDeleted" as const, id: 7 },
+    } as unknown as Api.TypeMessageMedia
+    expect(extractStoryInnerMedia(storyMedia)).toBeNull()
+  })
+
+  it("returns null when StoryItem.media is not photo/document", () => {
+    const storyMedia = {
+      className: "MessageMediaStory" as const,
+      peer: { className: "PeerChannel" as const, channelId: 1 },
+      id: 3,
+      story: {
+        className: "StoryItem" as const,
+        id: 3,
+        date: 0,
+        expireDate: 0,
+        media: { className: "MessageMediaGeo" as const },
+      },
+    } as unknown as Api.TypeMessageMedia
+    expect(extractStoryInnerMedia(storyMedia)).toBeNull()
+  })
+
+  it("returns inner MessageMediaPhoto when StoryItem has photo media", () => {
+    const photo = { className: "MessageMediaPhoto" as const, photo: {} }
+    const storyMedia = {
+      className: "MessageMediaStory" as const,
+      peer: { className: "PeerChannel" as const, channelId: 1 },
+      id: 10,
+      story: {
+        className: "StoryItem" as const,
+        id: 10,
+        date: 0,
+        expireDate: 0,
+        media: photo,
+      },
+    } as unknown as Api.TypeMessageMedia
+    expect(extractStoryInnerMedia(storyMedia)).toBe(photo)
+  })
+
+  it("returns inner MessageMediaDocument when StoryItem has document media", () => {
+    const doc = { className: "MessageMediaDocument" as const, document: {} }
+    const storyMedia = {
+      className: "MessageMediaStory" as const,
+      peer: { className: "PeerChannel" as const, channelId: 1 },
+      id: 11,
+      story: {
+        className: "StoryItem" as const,
+        id: 11,
+        date: 0,
+        expireDate: 0,
+        media: doc,
+      },
+    } as unknown as Api.TypeMessageMedia
+    expect(extractStoryInnerMedia(storyMedia)).toBe(doc)
   })
 })
 

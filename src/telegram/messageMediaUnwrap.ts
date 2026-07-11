@@ -170,6 +170,38 @@ export function getMessageDocumentResolved(m: Api.Message): ReturnType<typeof ge
   return getMessageDocument(resolveMessageMediaForDisplay(m))
 }
 
+/**
+ * Extracts the inner {@link Api.TypeMessageMedia} from a story's embedded {@link Api.StoryItem}
+ * when the story carries a renderable photo or document.
+ *
+ * Returns `null` when:
+ * - `media` is not `MessageMediaStory`
+ * - the story item is absent or not a `StoryItem` (e.g. `StoryItemDeleted`)
+ * - the inner media is not `MessageMediaPhoto` or `MessageMediaDocument`
+ *
+ * The caller can use the return value to render story media inline via the normal blob pipeline.
+ */
+export function extractStoryInnerMedia(
+  media: Api.TypeMessageMedia,
+): Api.TypeMessageMedia | null {
+  if (media.className !== "MessageMediaStory") {
+    return null
+  }
+  const s = media as Api.MessageMediaStory
+  const si = s.story
+  if (!si || si.className !== "StoryItem") {
+    return null
+  }
+  const inner = (si as Api.StoryItem).media
+  if (!inner) {
+    return null
+  }
+  if (inner.className === "MessageMediaPhoto" || inner.className === "MessageMediaDocument") {
+    return inner
+  }
+  return null
+}
+
 export function mapsUrlFromGeoPoint(geo: Api.TypeGeoPoint): string | null {
   if (geo.className !== "GeoPoint") {
     return null

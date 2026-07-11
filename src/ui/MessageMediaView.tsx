@@ -18,6 +18,7 @@ import { makeBlobUrl } from "./messageMediaBlobUtils"
 import type { MessageMediaTranslateFn } from "./messageMediaI18n"
 import { PollReadonly, useWpPreview, WebPageView } from "./messageMediaPollWeb"
 import {
+  extractStoryInnerMedia,
   isNonBlobVisualMedia,
   listPaidBundleSlots,
   resolveMessageMediaForDisplay,
@@ -40,6 +41,14 @@ import { useInlineThumb } from "./useInlineThumb"
 import type { MediaViewerContext } from "./mediaViewerContext"
 
 export type { MediaViewerContext } from "./mediaViewerContext"
+
+function storyPeerLabel(peer: Api.TypePeer | undefined): string {
+  if (!peer) return "?"
+  if (peer.className === "PeerUser") return `user:${(peer as Api.PeerUser).userId}`
+  if (peer.className === "PeerChannel") return `channel:${(peer as Api.PeerChannel).channelId}`
+  if (peer.className === "PeerChat") return `chat:${(peer as Api.PeerChat).chatId}`
+  return "?"
+}
 
 function messageWithReplacedMedia(
   base: Api.Message,
@@ -960,6 +969,11 @@ export function MessageMediaView({
     return resolveMessageMediaForDisplay(message)
   }, [message, paidBundleSlots, renderPaidAsBundle])
 
+  const storyInnerMedia = useMemo<Api.TypeMessageMedia | null>(() => {
+    if (!resolved.media || resolved.media.className !== "MessageMediaStory") return null
+    return extractStoryInnerMedia(resolved.media)
+  }, [resolved.media])
+
   const wpPreview = useWpPreview(resolved, client, noPreview)
   const [s, requestLoad, cancelLoad] = useBlob(blobSourceMessage, client, filterGifs)
   const inlineThumb = useInlineThumb(blobSourceMessage.media)
@@ -1067,6 +1081,28 @@ export function MessageMediaView({
         onThumbRequest={wpPreview.requestThumb}
         viewerContext={viewerContext}
       />
+    )
+  }
+  if (storyInnerMedia !== null) {
+    const storyMed = resolved.media as Api.MessageMediaStory
+    const innerMsg = { ...resolved, media: storyInnerMedia } as Api.Message
+    const attribution = t("chat.storyFrom", { peer: storyPeerLabel(storyMed.peer) })
+      + (storyMed.id != null ? ` · #${storyMed.id}` : "")
+    return (
+      <div className="msg-story-inline-wrap">
+        <div className="msg-story-attribution" aria-label={t("chat.previewStory")}>
+          {attribution}
+        </div>
+        <MessageMediaView
+          message={innerMsg}
+          client={client}
+          noPreview={noPreview}
+          filterGifs={filterGifs}
+          t={t}
+          pollVoter={pollVoter}
+          viewerContext={viewerContext}
+        />
+      </div>
     )
   }
   if (isNonBlobVisualMedia(resolved.media)) {
