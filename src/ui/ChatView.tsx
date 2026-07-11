@@ -1747,7 +1747,8 @@ export function ChatView({
             <ChatViewInChatSearch
               client={client}
               entity={dialog.entity}
-              forumDisabled={isForum}
+              forumDisabled={isForum && topicId == null}
+              topicId={isForum ? (topicId ?? undefined) : undefined}
               peerDisplayName={name}
               onClose={closeSearchMode}
               onPickMessage={(msg) => {
@@ -1834,7 +1835,8 @@ export function ChatView({
               <ChatViewInChatSearch
                 client={client}
                 entity={dialog.entity}
-                forumDisabled={isForum}
+                forumDisabled={isForum && topicId == null}
+                topicId={isForum ? (topicId ?? undefined) : undefined}
                 peerDisplayName={name}
                 onClose={closeSearchMode}
                 onPickMessage={(msg) => {
@@ -2371,7 +2373,7 @@ export function ChatView({
           client={client}
           isOpen={slidePanelOpen}
           onClose={() => setPanelOpen(false)}
-          isForum={isForum}
+          isForum={isForum && topicId == null}
           onOpenInChatSearch={() => {
             openSearchMode()
           }}

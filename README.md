@@ -126,7 +126,7 @@ The panel closes automatically on every chat switch.
 
 - Peer header — avatar (48 px) and display name
 - Shared media grid — 3 × 2 most recent photo thumbnails (blob-rendered); loading skeleton and "No shared media" fallback
-- Quick actions — Search in chat (stub, pending UX-14), Mute/Unmute (stub, V2), Block user (private peers, stub V2), Leave group (groups/megagroups, with inline confirmation)
+- Quick actions — Search in chat (queries the open chat's messages; in a forum, available only while a topic is open — scoped to that topic's messages, disabled while browsing the topic list), Mute/Unmute, Block user (private peers), Leave group (groups/megagroups, with inline confirmation)
 
 **Keyboard / a11y:** Escape dismisses the panel. Panel root is `role="dialog" aria-modal="true"`. Backdrop click also dismisses.
 

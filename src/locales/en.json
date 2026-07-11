@@ -280,7 +280,7 @@
     "searchRunning": "Searching…",
     "searchNoHits": "No messages match.",
     "searchHitNoText": "(no text)",
-    "searchForumDisabled": "Search in chat is not available in forum topic view yet.",
+    "searchForumDisabled": "Open a topic to search its messages.",
     "searchFromYou": "You",
     "searchMessagesAria": "Search messages",
     "searchResultsAria": "Search results",

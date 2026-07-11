@@ -10,6 +10,8 @@ type Props = {
   client: TelegramClient | null
   entity: Dialog["entity"]
   forumDisabled: boolean
+  /** Open forum topic id; scopes search to that topic (see {@link useInChatSearch}). */
+  topicId?: number
   peerDisplayName: string
   onClose: () => void
   onPickMessage: (msg: Api.Message) => void | Promise<void>
@@ -22,6 +24,7 @@ export function ChatViewInChatSearch({
   client,
   entity,
   forumDisabled,
+  topicId,
   peerDisplayName,
   onClose,
   onPickMessage,
@@ -36,6 +39,7 @@ export function ChatViewInChatSearch({
     client,
     entity,
     disabled: forumDisabled,
+    topicId,
   })
 
   const [resultIndex, setResultIndex] = useState(0)

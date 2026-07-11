@@ -1,5 +1,6 @@
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
+import { generateRandomBigInt } from "telegram/Helpers"
 import { useEffect, useRef, useState } from "react"
 import { toMessageList } from "../telegram/messageList"
 import { withTransientRetry } from "../telegram/invokeWithTransientRetry"
@@ -10,18 +11,64 @@ const SEARCH_LIMIT = 40
 export type UseInChatSearchArgs = {
   client: TelegramClient | null
   entity: unknown | null | undefined
-  /** When true (e.g. forum topics), no requests are made. */
+  /** When true (e.g. forum topic list with no topic open), no requests are made. */
   disabled: boolean
+  /**
+   * When set (an open forum topic), scopes the search to that topic via the raw
+   * `Api.messages.Search` + `topMsgId` primitive instead of {@link TelegramClient.getMessages}.
+   * See {@link searchTopicMessages}.
+   */
+  topicId?: number
+}
+
+/**
+ * Topic-scoped search request, mirroring the request shape already in production use in
+ * `src/telegram/forum.ts:getForumThreadMessages` (peer / q / filter / topMsgId). Unlike that
+ * function, results are **not** hydrated via `_finishInit`/`repairMessageAfterGramJs`:
+ * `SearchResultRow` only reads scalar fields that survive unhydrated, and jump-to-message
+ * re-fetches and repairs the target message anyway via the existing `refreshMessagesById` path
+ * (see feature tech-plan.md decision record 2).
+ */
+async function searchTopicMessages(
+  client: TelegramClient,
+  entity: unknown,
+  q: string,
+  topicId: number,
+  limit: number,
+): Promise<Api.Message[]> {
+  const peer = await client.getInputEntity(entity as never)
+  const res = await client.invoke(
+    new Api.messages.Search({
+      peer,
+      q,
+      filter: new Api.InputMessagesFilterEmpty(),
+      topMsgId: topicId,
+      minDate: 0,
+      maxDate: 0,
+      offsetId: 0,
+      addOffset: 0,
+      limit,
+      maxId: 0,
+      minId: 0,
+      hash: generateRandomBigInt(),
+    }),
+  )
+  if (res.className === "messages.MessagesNotModified" || !("messages" in res)) {
+    return []
+  }
+  return res.messages.filter((m): m is Api.Message => m.className === "Message")
 }
 
 /**
  * Debounced in-chat search via {@link TelegramClient.getMessages} with `search`
- * (GramJS equivalent to history search; see feature spec).
+ * (GramJS equivalent to history search; see feature spec). When `topicId` is set (an open
+ * forum topic), scopes the search to that topic via {@link searchTopicMessages} instead.
  */
 export function useInChatSearch({
   client,
   entity,
   disabled,
+  topicId,
 }: UseInChatSearchArgs): {
   query: string
   setQuery: (q: string) => void
@@ -38,7 +85,7 @@ export function useInChatSearch({
 
   useEffect(() => {
     fetchGenRef.current += 1
-  }, [entity])
+  }, [entity, topicId])
 
   useEffect(() => {
     if (debounceTimerRef.current != null) {
@@ -72,13 +119,23 @@ export function useInChatSearch({
       setError(null)
       void (async () => {
         try {
-          const raw = await withTransientRetry(client, () =>
-            client.getMessages(entity as never, { search: q, limit: SEARCH_LIMIT }),
-          )
-          if (runGen !== fetchGenRef.current) {
-            return
+          if (topicId != null) {
+            const list = await withTransientRetry(client, () =>
+              searchTopicMessages(client, entity, q, topicId, SEARCH_LIMIT),
+            )
+            if (runGen !== fetchGenRef.current) {
+              return
+            }
+            setResults(list)
+          } else {
+            const raw = await withTransientRetry(client, () =>
+              client.getMessages(entity as never, { search: q, limit: SEARCH_LIMIT }),
+            )
+            if (runGen !== fetchGenRef.current) {
+              return
+            }
+            setResults(toMessageList(raw))
           }
-          setResults(toMessageList(raw))
           setError(null)
         } catch {
           if (runGen !== fetchGenRef.current) {
@@ -100,7 +157,7 @@ export function useInChatSearch({
         debounceTimerRef.current = null
       }
     }
-  }, [query, client, entity, disabled])
+  }, [query, client, entity, disabled, topicId])
 
   return { query, setQuery, results, loading, error }
 }
