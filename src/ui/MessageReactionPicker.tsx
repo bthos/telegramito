@@ -116,6 +116,8 @@ export function MessageReactionPicker({
   onReply,
   onForward,
   onCoRead,
+  onPin,
+  onUnpin,
   canReply = true,
 }: {
   open: boolean
@@ -131,6 +133,8 @@ export function MessageReactionPicker({
   onReply?: () => void
   onForward?: () => void
   onCoRead?: () => void
+  onPin?: () => void
+  onUnpin?: () => void
   canReply?: boolean
 }) {
   const { t: tRoot } = useTranslation()
@@ -180,6 +184,8 @@ export function MessageReactionPicker({
   const showMessageBar =
     onForward != null
     || onCoRead != null
+    || onPin != null
+    || onUnpin != null
     || (onReply != null && canReply)
 
   useLayoutEffect(() => {
@@ -325,6 +331,33 @@ export function MessageReactionPicker({
                     </button>
                   )
                 : null}
+              {onUnpin != null
+                ? (
+                    <button
+                      type="button"
+                      className="msg-bubble-action"
+                      onClick={() => {
+                        onUnpin()
+                        onClose()
+                      }}
+                    >
+                      {t("chat.unpinMessage")}
+                    </button>
+                  )
+                : onPin != null
+                  ? (
+                      <button
+                        type="button"
+                        className="msg-bubble-action"
+                        onClick={() => {
+                          onPin()
+                          onClose()
+                        }}
+                      >
+                        {t("chat.pinMessage")}
+                      </button>
+                    )
+                  : null}
             </div>
           )
         : null}

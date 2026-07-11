@@ -10,6 +10,7 @@ A static, browser-only Telegram client built on [GramJS](https://gram.js.org/) (
 - Chat list with message previews and unread counts
 - Message thread with media rendering (photos, video, audio, files, polls, stickers, dice, paid media, and more)
 - Compose area with auto-grow textarea and reply/forward support
+- Pin/unpin messages from the same per-message action menu as Reply/Forward, with a pinned banner (tap to jump, cycles through multiple pins) — see [docs/pinned-messages.md](docs/pinned-messages.md)
 - Image lightbox, inline location maps, poll voting
 - Chat context panel — peer info, shared media grid, quick actions (see below)
 - Parental / supervised mode: child profile, allowlist, PIN-gated settings, night-hours lock

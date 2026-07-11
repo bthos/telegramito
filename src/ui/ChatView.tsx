@@ -70,6 +70,9 @@ import { MessageTextContent } from "./MessageTextContent"
 import { MessageMediaView } from "./MessageMediaView"
 import { MessageReactionPicker } from "./MessageReactionPicker"
 import { MessageReactionsView } from "./MessageReactionsView"
+import { PinnedMessageBanner } from "./PinnedMessageBanner"
+import { usePinnedMessages } from "../hooks/usePinnedMessages"
+import { nextPinnedIndex } from "../telegram/pinnedMessages"
 import { MessageReplyView } from "./MessageReplyView"
 import type { ChatDatedItem } from "./chatDatedItem"
 import { MessageListSkeleton } from "./MessageListSkeleton"
@@ -386,6 +389,18 @@ export function ChatView({
   })
 
   const isInitialLoad = list.length === 0
+
+  const { pinned: pinnedMessages, refresh: refreshPinnedMessages } = usePinnedMessages({
+    client,
+    entity: dialog.entity,
+    topicId: isForum ? (topicId ?? undefined) : undefined,
+  })
+  const [pinnedBannerIndex, setPinnedBannerIndex] = useState(0)
+  const [pinnedBannerDismissed, setPinnedBannerDismissed] = useState(false)
+  useEffect(() => {
+    setPinnedBannerIndex(0)
+    setPinnedBannerDismissed(false)
+  }, [convKey])
 
   const listForView = useMemo(() => {
     if (!messagesUnreadOnly) {
@@ -1015,6 +1030,29 @@ export function ChatView({
       }
     },
     [jumpToMessageById],
+  )
+
+  const handlePinToggle = useCallback(
+    async (m: Api.Message, pin: boolean) => {
+      setReactionTarget(null)
+      setMessageActionError(null)
+      const id = m.id
+      if (!client || dialog.entity == null || typeof id !== "number") {
+        return
+      }
+      try {
+        if (pin) {
+          await client.pinMessage(dialog.entity as never, id, { notify: false })
+        } else {
+          await client.unpinMessage(dialog.entity as never, id)
+        }
+        void refreshMessagesById([id])
+        refreshPinnedMessages()
+      } catch {
+        setMessageActionError(t(pin ? "chat.pinFailed" : "chat.unpinFailed"))
+      }
+    },
+    [client, dialog.entity, refreshMessagesById, refreshPinnedMessages, t],
   )
 
   const goToQuotedMessage = useCallback(
@@ -1939,6 +1977,18 @@ export function ChatView({
           {t("chat.messagesUnreadEmpty")}
         </p>
       ) : null}
+      {!pinnedBannerDismissed && !(isForum && topicId == null) && pinnedMessages.length > 0 ? (
+        <PinnedMessageBanner
+          messages={pinnedMessages}
+          index={pinnedBannerIndex}
+          onJump={(id) => {
+            void jumpToMessageById(id)
+            setPinnedBannerIndex((i) => nextPinnedIndex(i, pinnedMessages.length))
+          }}
+          onDismiss={() => setPinnedBannerDismissed(true)}
+          t={t}
+        />
+      ) : null}
       <div className="message-scroll">
         <div
           className={
@@ -2287,6 +2337,16 @@ export function ChatView({
             setReplyingTo(pickerMessage)
             setMessageActionError(null)
           }}
+          onPin={
+            pickerMessage.className === "Message" && !pickerMessage.pinned
+              ? () => { void handlePinToggle(pickerMessage, true) }
+              : undefined
+          }
+          onUnpin={
+            pickerMessage.className === "Message" && Boolean(pickerMessage.pinned)
+              ? () => { void handlePinToggle(pickerMessage, false) }
+              : undefined
+          }
           onCoRead={
             settings.appMode === "parent"
               ? () => {
