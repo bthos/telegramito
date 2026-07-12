@@ -17,6 +17,8 @@ type Props = {
   labelPause: string
   /** When known, show in scrub row; otherwise only elapsed shows. */
   durationSec: number | null
+  /** Volume button accessible label. */
+  labelVolume: string
   /** Round video note — circular crop (see `round-video.html`). */
   variant?: "rect" | "round"
 }
@@ -36,6 +38,7 @@ export function VideoFullViewer({
   labelPlay,
   labelPause,
   durationSec,
+  labelVolume,
   variant = "rect",
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -95,17 +98,30 @@ export function VideoFullViewer({
             }}
           />
           <div className="video-full-viewer__controls">
-            <div className="video-full-viewer__scrub" aria-hidden>
-              <div
-                className="video-full-viewer__scrub-fill"
-                style={{
-                  width:
-                    durationSec != null && durationSec > 0
-                      ? `${Math.min(100, (currentSec / durationSec) * 100)}%`
-                      : "0%",
-                }}
-              />
-            </div>
+            <input
+              type="range"
+              className="video-full-viewer__scrub-input"
+              aria-label="seek"
+              min={0}
+              max={durationSec ?? 100}
+              step={0.5}
+              value={currentSec}
+              onChange={(e) => {
+                const v = videoRef.current
+                if (v) {
+                  v.currentTime = Number(e.target.value)
+                }
+              }}
+            />
+            <div
+              className="video-full-viewer__scrub-fill"
+              style={{
+                width:
+                  durationSec != null && durationSec > 0
+                    ? `${Math.min(100, (currentSec / durationSec) * 100)}%`
+                    : "0%",
+              }}
+            />
             <div className="video-full-viewer__row">
               <button
                 type="button"
@@ -130,6 +146,15 @@ export function VideoFullViewer({
                 {" / "}
                 {durLabel}
               </span>
+              <button
+                type="button"
+                className="video-full-viewer__volume"
+                aria-label={labelVolume}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+                  <path d="M3 5.5H1a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h2l3 2.5V3L3 5.5zm7.53-.53a5 5 0 0 1 0 6.06" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>

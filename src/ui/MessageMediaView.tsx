@@ -1385,6 +1385,7 @@ export function MessageMediaView({
             sentAtLabel={sentAt}
             labelPlay={te("chat.videoPlay")}
             labelPause={te("chat.videoPause")}
+            labelVolume={te("chat.videoVolume")}
             durationSec={durSec}
             variant={round ? "round" : "rect"}
           />

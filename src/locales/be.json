@@ -330,7 +330,22 @@
     "composePhoto": "Фота",
     "composeVoice": "Голас",
     "composeFile": "Файл",
-    "sendArrow": "Даслаць →"
+    "sendArrow": "Даслаць →",
+    "gifViewerDialog": "Праграма прагляду GIF",
+    "gifActionFavourite": "Улюбёнае",
+    "gifActionForward": "Пераслаць",
+    "gifActionSave": "Захаваць",
+    "videoVolume": "Гучнасць",
+    "audioSkipPrev": "Папярэдні трэк",
+    "audioSkipNext": "Наступны трэк",
+    "voicePlaybackSpeed": "Хуткасць узнаўлення: {{speed}}×",
+    "photoActionFavourite": "Улюбёнае",
+    "photoActionSave": "Захаваць",
+    "photoActionShare": "Падзяліцца",
+    "fileDownloadLabel": "Спампаваць файл",
+    "documentOverflow": "Яшчэ параметры",
+    "documentPageCount_one": "{{count}} старонка",
+    "documentPageCount_other": "{{count}} старонак"
   },
   "letters": {
     "correspondents": "Карэспандэнты",

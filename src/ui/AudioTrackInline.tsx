@@ -12,12 +12,16 @@ function AudioFullModal({
   title,
   performer,
   durationSec,
+  prevTrack,
+  nextTrack,
 }: {
   src: string
   onClose: () => void
   title: string
   performer: string
   durationSec: number | null
+  prevTrack?: () => void
+  nextTrack?: () => void
 }) {
   const { t } = useTranslation()
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -57,6 +61,17 @@ function AudioFullModal({
         <div className="audio-full-modal__controls">
           <button
             type="button"
+            className="audio-full-modal__skip audio-full-modal__skip--prev"
+            aria-label={t("chat.audioSkipPrev")}
+            disabled={!prevTrack}
+            onClick={prevTrack}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+              <path d="M5 4h2v12H5V4zm9.5 6L8 6v8l6.5-4z" />
+            </svg>
+          </button>
+          <button
+            type="button"
             className="audio-full-modal__pp"
             aria-label={playing ? t("chat.videoPause") : t("chat.videoPlay")}
             onClick={() => {
@@ -72,6 +87,17 @@ function AudioFullModal({
             }}
           >
             {playing ? "❚❚" : "▶"}
+          </button>
+          <button
+            type="button"
+            className="audio-full-modal__skip audio-full-modal__skip--next"
+            aria-label={t("chat.audioSkipNext")}
+            disabled={!nextTrack}
+            onClick={nextTrack}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+              <path d="M13 4h2v12h-2V4zM5.5 10L12 6v8L5.5 10z" />
+            </svg>
           </button>
         </div>
         <audio

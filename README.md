@@ -8,10 +8,11 @@ A static, browser-only Telegram client built on [GramJS](https://gram.js.org/) (
 
 - MTProto connection via GramJS in the browser
 - Chat list with message previews and unread counts
-- Message thread with media rendering (photos, video, audio, files, polls, stickers, dice, paid media, and more)
+- Message thread with media rendering (photos, video, GIFs, audio, voice, files, polls, stickers, dice, paid media, and more)
+- Full-view overlays for every media type — video scrub bar and volume, GIF viewer, audio player with skip prev/next, document download, voice message speed control (1×/1.5×/2×) and transcription — see [docs/media-full-view.md](docs/media-full-view.md)
 - Compose area with auto-grow textarea and reply/forward support
 - Pin/unpin messages from the same per-message action menu as Reply/Forward, with a pinned banner (tap to jump, cycles through multiple pins) — see [docs/pinned-messages.md](docs/pinned-messages.md)
-- Image lightbox, inline location maps, poll voting
+- Photo lightbox, inline location maps, poll voting
 - Chat context panel — peer info, shared media grid, quick actions (see below)
 - Parental / supervised mode: child profile, allowlist, PIN-gated settings, night-hours lock
 - Infinite scroll via IntersectionObserver sentinel (no load-more button)

@@ -1,5 +1,6 @@
 import { useRef, type ReactNode } from "react"
 import { createPortal } from "react-dom"
+import { useTranslation } from "react-i18next"
 import { useBodyScrollLockAndEscape } from "../hooks/useBodyScrollLockAndEscape"
 import { useFocusTrap } from "../hooks/useFocusTrap"
 
@@ -42,6 +43,7 @@ export function PhotoMediaViewer({
   peerInitials,
   footerActions,
 }: Props) {
+  const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
   useFocusTrap(containerRef, true)
   useBodyScrollLockAndEscape(true, onClose)
@@ -92,9 +94,24 @@ export function PhotoMediaViewer({
           >
             {footerActions ?? (
               <>
-                <span className="photo-viewer__act-ico" title="" />
-                <span className="photo-viewer__act-ico" title="" />
-                <span className="photo-viewer__act-ico" title="" />
+                <button
+                  type="button"
+                  className="photo-viewer__act-ico"
+                  aria-label={t("chat.photoActionFavourite")}
+                  title={t("chat.photoActionFavourite")}
+                />
+                <button
+                  type="button"
+                  className="photo-viewer__act-ico"
+                  aria-label={t("chat.photoActionSave")}
+                  title={t("chat.photoActionSave")}
+                />
+                <button
+                  type="button"
+                  className="photo-viewer__act-ico"
+                  aria-label={t("chat.photoActionShare")}
+                  title={t("chat.photoActionShare")}
+                />
               </>
             )}
           </div>

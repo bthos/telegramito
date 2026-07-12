@@ -330,7 +330,22 @@
     "composePhoto": "Foto",
     "composeVoice": "Voz",
     "composeFile": "Archivo",
-    "sendArrow": "Enviar →"
+    "sendArrow": "Enviar →",
+    "gifViewerDialog": "Visor GIF",
+    "gifActionFavourite": "Favorito",
+    "gifActionForward": "Reenviar",
+    "gifActionSave": "Guardar",
+    "videoVolume": "Volumen",
+    "audioSkipPrev": "Pista anterior",
+    "audioSkipNext": "Pista siguiente",
+    "voicePlaybackSpeed": "Velocidad de reproducción: {{speed}}×",
+    "photoActionFavourite": "Favorito",
+    "photoActionSave": "Guardar",
+    "photoActionShare": "Compartir",
+    "fileDownloadLabel": "Descargar archivo",
+    "documentOverflow": "Más opciones",
+    "documentPageCount_one": "{{count}} página",
+    "documentPageCount_other": "{{count}} páginas"
   },
   "letters": {
     "correspondents": "Corresponsales",

@@ -371,7 +371,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
   bottom: 0;
   padding: 28px 16px 14px;
   background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.72));
-  color: #fff;
+  color: var(--on-overlay, #fff);
 }
 
 .video-full-viewer__scrub {
@@ -1706,4 +1706,172 @@ button.msg-video-play.msg-video-thumb-play-fab {
   border-radius: inherit;
   pointer-events: none;
   user-select: none;
+}
+
+/* --- GIF full viewer (full state) --- */
+.gif-full-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 10055;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ds-overlay, rgba(10, 18, 28, 0.92));
+}
+
+.gif-full-viewer__chrome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: min(80vw, 480px);
+}
+
+.gif-full-viewer__video {
+  max-width: 70%;
+  border-radius: 8px;
+  display: block;
+}
+
+.gif-full-viewer__caption {
+  color: var(--on-overlay, #fff);
+  font-size: 14px;
+  text-align: center;
+  max-width: 420px;
+  word-break: break-word;
+}
+
+.gif-full-viewer__actions {
+  display: flex;
+  flex-direction: row;
+  gap: 22px;
+  color: var(--on-overlay-2, rgba(255, 255, 255, 0.72));
+}
+
+.gif-full-viewer__act {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--on-overlay, #fff);
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+}
+
+.gif-full-viewer__act:hover {
+  background: color-mix(in srgb, var(--ds-on-overlay) 14%, transparent);
+}
+
+/* --- Video full viewer additions (scrub range input + volume button) --- */
+.video-full-viewer__scrub-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  cursor: pointer;
+  accent-color: var(--ds-on-overlay, #fff);
+}
+
+.video-full-viewer__volume {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ds-on-overlay, #fff);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  margin-left: auto;
+}
+
+.video-full-viewer__volume:hover {
+  background: color-mix(in srgb, var(--ds-on-overlay) 14%, transparent);
+}
+
+/* --- Audio full modal — prev/next skip buttons --- */
+.audio-full-modal__skip {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.audio-full-modal__skip[disabled] {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* --- Document preview modal additions --- */
+.doc-preview-modal__dl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--tg-blue);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.doc-preview-modal__dl:hover {
+  background: color-mix(in srgb, var(--tg-blue) 12%, transparent);
+}
+
+.doc-preview-modal__overflow {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.doc-preview-modal__overflow:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.doc-preview-modal__page-count {
+  text-align: center;
+  font-size: 12px;
+  color: var(--tg-ink-muted, #9aa7b8);
+  padding: 6px 0;
+}
+
+/* --- Voice full modal additions — speed button --- */
+.voice-full-modal__speed {
+  flex-shrink: 0;
+  min-width: 36px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--tg-ink-muted) 40%, transparent);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tg-ink-muted, #9aa7b8);
+  align-self: center;
+}
+
+.voice-full-modal__speed:hover {
+  background: color-mix(in srgb, var(--tg-blue) 10%, transparent);
+  color: var(--tg-blue);
+  border-color: var(--tg-blue);
+}
+
+/* photo-viewer action button reset (default no-op actions are now <button>) */
+.photo-viewer__act-ico {
+  border: none;
+  cursor: pointer;
 }

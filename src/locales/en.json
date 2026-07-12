@@ -330,7 +330,22 @@
     "composePhoto": "Photo",
     "composeVoice": "Voice",
     "composeFile": "File",
-    "sendArrow": "Send →"
+    "sendArrow": "Send →",
+    "gifViewerDialog": "GIF viewer",
+    "gifActionFavourite": "Favourite",
+    "gifActionForward": "Forward",
+    "gifActionSave": "Save",
+    "videoVolume": "Volume",
+    "audioSkipPrev": "Previous track",
+    "audioSkipNext": "Next track",
+    "voicePlaybackSpeed": "Playback speed: {{speed}}×",
+    "photoActionFavourite": "Favourite",
+    "photoActionSave": "Save",
+    "photoActionShare": "Share",
+    "fileDownloadLabel": "Download file",
+    "documentOverflow": "More options",
+    "documentPageCount_one": "{{count}} page",
+    "documentPageCount_other": "{{count}} pages"
   },
   "letters": {
     "correspondents": "Correspondents",

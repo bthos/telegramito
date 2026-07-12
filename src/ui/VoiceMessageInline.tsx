@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { formatVideoDuration } from "../telegram/documentVideoMeta"
 import { waveformHeights } from "./mediaWaveform"
@@ -66,6 +66,20 @@ function VoiceFullModal({
   const bars = waveformHeights(40, 13)
   const playedFrac = total > 0 ? Math.min(1, tcur / total) : 0
 
+  const SPEEDS = [1, 1.5, 2] as const
+  const [speedIdx, setSpeedIdx] = useState(0)
+  const speed = SPEEDS[speedIdx]!
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = speed
+    }
+  }, [speed])
+
+  const cycleSpeed = useCallback(() => {
+    setSpeedIdx((i) => (i + 1) % SPEEDS.length)
+  }, [SPEEDS.length])
+
   return (
     <ModalChrome onClose={onClose} ariaLabel={ariaLabel} className="media-modal-backdrop--surface">
       <div className="voice-full-modal" data-media-state="full">
@@ -116,6 +130,14 @@ function VoiceFullModal({
               ) : null}
             </div>
           </div>
+          <button
+            type="button"
+            className="voice-full-modal__speed"
+            aria-label={t("chat.voicePlaybackSpeed", { speed })}
+            onClick={cycleSpeed}
+          >
+            {speed === 1 ? "1×" : `${speed}×`}
+          </button>
         </div>
         <audio
           ref={audioRef}

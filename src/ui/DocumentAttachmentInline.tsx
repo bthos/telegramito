@@ -11,12 +11,14 @@ export function DocumentAttachmentInline({
   sizeStr,
   doc: _doc,
   viewerContext,
+  pageCount,
 }: {
   url: string
   name: string
   sizeStr: string
   doc: Api.Document | null
   viewerContext?: MediaViewerContext | null
+  pageCount?: number
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -54,6 +56,26 @@ export function DocumentAttachmentInline({
                 <div className="doc-preview-modal__name">{name}</div>
                 <div className="doc-preview-modal__sub">{t("chat.documentPreviewStub")}</div>
               </div>
+              <a
+                className="doc-preview-modal__dl"
+                href={url}
+                download={dName}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t("chat.fileDownloadLabel")}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+                  <path d="M8 12l-5-5h3V2h4v5h3l-5 5zM2 14h12v-2H2v2z" />
+                </svg>
+              </a>
+              <button
+                type="button"
+                className="doc-preview-modal__overflow"
+                aria-label={t("chat.documentOverflow")}
+                aria-haspopup="menu"
+              >
+                ⋮
+              </button>
               <button type="button" className="doc-preview-modal__close" onClick={() => setOpen(false)} aria-label={t("chat.imageViewerClose")}>
                 ×
               </button>
@@ -70,6 +92,11 @@ export function DocumentAttachmentInline({
                 <div className="doc-preview-modal__ln doc-preview-modal__ln--short" />
               </div>
             </div>
+            {pageCount != null ? (
+              <div className="doc-preview-modal__page-count">
+                {t("chat.documentPageCount", { count: pageCount })}
+              </div>
+            ) : null}
             <a className="doc-preview-modal__open" href={url} download={dName} target="_blank" rel="noopener noreferrer">
               {t("chat.fileSaveHint")}
             </a>
