@@ -10,6 +10,7 @@ import { ChildModeIcon, ParentModeIcon } from "./ModeToggleIcons"
 import { SignOutIcon } from "./SignOutIcon"
 import { DarkThemeIcon, LightThemeIcon, SystemThemeIcon } from "./ThemeToggleIcons"
 import type { CoReadingBookmark } from "../util/lettersRitualsStorage"
+import { getLettersPortalRoot } from "../util/lettersPortalRoot"
 
 const THEME_TOGGLES: {
   pref: ThemePreference
@@ -294,5 +295,5 @@ export function LettersDeskSheet({
     </div>
   )
 
-  return createPortal(node, document.body)
+  return createPortal(node, getLettersPortalRoot())
 }

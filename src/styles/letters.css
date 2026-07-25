@@ -697,6 +697,23 @@ html[data-theme="dark"] .letters-day-mail__item.is-active {
   font-weight: 600;
 }
 
+.letters-day-mail__summary-name {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.letters-day-mail__summary-name:hover,
+.letters-day-mail__summary-name:focus-visible {
+  text-decoration: underline;
+}
+
 .chat-row--draft .chat-row__draft-preview {
   font-family: var(--letters-serif, inherit);
   font-size: 1rem;

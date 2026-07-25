@@ -5,6 +5,7 @@ import type { TelegramClient } from "telegram"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import { useBodyScrollLockAndEscape } from "../hooks/useBodyScrollLockAndEscape"
 import { useFocusTrap } from "../hooks/useFocusTrap"
+import { getLettersPortalRoot } from "../util/lettersPortalRoot"
 import { DayMailRail } from "./DayMailRail"
 import { Button } from "./ds"
 
@@ -73,5 +74,5 @@ export function LettersDayMailSlideOver({
     </div>
   )
 
-  return createPortal(node, document.body)
+  return createPortal(node, getLettersPortalRoot())
 }

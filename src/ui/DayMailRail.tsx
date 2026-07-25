@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
@@ -286,6 +286,23 @@ export function DayMailRail({
   }, [baseEveningSummary, client, dialogs, eveningPrecise, now])
 
   const eveningSummary = tier2EveningSummary ?? baseEveningSummary
+
+  const dialogByKey = useMemo(() => {
+    const map = new Map<string, Dialog>()
+    for (const d of dialogs) {
+      map.set(getPeerInfo(d).key, d)
+    }
+    return map
+  }, [dialogs])
+
+  const handleSummarySelect = useCallback(
+    (key: string) => {
+      const d = dialogByKey.get(key)
+      if (d) onSelect?.(d)
+    },
+    [dialogByKey, onSelect],
+  )
+
   const lockMinutes = nightMode != null ? minutesUntilNightLock(nightMode, now) : null
 
   return (
@@ -312,7 +329,18 @@ export function DayMailRail({
               <span className="letters-day-mail__summary-label">
                 {t("letters.evening.wroteToYou")}
               </span>{" "}
-              {eveningSummary.wroteToday.map((x) => x.name).join(", ")}
+              {eveningSummary.wroteToday.map((x, i) => (
+                <Fragment key={x.key}>
+                  {i > 0 ? ", " : null}
+                  <button
+                    type="button"
+                    className="letters-day-mail__summary-name"
+                    onClick={() => handleSummarySelect(x.key)}
+                  >
+                    {x.name}
+                  </button>
+                </Fragment>
+              ))}
             </p>
           ) : null}
           {eveningSummary.awaitingReply.length > 0 ? (
@@ -320,7 +348,18 @@ export function DayMailRail({
               <span className="letters-day-mail__summary-label">
                 {t("letters.evening.awaitingReply")}
               </span>{" "}
-              {eveningSummary.awaitingReply.map((x) => x.name).join(", ")}
+              {eveningSummary.awaitingReply.map((x, i) => (
+                <Fragment key={x.key}>
+                  {i > 0 ? ", " : null}
+                  <button
+                    type="button"
+                    className="letters-day-mail__summary-name"
+                    onClick={() => handleSummarySelect(x.key)}
+                  >
+                    {x.name}
+                  </button>
+                </Fragment>
+              ))}
             </p>
           ) : null}
           {eveningSummary.broadcastToday.length > 0 ? (
@@ -328,7 +367,18 @@ export function DayMailRail({
               <span className="letters-day-mail__summary-label">
                 {t("letters.evening.broadcastToday")}
               </span>{" "}
-              {eveningSummary.broadcastToday.map((x) => x.name).join(", ")}
+              {eveningSummary.broadcastToday.map((x, i) => (
+                <Fragment key={x.key}>
+                  {i > 0 ? ", " : null}
+                  <button
+                    type="button"
+                    className="letters-day-mail__summary-name"
+                    onClick={() => handleSummarySelect(x.key)}
+                  >
+                    {x.name}
+                  </button>
+                </Fragment>
+              ))}
             </p>
           ) : null}
           {eveningSummary.postedToChannelsToday.length > 0 ? (
@@ -336,7 +386,18 @@ export function DayMailRail({
               <span className="letters-day-mail__summary-label">
                 {t("letters.evening.postedToChannels")}
               </span>{" "}
-              {eveningSummary.postedToChannelsToday.map((x) => x.name).join(", ")}
+              {eveningSummary.postedToChannelsToday.map((x, i) => (
+                <Fragment key={x.key}>
+                  {i > 0 ? ", " : null}
+                  <button
+                    type="button"
+                    className="letters-day-mail__summary-name"
+                    onClick={() => handleSummarySelect(x.key)}
+                  >
+                    {x.name}
+                  </button>
+                </Fragment>
+              ))}
             </p>
           ) : null}
         </section>
