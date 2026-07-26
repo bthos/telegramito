@@ -3,6 +3,7 @@ import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { useBodyScrollLockAndEscape } from "../hooks/useBodyScrollLockAndEscape"
 import { useFocusTrap } from "../hooks/useFocusTrap"
+import { useSheetDragDismiss } from "../hooks/useSheetDragDismiss"
 import { useTheme } from "../context/ThemeContext"
 import type { AppMode } from "../parental/types"
 import type { ThemePreference } from "../theme/storage"
@@ -63,32 +64,32 @@ export function LettersDeskSheet({
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
   const panelRef = useRef<HTMLDivElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
 
   useFocusTrap(panelRef, open)
   useBodyScrollLockAndEscape(open, onClose)
-
-  if (!open) {
-    return null
-  }
+  useSheetDragDismiss(panelRef, backdropRef, { open, onDismiss: onClose })
 
   const node = (
-    <div
-      className="letters-desk-sheet-backdrop"
-      role="presentation"
-      onClick={onClose}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") {
-          onClose()
-        }
-      }}
-    >
+    <>
+      <div
+        ref={backdropRef}
+        className={`letters-desk-sheet-backdrop${open ? " letters-desk-sheet-backdrop--open" : ""}`}
+        role="presentation"
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            onClose()
+          }
+        }}
+      />
       <div
         ref={panelRef}
-        className="letters-desk-sheet"
+        className={`letters-desk-sheet${open ? " letters-desk-sheet--open" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={t("letters.deskSheetAria")}
-        onClick={(e) => e.stopPropagation()}
+        inert={!open}
       >
         <div className="letters-desk-sheet__grip" aria-hidden />
         <h2 className="letters-desk-sheet__title">{t("letters.deskSheetTitle")}</h2>
@@ -292,7 +293,7 @@ export function LettersDeskSheet({
           </button>
         </div>
       </div>
-    </div>
+    </>
   )
 
   return createPortal(node, getLettersPortalRoot())

@@ -9,6 +9,7 @@ import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { useTranslation } from "react-i18next"
 import { useHardwareBackLayer } from "../hooks/useHardwareBack"
+import { useSheetDragDismiss } from "../hooks/useSheetDragDismiss"
 import { blockTelegramUser } from "../telegram/blockUser"
 import {
   getPeerMuteUntil,
@@ -288,6 +289,7 @@ export function ChatContextPanel({
 }: Props) {
   const { t } = useTranslation()
   const panelRef = useRef<HTMLDivElement | null>(null)
+  const backdropRef = useRef<HTMLDivElement | null>(null)
 
   const [activeTab, setActiveTab] = useState<MediaTab>("photos")
 
@@ -298,6 +300,7 @@ export function ChatContextPanel({
   )
 
   useHardwareBackLayer(isOpen, onClose)
+  useSheetDragDismiss(panelRef, backdropRef, { open: isOpen, onDismiss: onClose })
 
   // Escape key dismisses
   useEffect(() => {
@@ -621,19 +624,19 @@ export function ChatContextPanel({
 
   return (
     <>
-      {isOpen ? (
-        <div
-          className="context-panel__backdrop"
-          onClick={onClose}
-          aria-hidden="true"
-        />
-      ) : null}
+      <div
+        ref={backdropRef}
+        className={`context-panel__backdrop${isOpen ? " context-panel__backdrop--open" : ""}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <div
         ref={panelRef}
         className={`chat-context-panel${isOpen ? " context-panel--open" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={t("chat.info")}
+        inert={!isOpen}
       >
         {inner}
       </div>

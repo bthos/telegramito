@@ -2516,6 +2516,54 @@ button.letters-insights__cal-cell {
   );
 }
 
+/* Chat info panel — mobile/tablet overlay presentation (bottom sheet / side
+   panel). Brings the scrim tint, surface, and action-button treatment in
+   line with the Letters desk sheet (same warm scrim + parchment panel +
+   borderless divider-row actions) instead of the generic dark-surface
+   tokens this presentation shipped with; the docked desktop rail keeps its
+   own bordered-pill treatment above. */
+.app-root--letters-chats .context-panel__backdrop {
+  background: rgba(28, 24, 21, 0.42);
+}
+.app-root--letters-chats .chat-context-panel:not(.chat-context-panel--letters-rail) {
+  background: var(--letters-panel);
+  color: var(--letters-ink);
+  font-family: var(--letters-ui);
+}
+.app-root--letters-chats .chat-context-panel:not(.chat-context-panel--letters-rail)::before {
+  background: var(--letters-lines);
+}
+.app-root--letters-chats .chat-context-panel:not(.chat-context-panel--letters-rail) .context-panel__header,
+.app-root--letters-chats .chat-context-panel:not(.chat-context-panel--letters-rail) .context-panel__section {
+  border-bottom-color: var(--letters-hairline);
+}
+.app-root--letters-chats .chat-context-panel:not(.chat-context-panel--letters-rail) .context-panel__name {
+  font-family: var(--letters-serif);
+  color: var(--letters-ink);
+}
+.app-root--letters-chats .chat-context-panel:not(.chat-context-panel--letters-rail) .context-panel__section-title {
+  font-family: var(--letters-ui);
+  color: var(--letters-ink-3);
+}
+.app-root--letters-chats .chat-context-panel:not(.chat-context-panel--letters-rail) .context-panel__media-tab--active {
+  color: var(--letters-terra);
+  border-bottom-color: var(--letters-terra);
+}
+.app-root--letters-chats .chat-context-panel:not(.chat-context-panel--letters-rail) .context-panel__action-btn {
+  font-family: var(--letters-ui);
+  color: var(--letters-ink);
+  border-radius: 0;
+  border-bottom: 1px solid var(--letters-lines);
+  padding: 10px 2px;
+}
+.app-root--letters-chats .chat-context-panel:not(.chat-context-panel--letters-rail) .context-panel__action-btn:hover {
+  background: color-mix(in srgb, var(--letters-terra) 6%, transparent);
+}
+.app-root--letters-chats .chat-context-panel:not(.chat-context-panel--letters-rail) .context-panel__action-btn--danger {
+  color: var(--letters-terra);
+  border-bottom: none;
+}
+
 /* BP_PAIR.lettersBelowThreeColMax — no day-mail rail in two-pane */
 @media (max-width: 1279px) {
   /* BP_PAIR.lettersBelowThreeColMax (= BP.lettersThreeColMin - 1) */
@@ -2760,12 +2808,23 @@ button.letters-insights__cal-cell {
     inset: 0;
     z-index: var(--ds-z-modal, 1200);
     background: rgba(28, 24, 21, 0.42);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease-out;
+  }
+
+  .letters-desk-sheet-backdrop.letters-desk-sheet-backdrop--open {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .letters-desk-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: calc(var(--ds-z-modal, 1200) + 1);
+    margin: 0 auto;
     box-sizing: border-box;
     width: 100%;
     max-width: 480px;
@@ -2778,6 +2837,12 @@ button.letters-insights__cal-cell {
     color: var(--letters-ink);
     font-family: var(--letters-ui);
     box-shadow: 0 -8px 32px rgba(28, 24, 21, 0.18);
+    transform: translateY(100%);
+    transition: transform 0.22s ease-out;
+  }
+
+  .letters-desk-sheet.letters-desk-sheet--open {
+    transform: translateY(0);
   }
 
   .letters-desk-sheet__grip {
