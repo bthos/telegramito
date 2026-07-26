@@ -108,7 +108,6 @@ describe("VideoFullViewer full chrome", () => {
           labelPlay="Play"
           labelPause="Pause"
           durationSec={90}
-          // @ts-expect-error — labelVolume added by Cmok
           labelVolume="Volume"
           {...extra}
         />
@@ -345,7 +344,6 @@ describe("DocumentAttachmentInline full modal", () => {
   })
 
   it("shows page indicator when pageCount is provided (AC-DF2)", () => {
-    // @ts-expect-error — pageCount prop added by Cmok
     openModal({ pageCount: 5 })
     const indicator = document.querySelector(".doc-preview-modal__page-count")
     expect(indicator, "page count indicator missing").toBeTruthy()

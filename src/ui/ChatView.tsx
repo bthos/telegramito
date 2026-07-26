@@ -974,6 +974,7 @@ export function ChatView({
     lettersRailCtx?.lettersInfoOpen,
     loadedDaysSpan,
     loadedWindowSinceLabel,
+    name,
     openSearchMode,
     participantsCount,
     refreshDialogs,

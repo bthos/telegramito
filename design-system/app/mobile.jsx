@@ -233,6 +233,81 @@ const MB_CSS = `
   background: transparent; border-radius: 999px; padding: 9px 14px; cursor: pointer; }
 .mb-ev-foot { margin: 18px 20px 0; font-family: 'Spectral', serif; font-style: italic;
   font-size: 13.5px; line-height: 1.5; color: #7a705f; }
+
+/* ── Кружки · corkboard of postcards ── */
+.mb-corkboard { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 14px 26px;
+  background:
+    radial-gradient(circle at 14% 20%, rgba(28,24,21,.06) 0, rgba(28,24,21,0) 2.5px),
+    radial-gradient(circle at 82% 15%, rgba(28,24,21,.06) 0, rgba(28,24,21,0) 2.5px),
+    radial-gradient(circle at 62% 55%, rgba(28,24,21,.06) 0, rgba(28,24,21,0) 2.5px),
+    radial-gradient(circle at 20% 82%, rgba(28,24,21,.06) 0, rgba(28,24,21,0) 2.5px),
+    radial-gradient(circle at 88% 78%, rgba(28,24,21,.06) 0, rgba(28,24,21,0) 2.5px),
+    #cbb994;
+}
+.mb-cork-grid { display: flex; flex-wrap: wrap; gap: 20px 12px; }
+.mb-postcard { position: relative; width: calc(50% - 6px); background: #f7f2e6; border: none;
+  border-radius: 3px; padding: 9px 9px 10px; text-align: left; cursor: pointer;
+  box-shadow: 0 4px 9px rgba(28,24,21,.24), 0 1px 0 rgba(255,255,255,.5) inset; }
+.mb-postcard:nth-child(6n+1) { transform: rotate(-3deg); }
+.mb-postcard:nth-child(6n+2) { transform: rotate(2.5deg); margin-top: 22px; }
+.mb-postcard:nth-child(6n+3) { transform: rotate(-1.5deg); }
+.mb-postcard:nth-child(6n+4) { transform: rotate(3deg); margin-top: 12px; }
+.mb-postcard:nth-child(6n+5) { transform: rotate(-2deg); }
+.mb-postcard:nth-child(6n+6) { transform: rotate(1.5deg); margin-top: 6px; }
+.mb-postcard .pin { position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  width: 12px; height: 12px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff8a5c, #b03e1b 65%, #7a2a10 100%);
+  box-shadow: 0 2px 3px rgba(28,24,21,.35); }
+.mb-postcard.own .pin { background: radial-gradient(circle at 35% 30%, #d8d2c2, #948c79 65%, #635b4c 100%); }
+.mb-postcard .photo { display: block; height: 76px; border-radius: 2px; margin-bottom: 7px; }
+.mb-postcard .who { font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 700;
+  color: #3a322a; display: flex; align-items: center; gap: 5px; }
+.mb-postcard .fresh { width: 7px; height: 7px; border-radius: 50%; background: #b03e1b;
+  box-shadow: 0 0 0 2px #f7f2e6; flex: 0 0 auto; }
+.mb-postcard .cap { font-family: 'Spectral', serif; font-style: italic; font-size: 11px;
+  color: #7a705f; margin-top: 2px; line-height: 1.32; overflow: hidden; display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.mb-postcard.read { filter: saturate(.45) brightness(.98); box-shadow: 0 2px 5px rgba(28,24,21,.15); }
+.mb-postcard.fallen { width: 48%; transform: rotate(-9deg) translateY(4px) !important; }
+.mb-postcard-slot { width: calc(50% - 6px); height: 104px; border: 1.5px dashed rgba(28,24,21,.18);
+  border-radius: 4px; }
+.mb-postcard-slot:nth-child(1) { transform: rotate(-2deg); }
+.mb-postcard-slot:nth-child(2) { transform: rotate(2deg); margin-top: 16px; }
+.mb-cork-note { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; text-align: center; padding: 34px 20px; color: #7a705f; }
+.mb-cork-note .g { font-size: 22px; }
+.mb-cork-note .t { font-family: 'Spectral', serif; font-size: 14.5px; color: #3a322a; max-width: 230px; }
+.mb-cork-note.locked .t { font-family: 'Manrope', sans-serif; font-weight: 700; letter-spacing: .04em;
+  font-size: 12.5px; }
+
+/* ── Кружки · Story viewer (full-screen) ── */
+.mb-viewer { position: absolute; inset: 0; z-index: 30; background: #0a0806;
+  display: flex; flex-direction: column; border-radius: 34px; overflow: hidden; }
+.mb-viewer .vg-progress { display: flex; gap: 4px; padding: 14px 10px 0; }
+.mb-viewer .vg-seg { flex: 1; height: 2.5px; border-radius: 2px; background: rgba(255,255,255,.28); overflow: hidden; }
+.mb-viewer .vg-seg .fill { display: block; height: 100%; background: #f5f0e6; }
+.mb-viewer .vg-seg.done .fill { width: 100%; }
+.mb-viewer .vg-seg.active .fill { width: 45%; }
+.mb-viewer .vg-seg.todo .fill { width: 0; }
+.mb-viewer .vg-top { display: flex; align-items: center; gap: 10px; padding: 10px 14px 0; color: #f5f0e6; }
+.mb-viewer .vg-av { width: 30px; height: 30px; border-radius: 50%; background: #e9e4d8; border: 1.5px solid rgba(245,240,230,.5); flex: 0 0 auto; }
+.mb-viewer .vg-who { font-family: 'Manrope', sans-serif; font-size: 12.5px; font-weight: 700; }
+.mb-viewer .vg-when { font-family: 'Manrope', sans-serif; font-size: 11px; color: rgba(245,240,230,.72); margin-left: 6px; }
+.mb-viewer .vg-close { margin-left: auto; width: 32px; height: 32px; border: none; background: none;
+  color: #f5f0e6; font-size: 17px; cursor: pointer; }
+.mb-viewer .vg-media { flex: 1; position: relative; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(90% 70% at 55% 25%, #4a4238 0%, #241d18 65%, #120e0b 100%); }
+.mb-viewer .vg-media.photo { background: radial-gradient(80% 60% at 60% 25%, #ffd97a 0%, #ff7a59 42%, #8b2f5b 78%, #241a33 100%); }
+.mb-viewer .vg-tapzone { position: absolute; top: 0; bottom: 0; border: none; background: transparent; }
+.mb-viewer .vg-tapzone.prev { left: 0; width: 35%; }
+.mb-viewer .vg-tapzone.next { left: 35%; width: 65%; }
+.mb-viewer .vg-caption { padding: 10px 16px 18px; background: linear-gradient(rgba(10,8,6,0), rgba(10,8,6,.85));
+  color: #f5f0e6; font-family: 'Spectral', serif; font-size: 14px; line-height: 1.4; margin-top: -70px; position: relative; z-index: 2; }
+.mb-viewer .vg-badge { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px; color: rgba(245,240,230,.85); }
+.mb-viewer .vg-badge .g { font-size: 26px; }
+.mb-viewer .vg-badge .t { font-family: 'Manrope', sans-serif; font-size: 12px; }
+.mb-viewer .vg-sound { position: absolute; right: 14px; bottom: 68px; z-index: 2; color: #f5f0e6; opacity: .85; font-size: 15px; }
 `;
 
 function MbStatus() {
@@ -257,7 +332,7 @@ function MbTabBar({ active }) {
   const tabs = [
     { k: 'letters', g: '✉', l: 'Письма' },
     { k: 'daymail', g: '☙', l: 'Почта дня', badge: '14' },
-    { k: 'circles', g: '◫', l: 'Кружки' },
+    { k: 'circles', g: '◎', l: 'Кружки' },
     { k: 'desk', g: '❦', l: 'Стол' },
   ];
   return (
@@ -524,4 +599,150 @@ function MobEvening() {
   );
 }
 
-Object.assign(window, { MobLetters, MobDayMail, MobThread, MobDesk, MobEvening });
+/* ═══ F · Кружки (доска открыток) ═══ */
+function MobCircles() {
+  const items = [
+    { k: 'me', who: 'Вы', cap: 'ваш кружок · 6 просмотров', own: true,
+      photo: 'linear-gradient(135deg, #e9e4d8, #cfc9ba 70%, #b6ae9b)' },
+    { k: 'a', who: 'Anna', cap: 'сегодня вечером у гавани 🌅', unread: true,
+      photo: 'linear-gradient(135deg, #ffd97a, #ff7a59 55%, #8b2f5b)' },
+    { k: 'b', who: 'Marco', cap: 'студийная запись, новый рифф', unread: true,
+      photo: 'linear-gradient(135deg, #7ec8e3, #3a6ea5 60%, #1c2b4a)' },
+    { k: 'c', who: 'Dana', cap: 'утро в парке, тихо и туманно',
+      photo: 'linear-gradient(135deg, #cfe3c9, #7fae72 60%, #3c5a34)' },
+    { k: 'd', who: 'Ravi', cap: 'новый день, старый маршрут',
+      photo: 'linear-gradient(135deg, #e3c9df, #a771a0 60%, #5a3457)' },
+  ];
+  return (
+    <div className="mb-phone">
+      <style>{MB_CSS}</style>
+      <MbStatus />
+      <MbTop actions={null} />
+      <div className="mb-body">
+        <div className="mb-corkboard">
+          <div className="mb-cork-grid" role="list" aria-label="Кружки — открытки на доске">
+            {items.map((it) => (
+              <button
+                key={it.k}
+                type="button"
+                role="listitem"
+                className={`mb-postcard${it.own ? ' own' : ''}${!it.unread && !it.own ? ' read' : ''}`}
+                aria-label={`${it.who}${it.own ? ' — ваш кружок' : it.unread ? ' — новый кружок, не просмотрен' : ' — просмотрено'}`}
+              >
+                <span className="pin" aria-hidden="true" />
+                <span className="photo" style={{ background: it.photo }} />
+                <span className="who">{it.who}{it.unread ? <span className="fresh" aria-hidden="true" /> : null}</span>
+                <span className="cap">{it.cap}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <MbTabBar active="circles" />
+    </div>
+  );
+}
+
+/* ═══ F′ · Кружки — пусто / загрузка / заблокировано / ошибка ═══ */
+function MobCirclesEmpty({ variant = 'empty' }) {
+  return (
+    <div className="mb-phone">
+      <style>{MB_CSS}</style>
+      <MbStatus />
+      <MbTop actions={null} />
+      <div className="mb-body">
+        {variant === 'loading' ? (
+          <div className="mb-corkboard">
+            <div className="mb-cork-grid" role="status" aria-busy="true" aria-label="Загрузка кружков">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="mb-postcard" aria-hidden="true">
+                  <span className="pin" />
+                  <span className="photo skeleton" />
+                  <span className="skeleton" style={{ display: 'block', height: 9, width: '55%', borderRadius: 4 }} />
+                  <span className="skeleton" style={{ display: 'block', height: 8, width: '80%', borderRadius: 4, marginTop: 5 }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : variant === 'locked' ? (
+          <div className="mb-corkboard">
+            <div className="mb-cork-note locked" role="status" style={{ paddingTop: 96 }}>
+              <span className="g">☾</span>
+              <p className="t">Кружки закрыты до 8:00</p>
+            </div>
+          </div>
+        ) : variant === 'error' ? (
+          <div className="mb-corkboard">
+            <div className="mb-cork-grid" aria-hidden="true" style={{ justifyContent: 'center' }}>
+              <div className="mb-postcard fallen">
+                <span className="pin" />
+                <span className="photo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22, background: 'rgba(192,51,31,.12)' }}>⚠</span>
+                <span className="who">Кружки</span>
+                <span className="cap">открытка упала с доски</span>
+              </div>
+            </div>
+            <div className="mb-cork-note" role="status" style={{ paddingTop: 8 }}>
+              <p className="t">Не удалось загрузить кружки</p>
+              <button className="mb-ev-act" type="button">Повторить</button>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-corkboard">
+            <div className="mb-cork-grid" aria-hidden="true">
+              <span className="mb-postcard-slot" />
+              <span className="mb-postcard-slot" />
+            </div>
+            <div className="mb-cork-note" role="status">
+              <span className="g">📌</span>
+              <p className="t">Доска пуста — пока никто не приколол открытку</p>
+            </div>
+          </div>
+        )}
+      </div>
+      <MbTabBar active="circles" />
+    </div>
+  );
+}
+
+/* ═══ G · Кружок — полноэкранный просмотр ═══ */
+function MobStoryViewer({ variant = 'photo' }) {
+  const isVideo = variant === 'video';
+  const isLoading = variant === 'loading';
+  const isError = variant === 'error';
+  return (
+    <div className="mb-phone">
+      <style>{MB_CSS}</style>
+      <div className="mb-viewer">
+        <div className="vg-progress" aria-hidden>
+          <span className="vg-seg done"><span className="fill" /></span>
+          <span className="vg-seg active"><span className="fill" /></span>
+          <span className="vg-seg todo"><span className="fill" /></span>
+          <span className="vg-seg todo"><span className="fill" /></span>
+        </div>
+        <div className="vg-top">
+          <span className="vg-av" />
+          <span className="vg-who">Anna</span>
+          <span className="vg-when">· 3ч</span>
+          <button className="vg-close" type="button" aria-label="Закрыть">✕</button>
+        </div>
+        <div className={`vg-media ${isVideo || isError || isLoading ? '' : 'photo'}`}>
+          <button className="vg-tapzone prev" type="button" aria-label="Предыдущий кружок" />
+          <button className="vg-tapzone next" type="button" aria-label="Следующий кружок" />
+          {isLoading ? (
+            <span className="vg-badge"><span className="g skeleton" style={{ width: 40, height: 40, borderRadius: '50%', display: 'block' }} /><span className="t">Загрузка…</span></span>
+          ) : isError ? (
+            <span className="vg-badge"><span className="g">⚠</span><span className="t">Не удалось загрузить</span></span>
+          ) : isVideo ? (
+            <span className="vg-sound" aria-hidden>♪</span>
+          ) : null}
+        </div>
+        {!isLoading && !isError ? (
+          <div className="vg-caption">tonight at the harbor 🌅</div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { MobLetters, MobDayMail, MobThread, MobDesk, MobEvening, MobCircles, MobCirclesEmpty, MobStoryViewer });

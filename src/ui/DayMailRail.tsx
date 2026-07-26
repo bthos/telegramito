@@ -135,8 +135,7 @@ export function DayMailRail({
   const { t, i18n } = useTranslation()
   const { settings } = useParentalSettings()
   const nightMode = nightModeProp ?? settings.nightMode
-  usePeriodicTick(30_000)
-  const now = new Date()
+  const now = usePeriodicTick(30_000)
   const railRef = useRef<HTMLDivElement>(null)
   /** Smallest top-visible row index since last list reset (= newest row the user has aligned with). */
   const newestSeenTopIndexRef = useRef<number | null>(null)
