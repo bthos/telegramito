@@ -5,6 +5,8 @@
   "common": { "cancel": "Скасаваць", "back": "Назад", "close": "Закрыць", "pressBackToExit": "Націсніце «Назад» яшчэ раз, каб выйсці" },
   "loading": "Загрузка…",
   "signOut": "Выйсці",
+  "signOutConfirmTitle": "Выйсці з акаунта?",
+  "signOutConfirmBody": "Каб зноў карыстацца Telegramito, трэба будзе ўвайсці зноў.",
   "chats": "Чаты",
   "settings": "Налады",
   "requestsTab": "Запыты",

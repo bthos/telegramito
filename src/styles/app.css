@@ -717,6 +717,7 @@ button.switch:active .switch__thumb {
   flex-direction: column;
   gap: 0.5rem;
 }
+.sign-out-confirm__danger { background: var(--err, #f58b8b); }
 .sep {
   border: 0;
   border-top: 1px solid var(--line);

@@ -5,6 +5,8 @@
   "common": { "cancel": "Cancelar", "back": "Atrás", "close": "Cerrar", "pressBackToExit": "Pulse Atrás de nuevo para salir" },
   "loading": "Cargando…",
   "signOut": "Cerrar sesión",
+  "signOutConfirmTitle": "¿Cerrar sesión?",
+  "signOutConfirmBody": "Tendrás que iniciar sesión de nuevo para usar Telegramito.",
   "chats": "Chats",
   "settings": "Ajustes",
   "requestsTab": "Solicitudes",

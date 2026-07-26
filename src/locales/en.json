@@ -5,6 +5,8 @@
   "common": { "cancel": "Cancel", "back": "Back", "close": "Close", "pressBackToExit": "Press Back again to exit" },
   "loading": "Loading…",
   "signOut": "Sign out",
+  "signOutConfirmTitle": "Sign out?",
+  "signOutConfirmBody": "You'll need to sign in again to use Telegramito.",
   "chats": "Chats",
   "settings": "Settings",
   "requestsTab": "Requests",

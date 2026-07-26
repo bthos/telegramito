@@ -44,6 +44,7 @@ import { LettersWriteFab } from "./LettersWriteFab"
 import { SettingsView } from "./SettingsView"
 import { PinDialog } from "./PinDialog"
 import { RequestsView } from "./RequestsView"
+import { SignOutConfirmDialog } from "./SignOutConfirmDialog"
 import { Button } from "./ds"
 import { BackIcon } from "./BackIcon"
 
@@ -87,6 +88,7 @@ export function MainShell() {
     null,
   )
   const [showPin, setShowPin] = useState(false)
+  const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false)
   const [modePinToParent, setModePinToParent] = useState(false)
   const [search, setSearch] = useState("")
   const deferredSearch = useDeferredValue(search)
@@ -488,7 +490,7 @@ export function MainShell() {
           appMode={settings.appMode}
           onAppMode={setAppMode}
           onSignOut={() => {
-            void logOut()
+            setSignOutConfirmOpen(true)
           }}
           compact
           searchExpanded={searchExpanded}
@@ -512,7 +514,7 @@ export function MainShell() {
           appMode={settings.appMode}
           onAppMode={setAppMode}
           onSignOut={() => {
-            void logOut()
+            setSignOutConfirmOpen(true)
           }}
           showDayMailButton={showTabletDayMailBtn}
           onOpenDayMail={() => {
@@ -693,7 +695,7 @@ export function MainShell() {
           setTab("requests")
         }}
         onSignOut={() => {
-          void logOut()
+          setSignOutConfirmOpen(true)
         }}
       />
 
@@ -717,6 +719,17 @@ export function MainShell() {
             setModePinToParent(false)
             void setSettings((prev) => ({ ...prev, appMode: "parent" }))
           }
+        }}
+      />
+
+      <SignOutConfirmDialog
+        open={signOutConfirmOpen}
+        onClose={() => {
+          setSignOutConfirmOpen(false)
+        }}
+        onConfirm={() => {
+          setSignOutConfirmOpen(false)
+          void logOut()
         }}
       />
     </div>
