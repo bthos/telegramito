@@ -33,6 +33,7 @@ import {
 import { ChatView, THREAD_HEADER_ACTIONS_ID, THREAD_HEADER_CENTER_ID } from "./ChatView"
 import { ChatsListPanel } from "./ChatsListPanel"
 import { DayMailRail } from "./DayMailRail"
+import { StoriesRailStrip } from "./StoriesRailStrip"
 import { LettersCorrespondenceSeg } from "./LettersCorrespondenceSeg"
 import { LettersDayMailSlideOver } from "./LettersDayMailSlideOver"
 import { LettersDeskSheet } from "./LettersDeskSheet"
@@ -461,11 +462,13 @@ export function MainShell() {
         </div>
       ) : null}
       {mobileTab === "circles" ? (
-        <div className="letters-mobile-panel-scroll chats-narrow-list">
-          <ChatsListPanel
-            {...listPanelCommon}
-            dialogs={lettersCirclesDialogs}
-            circlesOnly
+        <div className="letters-mobile-panel-scroll letters-mobile-circles">
+          <StoriesRailStrip
+            client={client}
+            appMode={settings.appMode}
+            nightListHidden={nightHidden}
+            nightWindow={listPanelCommon.nightWindow}
+            deniedPeerIds={deniedPeerIds}
           />
         </div>
       ) : null}

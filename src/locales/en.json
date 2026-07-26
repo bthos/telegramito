@@ -373,7 +373,7 @@
     "mobileTabGlyph": {
       "letters": "✉",
       "dayMail": "☙",
-      "circles": "◫",
+      "circles": "◎",
       "desk": "❦"
     },
     "deskSheetAria": "Desk — settings and account",
@@ -447,7 +447,22 @@
     "waxSealUndo": "Unseal",
     "coReadingAction": "Discuss at dinner",
     "coReadingDeskTitle": "To discuss together",
-    "coReadingDeviceOnlyHint": "Bookmarks stay on this device only. Import will be available in a future update."
+    "coReadingDeviceOnlyHint": "Bookmarks stay on this device only. Import will be available in a future update.",
+    "stories": {
+      "railAria": "Stories",
+      "ringAriaUnread": "{{name}} — new story",
+      "ringAriaRead": "{{name}} — story",
+      "ownRingAria": "Your story",
+      "empty": "No stories yet — nobody's pinned one to the board.",
+      "lockedNotice": "Stories are closed until {{time}}",
+      "loadError": "Couldn't load stories.",
+      "retry": "Retry",
+      "viewerAria": "{{name}}'s story",
+      "close": "Close",
+      "prev": "Previous story",
+      "next": "Next story",
+      "mediaError": "Couldn't load this story."
+    }
   },
   "mode": {
     "label": "Profile",

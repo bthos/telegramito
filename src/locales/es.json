@@ -373,7 +373,7 @@
     "mobileTabGlyph": {
       "letters": "✉",
       "dayMail": "☙",
-      "circles": "◫",
+      "circles": "◎",
       "desk": "❦"
     },
     "deskSheetAria": "Escritorio — ajustes y cuenta",
@@ -447,7 +447,22 @@
     "waxSealUndo": "Desellar",
     "coReadingAction": "Comentar en la cena",
     "coReadingDeskTitle": "Para comentar juntos",
-    "coReadingDeviceOnlyHint": "Los marcadores permanecen solo en este dispositivo. La importación estará disponible en una actualización futura."
+    "coReadingDeviceOnlyHint": "Los marcadores permanecen solo en este dispositivo. La importación estará disponible en una actualización futura.",
+    "stories": {
+      "railAria": "Historias",
+      "ringAriaUnread": "{{name}} — historia nueva",
+      "ringAriaRead": "{{name}} — historia",
+      "ownRingAria": "Tu historia",
+      "empty": "Aún no hay historias — nadie ha prendido ninguna en el tablero.",
+      "lockedNotice": "Las historias están cerradas hasta las {{time}}",
+      "loadError": "No se pudieron cargar las historias.",
+      "retry": "Reintentar",
+      "viewerAria": "Historia de {{name}}",
+      "close": "Cerrar",
+      "prev": "Historia anterior",
+      "next": "Historia siguiente",
+      "mediaError": "No se pudo cargar esta historia."
+    }
   },
   "mode": {
     "label": "Perfil",

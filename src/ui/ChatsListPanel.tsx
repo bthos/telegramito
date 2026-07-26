@@ -36,8 +36,6 @@ type Props = {
   lettersMode?: boolean
   /** When false, omit list search field (search lives in masthead). */
   showSearch?: boolean
-  /** Mobile circles tab: groups + channels only (no correspondents accordion). */
-  circlesOnly?: boolean
   /** Letters: private dialogs only — correspondents accordion ChatList (defaults from `dialogs` if omitted). */
   correspondentsDialogs?: Dialog[]
   /** Letters: groups + channels except broadcasts — split into group / channel accordions (defaults derived if omitted). */
@@ -80,7 +78,6 @@ export function ChatsListPanel({
   client,
   lettersMode = false,
   showSearch = true,
-  circlesOnly = false,
   correspondentsDialogs: correspondentsDialogsProp,
   circlesDialogs: circlesDialogsProp,
   bulletinChannelPeers,
@@ -149,7 +146,7 @@ export function ChatsListPanel({
     !nightListHidden &&
     (hasLettersGroupsSection || hasLettersChannelsSection)
 
-  const showCorrespondentsSection = lettersMode && !circlesOnly
+  const showCorrespondentsSection = lettersMode
 
   const sidebarSectionsOrdered = useMemo((): LettersSidebarSection[] => {
     const list: LettersSidebarSection[] = []
@@ -166,10 +163,7 @@ export function ChatsListPanel({
     if (!sidebarSectionsOrdered.includes(openSection)) {
       setOpenSection(sidebarSectionsOrdered[0] ?? "correspondents")
     }
-    if (circlesOnly && openSection === "correspondents") {
-      setOpenSection(sidebarSectionsOrdered.find((s) => s !== "correspondents") ?? "groups")
-    }
-  }, [lettersMode, openSection, sidebarSectionsOrdered, circlesOnly])
+  }, [lettersMode, openSection, sidebarSectionsOrdered])
 
   const onLettersSectionHeaderClick = useCallback((section: LettersSidebarSection) => {
     if (!sidebarSectionsOrdered.includes(section)) {
