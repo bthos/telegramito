@@ -80,7 +80,7 @@ describe("LettersMasthead compact", () => {
     vi.unstubAllGlobals()
   })
 
-  it("renders at most three primary icon controls (search + desk menu)", async () => {
+  it("compact rest state: exactly one icon button (search), no Desk button", async () => {
     const inst = await miniI18n()
     render(
       <I18nextProvider i18n={inst}>
@@ -88,16 +88,34 @@ describe("LettersMasthead compact", () => {
           <LettersMasthead
             {...baseProps}
             compact
-            onOpenDesk={vi.fn()}
           />
         </ThemeProvider>
       </I18nextProvider>,
     )
     const buttons = screen.getAllByRole("button")
-    expect(buttons.length).toBeLessThanOrEqual(3)
+    expect(buttons.length).toBe(1)
     expect(screen.getByRole("button", { name: "Search" })).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Desk" })).toBeTruthy()
+    expect(screen.queryByRole("button", { name: "Desk" })).toBeNull()
     expect(screen.queryByText("Write")).toBeNull()
     expect(screen.queryByText("Settings")).toBeNull()
+  })
+
+  it("compact search-expanded: field and close button visible, no Desk button", async () => {
+    const inst = await miniI18n()
+    render(
+      <I18nextProvider i18n={inst}>
+        <ThemeProvider>
+          <LettersMasthead
+            {...baseProps}
+            compact
+            searchExpanded
+            onSearchExpandedChange={vi.fn()}
+          />
+        </ThemeProvider>
+      </I18nextProvider>,
+    )
+    expect(screen.getByRole("searchbox")).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Close" })).toBeTruthy()
+    expect(screen.queryByRole("button", { name: "Desk" })).toBeNull()
   })
 })

@@ -39,7 +39,6 @@ type Props = {
   /** Compact: search icon expanded to full-width field. */
   searchExpanded?: boolean
   onSearchExpandedChange?: (open: boolean) => void
-  onOpenDesk?: () => void
   /** Tablet band: ☙ opens day-mail slide-over (not shown when `compact`). */
   showDayMailButton?: boolean
   onOpenDayMail?: () => void
@@ -56,13 +55,6 @@ function SearchIcon() {
   )
 }
 
-function MenuIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="1.35rem" height="1.35rem" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
-  )
-}
 
 export function LettersMasthead({
   dateLine,
@@ -80,7 +72,6 @@ export function LettersMasthead({
   compact = false,
   searchExpanded = false,
   onSearchExpandedChange,
-  onOpenDesk,
   showDayMailButton = false,
   onOpenDayMail,
   chromeHidden = false,
@@ -162,18 +153,6 @@ export function LettersMasthead({
                 }}
               >
                 <SearchIcon />
-              </Button>
-              <Button
-                variant="ghostIcon"
-                type="button"
-                className="letters-masthead__icon-btn"
-                aria-label={t("letters.deskSheetTitle")}
-                title={t("letters.deskSheetTitle")}
-                onClick={() => {
-                  onOpenDesk?.()
-                }}
-              >
-                <MenuIcon />
               </Button>
             </div>
           </>

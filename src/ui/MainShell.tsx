@@ -498,9 +498,6 @@ export function MainShell() {
           compact
           searchExpanded={searchExpanded}
           onSearchExpandedChange={setSearchExpanded}
-          onOpenDesk={() => {
-            setDeskSheetOpen(true)
-          }}
           chromeHidden={mastheadChromeHidden}
         />
       ) : tab === "chats" && !(mobileCompact && selected) ? (
