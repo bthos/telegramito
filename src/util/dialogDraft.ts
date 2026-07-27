@@ -4,6 +4,17 @@ import { getDialogRecord } from "./correspondenceFilter"
 
 type Tr = (key: string, options?: Record<string, string | number | undefined>) => string
 
+/** Draft edit time (unix seconds), or 0 when missing. */
+export function getDialogDraftDate(d: Dialog): number {
+  const r = getDialogRecord(d)
+  const dr = r?.draft
+  if (dr?.className !== "DraftMessage") {
+    return 0
+  }
+  const date = (dr as Api.DraftMessage).date
+  return typeof date === "number" ? date : 0
+}
+
 /** Non-empty draft body from the dialog TL record, if any. */
 export function getDialogDraftText(d: Dialog): string | null {
   const r = getDialogRecord(d)

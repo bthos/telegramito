@@ -6,6 +6,7 @@ import { AttachUploadProgress } from "./AttachUploadProgress"
 import { Button } from "./ds"
 import { EmojiPickerButton } from "./EmojiPicker"
 import type { UseChatComposeResult } from "../hooks/useChatCompose"
+import { LETTERS_COMPOSE_TEXTAREA_ID } from "./lettersWriteAction"
 
 type Props = {
   lettersLayout: boolean
@@ -146,7 +147,7 @@ export function ChatComposer({ lettersLayout, compose }: Props) {
           ) : null}
           <textarea
             ref={textareaRef}
-            id={lettersLayout ? "letters-compose-textarea" : undefined}
+            id={lettersLayout ? LETTERS_COMPOSE_TEXTAREA_ID : undefined}
             className="input input-compose"
             name="m"
             rows={1}
