@@ -58,7 +58,7 @@ export function MainShell() {
     dialogsLoadingMore,
     loadMoreDialogs,
   } = useTelegram()
-  const [tab, setTab] = useState<Tab>("chats")
+  const tab: Tab = "chats"
   const [correspondenceTab, setCorrespondenceTab] = useState<CorrespondenceTab>("letters")
   const [showPin, setShowPin] = useState(false)
   const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false)

@@ -2560,6 +2560,9 @@ button.letters-insights__cal-cell {
 }
 
 .letters-desk-sheet {
+  --letters-desk-control-active: color-mix(in srgb, var(--letters-terra) 14%, transparent);
+  --letters-desk-control-track: color-mix(in srgb, var(--letters-ink) 10%, var(--letters-panel));
+
   position: fixed;
   left: 0;
   right: 0;
@@ -2654,8 +2657,39 @@ button.letters-insights__cal-cell {
 }
 
 .letters-desk-sheet__seg-btn.is-active {
-  background: color-mix(in srgb, var(--letters-terra) 14%, transparent);
+  background: var(--letters-desk-control-active);
   color: var(--letters-ink);
+}
+
+/* Mode toggle — match theme segmented control (not legacy blue mode-pill). */
+.letters-desk-sheet__mode.app-mode-toggle {
+  background: transparent;
+  border-color: var(--letters-lines);
+  padding: 0;
+}
+
+.letters-desk-sheet__mode .app-mode-toggle__btn {
+  color: var(--letters-ink-3);
+}
+
+.letters-desk-sheet__mode .app-mode-toggle__btn.is-active {
+  background: var(--letters-desk-control-active);
+  color: var(--letters-ink);
+}
+
+.letters-desk-sheet__mode .app-mode-toggle__btn:focus-visible {
+  outline-color: var(--letters-terra);
+}
+
+/* Switches — warm off-track to match desk sheet (not legacy navy). */
+.letters-desk-sheet button.switch .switch__track {
+  background: var(--letters-desk-control-track);
+  border-color: var(--letters-lines);
+}
+
+.letters-desk-sheet button.switch .switch__thumb {
+  background: linear-gradient(180deg, #f5f0e6 0%, #e0dbd0 100%);
+  box-shadow: 0 0.1rem 0.25rem rgba(28, 24, 21, 0.18);
 }
 
 .letters-desk-sheet__action {
