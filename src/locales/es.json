@@ -395,6 +395,11 @@
     },
     "deskSheetAria": "Escritorio — ajustes y cuenta",
     "deskSheetTitle": "Escritorio",
+    "deskUnfinishedTitle": "En el escritorio · cartas sin terminar",
+    "deskHouseholdTitle": "Hogar",
+    "deskDraftTo": "Para · {{name}}",
+    "deskRitualsGroup": "Rituales de cartas",
+    "deskRitualsHint": "Hábitos opcionales al abrir la app y enviar correo.",
     "deskPendingRequests": "{{count}} nuevas",
     "dayMailTitle": "El correo del día",
     "dayMailSubtitle": "Lo que llegó mientras no estaba.",
@@ -532,7 +537,7 @@
     "groupLabel": "Acceso: {{name}}",
     "ariaAllowed": "Permitido (lista blanca) en modo niño/a",
     "ariaPending": "No está en la lista: el/la niño/a debe pedir o está en espera",
-    "ariaDenied": "Solicitud denegada para este chat privado"
+    "ariaDenied": "Denegado para este chat en modo niño/a"
   },
   "night": {
     "blurred": "La lista de chats está oculta (horas nocturnas).",

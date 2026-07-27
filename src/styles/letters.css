@@ -2606,6 +2606,99 @@ button.letters-insights__cal-cell {
   color: var(--letters-ink-3);
 }
 
+.letters-desk-sheet__drafts {
+  margin-bottom: 8px;
+}
+
+.letters-desk-sheet__draft-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.letters-desk-sheet__draft-card {
+  display: block;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 14px 16px 12px;
+  border: 1px solid var(--letters-lines);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--letters-panel) 70%, var(--letters-ink) 6%);
+  box-shadow: 0 2px 8px rgba(28, 24, 21, 0.08);
+  color: var(--letters-ink);
+  font-family: var(--letters-ui);
+  text-align: start;
+  cursor: pointer;
+}
+
+.letters-desk-sheet__draft-card--tilt {
+  transform: rotate(-0.7deg);
+}
+
+.letters-desk-sheet__draft-to {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--letters-ink-3);
+}
+
+.letters-desk-sheet__draft-excerpt {
+  margin: 0 0 10px;
+  font-family: var(--letters-serif, "Spectral", Georgia, serif);
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--letters-ink);
+}
+
+.letters-desk-sheet__draft-continue {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--letters-terra);
+}
+
+.letters-desk-sheet__drafts-empty {
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.letters-desk-sheet__household {
+  padding-top: 8px;
+  border-top: 1px solid var(--letters-lines);
+}
+
+.letters-desk-sheet__row-ic {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  color: var(--letters-ink-3);
+}
+
+.letters-desk-sheet__row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--letters-ink);
+}
+
+.letters-desk-sheet__action-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .letters-desk-sheet__rows {
   display: flex;
   flex-direction: column;
@@ -2619,12 +2712,6 @@ button.letters-insights__cal-cell {
   gap: 12px;
   min-height: 54px;
   padding: 8px 0 0;
-}
-
-.letters-desk-sheet__row-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--letters-ink);
 }
 
 .letters-desk-sheet__theme-hint,
@@ -2670,6 +2757,9 @@ button.letters-insights__cal-cell {
 }
 
 .letters-desk-sheet__mode .app-mode-toggle__btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
   color: var(--letters-ink-3);
 }
 
@@ -3164,6 +3254,96 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
     right: -0.35rem;
     min-width: 1.35rem;
     pointer-events: none;
+  }
+
+  /* Passage transcript — mobile stack (design-system/app/mobile.jsx: mb-who / mb-prose / mb-note). */
+  .app-root--letters-mobile .thread.thread--letters .letters-passage__grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 0.35rem;
+    row-gap: 0;
+    padding: 0.75rem 0 0.85rem;
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .letters-passage__speaker {
+    display: contents;
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .letters-passage__speaker-time {
+    order: 1;
+    font-family: var(--letters-ui);
+    font-size: 9px;
+    font-weight: 800;
+    font-style: normal;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--letters-ink-3);
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .letters-passage__speaker-name {
+    order: 2;
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .letters-passage__speaker-name--spacer {
+    display: none;
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .letters-passage__ticks {
+    order: 3;
+    display: inline-flex;
+    margin-top: 0;
+    margin-left: 0.15rem;
+    vertical-align: middle;
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .letters-passage__body {
+    order: 4;
+    flex: 0 0 100%;
+    width: 100%;
+    margin-top: 0.2rem;
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .letters-passage__prose {
+    font-size: 15.5px;
+    line-height: 1.58;
+    max-width: 58ch;
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .letters-passage__reactions-slot {
+    order: 5;
+    flex: 0 0 100%;
+    width: 100%;
+    margin-top: 0.45rem;
+    justify-content: flex-start;
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .letters-passage__reactions {
+    justify-content: flex-start;
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .msg-date {
+    display: block;
+    text-align: center;
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .msg-date .msg-date-pill {
+    grid-column: auto;
+    justify-self: center;
+    text-align: center;
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .message-scroll__date-overlay {
+    display: block;
+    text-align: center;
+  }
+
+  .app-root--letters-mobile .thread.thread--letters .message-scroll__date-overlay > .msg-date-pill {
+    grid-column: auto;
+    justify-self: center;
+    text-align: center;
   }
 }
 

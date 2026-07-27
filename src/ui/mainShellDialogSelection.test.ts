@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest"
 import {
-  shouldClearDeniedPrivateSelection,
+  shouldClearDeniedPeerSelection,
   shouldClearSelectionForNightLock,
   shouldRetainSelectedDialog,
 } from "./mainShellDialogSelection"
@@ -38,32 +38,29 @@ describe("shouldRetainSelectedDialog", () => {
   })
 })
 
-describe("shouldClearDeniedPrivateSelection", () => {
-  it("clears denied private chat in child mode only", () => {
+describe("shouldClearDeniedPeerSelection", () => {
+  it("clears denied peer chat in child mode only", () => {
     expect(
-      shouldClearDeniedPrivateSelection({
+      shouldClearDeniedPeerSelection({
         appMode: "child",
-        isPrivateUser: true,
         peerKey: "u:9",
         deniedPeerIds: new Set(["u:9"]),
       }),
     ).toBe(true)
     expect(
-      shouldClearDeniedPrivateSelection({
+      shouldClearDeniedPeerSelection({
         appMode: "parent",
-        isPrivateUser: true,
         peerKey: "u:9",
         deniedPeerIds: new Set(["u:9"]),
       }),
     ).toBe(false)
     expect(
-      shouldClearDeniedPrivateSelection({
+      shouldClearDeniedPeerSelection({
         appMode: "child",
-        isPrivateUser: false,
-        peerKey: "u:9",
-        deniedPeerIds: new Set(["u:9"]),
+        peerKey: "c:9",
+        deniedPeerIds: new Set(["c:9"]),
       }),
-    ).toBe(false)
+    ).toBe(true)
   })
 })
 

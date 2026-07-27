@@ -395,6 +395,11 @@
     },
     "deskSheetAria": "Desk — settings and account",
     "deskSheetTitle": "Desk",
+    "deskUnfinishedTitle": "On the desk · unfinished letters",
+    "deskHouseholdTitle": "Household",
+    "deskDraftTo": "To · {{name}}",
+    "deskRitualsGroup": "Letters rituals",
+    "deskRitualsHint": "Optional habits for opening the app and sending mail.",
     "deskPendingRequests": "{{count}} new",
     "dayMailTitle": "The day’s mail",
     "dayMailSubtitle": "What arrived while you were away.",
@@ -532,7 +537,7 @@
     "groupLabel": "Access for {{name}}",
     "ariaAllowed": "Allowed in child mode (allowlist)",
     "ariaPending": "Not on allowlist — child must request or is waiting",
-    "ariaDenied": "Request denied for this private chat"
+    "ariaDenied": "Denied for this chat in child mode"
   },
   "night": {
     "blurred": "Chat list is hidden (night hours).",

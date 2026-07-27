@@ -202,6 +202,14 @@ html[data-theme="light"] .app-root--main .settings {
   border-bottom-color: var(--letters-hairline);
 }
 
+.app-root--main .settings__field-group {
+  border-bottom-color: var(--letters-hairline);
+}
+
+.app-root--main .settings__section-body > .settings__select-wrap {
+  border-bottom-color: var(--letters-hairline);
+}
+
 .app-root--main button.switch[aria-checked="true"] .switch__track {
   background: linear-gradient(135deg, var(--acc-dim), var(--acc));
   border-color: color-mix(in srgb, var(--acc) 42%, transparent);

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import type { AppMode } from "../parental/types"
-import { getPeerInfo, isPrivateUserDialog } from "../telegram/dialogUtils"
+import { getPeerInfo } from "../telegram/dialogUtils"
 import {
-  shouldClearDeniedPrivateSelection,
+  shouldClearDeniedPeerSelection,
   shouldClearSelectionForNightLock,
   shouldRetainSelectedDialog,
 } from "./mainShellDialogSelection"
@@ -77,9 +77,8 @@ export function useMainShellDialogSelection(opts: UseMainShellDialogSelectionOpt
     }
     const { key } = getPeerInfo(selected)
     if (
-      shouldClearDeniedPrivateSelection({
+      shouldClearDeniedPeerSelection({
         appMode,
-        isPrivateUser: isPrivateUserDialog(selected),
         peerKey: key,
         deniedPeerIds,
       })

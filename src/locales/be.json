@@ -395,6 +395,11 @@
     },
     "deskSheetAria": "Стол — налады і ўліковы запіс",
     "deskSheetTitle": "Стол",
+    "deskUnfinishedTitle": "На стале · незакончаныя лісты",
+    "deskHouseholdTitle": "Гаспадарства",
+    "deskDraftTo": "Каму · {{name}}",
+    "deskRitualsGroup": "Рытуалы лістоў",
+    "deskRitualsHint": "Дадатковыя звычкі пры адкрыцці праграмы і адпраўцы пошты.",
     "deskPendingRequests": "{{count}} новых",
     "dayMailTitle": "Пошта дня",
     "dayMailSubtitle": "Што прыйшло, пакуль вас не было.",
@@ -532,7 +537,7 @@
     "groupLabel": "Доступ: {{name}}",
     "ariaAllowed": "Дазволена ў дзіцячым рэжыме (у спісе дазволу)",
     "ariaPending": "Пакуль няма ў спісе — дзіця павінна запытаць дазвол ці ажыдае рашэння",
-    "ariaDenied": "Па гэтай прыватнай перапісцы запыт адхілены"
+    "ariaDenied": "У дзіцячым рэжыме гэты чат забаронены"
   },
   "night": {
     "blurred": "Спіс чатаў схаваны (начны час).",

@@ -1,4 +1,4 @@
-import { type ComponentType, type SVGProps, useCallback, useEffect, useRef, useState } from "react"
+import { type ComponentType, type SVGProps, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import type { Dialog } from "telegram/tl/custom/dialog"
@@ -8,11 +8,21 @@ import { useTheme } from "../context/ThemeContext"
 import type { AppMode } from "../parental/types"
 import type { ThemePreference } from "../theme/storage"
 import { BackIcon } from "./BackIcon"
+import {
+  DeskContinueIcon,
+  DeskModeRowIcon,
+  DeskRequestsIcon,
+  DeskSettingsIcon,
+  DeskThemeRowIcon,
+} from "./DeskSheetIcons"
 import { ChildModeIcon, ParentModeIcon } from "./ModeToggleIcons"
 import { SignOutIcon } from "./SignOutIcon"
 import { DarkThemeIcon, LightThemeIcon, SystemThemeIcon } from "./ThemeToggleIcons"
 import type { CoReadingBookmark } from "../util/lettersRitualsStorage"
+import { getDialogDraftDate, getDialogDraftExcerpt } from "../util/dialogDraft"
+import { dialogHasDraft } from "../util/correspondenceFilter"
 import { getLettersPortalRoot } from "../util/lettersPortalRoot"
+import { getPeerInfo } from "../telegram/dialogUtils"
 import { RequestsView } from "./RequestsView"
 import { SettingsView } from "./SettingsView"
 
@@ -38,12 +48,7 @@ type Props = {
   canEditSettings: boolean
   onRequestPin: () => void
   onSignOut: () => void
-  morningDayMailEnabled?: boolean
-  onMorningDayMailEnabled?: (enabled: boolean) => void
-  waxSealSendEnabled?: boolean
-  onWaxSealSendEnabled?: (enabled: boolean) => void
-  eveningSummaryPreciseEnabled?: boolean
-  onEveningSummaryPreciseEnabled?: (enabled: boolean) => void
+  onDraftSelect?: (d: Dialog) => void
   coReadingBookmarks?: CoReadingBookmark[]
   onCoReadingNavigate?: (bookmark: CoReadingBookmark) => void
 }
@@ -59,12 +64,7 @@ export function LettersDeskSheet({
   canEditSettings,
   onRequestPin,
   onSignOut,
-  morningDayMailEnabled = true,
-  onMorningDayMailEnabled,
-  waxSealSendEnabled = false,
-  onWaxSealSendEnabled,
-  eveningSummaryPreciseEnabled = false,
-  onEveningSummaryPreciseEnabled,
+  onDraftSelect,
   coReadingBookmarks = [],
   onCoReadingNavigate,
 }: Props) {
@@ -72,6 +72,12 @@ export function LettersDeskSheet({
   const { theme, setTheme } = useTheme()
   const backdropRef = useRef<HTMLDivElement>(null)
   const [deskPage, setDeskPage] = useState<DeskPage>("main")
+
+  const draftDialogs = useMemo(() => {
+    return dialogs
+      .filter(dialogHasDraft)
+      .sort((a, b) => getDialogDraftDate(b) - getDialogDraftDate(a))
+  }, [dialogs])
 
   useEffect(() => {
     if (!open) {
@@ -159,206 +165,218 @@ export function LettersDeskSheet({
           </>
         ) : (
           <>
-            <h2 className="letters-desk-sheet__title">{t("letters.deskSheetTitle")}</h2>
-
-            <div className="letters-desk-sheet__rows">
-              <div className="letters-desk-sheet__row">
-                <span className="letters-desk-sheet__row-label">{t("theme.label")}</span>
-                <div className="letters-desk-sheet__seg" role="group" aria-label={t("theme.label")}>
-                  {THEME_TOGGLES.map(({ pref, Icon }) => {
-                    const active = theme === pref
+            <section className="letters-desk-sheet__drafts" aria-labelledby="letters-desk-drafts-h">
+              <h2 className="letters-desk-sheet__title" id="letters-desk-drafts-h">
+                {t("letters.deskUnfinishedTitle")}
+              </h2>
+              {draftDialogs.length > 0 ? (
+                <ul className="letters-desk-sheet__draft-list" role="list">
+                  {draftDialogs.map((d, i) => {
+                    const { key, name } = getPeerInfo(d)
+                    const excerpt = getDialogDraftExcerpt(d, t)
                     return (
-                      <button
-                        key={pref}
-                        type="button"
-                        className={active ? "letters-desk-sheet__seg-btn is-active" : "letters-desk-sheet__seg-btn"}
-                        onClick={() => {
-                          setTheme(pref)
-                        }}
-                        aria-pressed={active}
-                        aria-label={t(`theme.${pref}`)}
-                        title={t(`theme.${pref}`)}
-                      >
-                        <Icon aria-hidden width={16} height={16} />
-                      </button>
+                      <li key={key}>
+                        <button
+                          type="button"
+                          className={
+                            i === 0
+                              ? "letters-desk-sheet__draft-card letters-desk-sheet__draft-card--tilt"
+                              : "letters-desk-sheet__draft-card"
+                          }
+                          onClick={() => {
+                            onDraftSelect?.(d)
+                            onClose()
+                          }}
+                        >
+                          <span className="letters-desk-sheet__draft-to">
+                            {t("letters.deskDraftTo", { name })}
+                          </span>
+                          <p className="letters-desk-sheet__draft-excerpt">«{excerpt}»</p>
+                          <span className="letters-desk-sheet__draft-continue">
+                            {t("letters.continueLetter")}
+                            <DeskContinueIcon width={12} height={12} />
+                          </span>
+                        </button>
+                      </li>
                     )
                   })}
-                </div>
-              </div>
-              <p className="letters-desk-sheet__row-hint">{t("theme.hint")}</p>
+                </ul>
+              ) : (
+                <p className="letters-desk-sheet__drafts-empty muted small">
+                  {t("letters.draftsEmptyTitle")}
+                </p>
+              )}
+            </section>
 
-              <div className="letters-desk-sheet__row">
-                <span className="letters-desk-sheet__row-label">{t("mode.label")}</span>
-                <div className="app-mode-toggle letters-desk-sheet__mode" role="group" aria-label={t("mode.headerToggle")}>
+            <section className="letters-desk-sheet__household" aria-labelledby="letters-desk-household-h">
+              <h2 className="letters-desk-sheet__title" id="letters-desk-household-h">
+                {t("letters.deskHouseholdTitle")}
+              </h2>
+
+              <div className="letters-desk-sheet__rows">
+                <div className="letters-desk-sheet__row">
+                  <span className="letters-desk-sheet__row-label">
+                    <span className="letters-desk-sheet__row-ic" aria-hidden>
+                      <DeskThemeRowIcon />
+                    </span>
+                    {t("theme.label")}
+                  </span>
+                  <div className="letters-desk-sheet__seg" role="group" aria-label={t("theme.label")}>
+                    {THEME_TOGGLES.map(({ pref, Icon }) => {
+                      const active = theme === pref
+                      return (
+                        <button
+                          key={pref}
+                          type="button"
+                          className={active ? "letters-desk-sheet__seg-btn is-active" : "letters-desk-sheet__seg-btn"}
+                          onClick={() => {
+                            setTheme(pref)
+                          }}
+                          aria-pressed={active}
+                          aria-label={t(`theme.${pref}`)}
+                          title={t(`theme.${pref}`)}
+                        >
+                          <Icon aria-hidden width={16} height={16} />
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <p className="letters-desk-sheet__row-hint">{t("theme.hint")}</p>
+
+                <div className="letters-desk-sheet__row">
+                  <span className="letters-desk-sheet__row-label">
+                    <span className="letters-desk-sheet__row-ic" aria-hidden>
+                      <DeskModeRowIcon />
+                    </span>
+                    {t("mode.label")}
+                  </span>
+                  <div className="app-mode-toggle letters-desk-sheet__mode" role="group" aria-label={t("mode.headerToggle")}>
+                    <button
+                      type="button"
+                      className={appMode === "child" ? "app-mode-toggle__btn is-active" : "app-mode-toggle__btn"}
+                      onClick={() => {
+                        onAppMode("child")
+                      }}
+                      aria-pressed={appMode === "child"}
+                      aria-label={t("mode.child")}
+                      title={t("mode.child")}
+                    >
+                      <span className="app-mode-toggle__ic" aria-hidden>
+                        <ChildModeIcon />
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className={appMode === "parent" ? "app-mode-toggle__btn is-active" : "app-mode-toggle__btn"}
+                      onClick={() => {
+                        onAppMode("parent")
+                      }}
+                      aria-pressed={appMode === "parent"}
+                      aria-label={t("mode.parent")}
+                      title={t("mode.parent")}
+                    >
+                      <span className="app-mode-toggle__ic" aria-hidden>
+                        <ParentModeIcon />
+                      </span>
+                    </button>
+                  </div>
+                </div>
+                <p className="letters-desk-sheet__row-hint">{t("mode.deskHint")}</p>
+
+                {showParentRows ? (
+                  <div className="letters-desk-sheet__bookmarks">
+                    <h3 className="letters-desk-sheet__bookmarks-title">{t("letters.coReadingDeskTitle")}</h3>
+                    {coReadingBookmarks.length > 0 ? (
+                      <ul className="letters-desk-sheet__bookmarks-list" role="list">
+                        {coReadingBookmarks.map((b) => (
+                          <li key={b.id}>
+                            <button
+                              type="button"
+                              className="letters-desk-sheet__bookmark"
+                              onClick={() => {
+                                onCoReadingNavigate?.(b)
+                                onClose()
+                              }}
+                            >
+                              <span className="letters-desk-sheet__bookmark-chat">{b.chatTitle}</span>
+                              <span className="letters-desk-sheet__bookmark-preview muted small">
+                                {b.preview}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    <p className="letters-desk-sheet__bookmarks-hint" role="status">
+                      {t("letters.coReadingDeviceOnlyHint")}
+                    </p>
+                  </div>
+                ) : null}
+
+                {showParentRows ? (
                   <button
                     type="button"
-                    className={appMode === "child" ? "app-mode-toggle__btn is-active" : "app-mode-toggle__btn"}
+                    className="letters-desk-sheet__action"
                     onClick={() => {
-                      onAppMode("child")
+                      setDeskPage("requests")
                     }}
-                    aria-pressed={appMode === "child"}
-                    aria-label={t("mode.child")}
-                    title={t("mode.child")}
                   >
-                    <span className="app-mode-toggle__ic" aria-hidden>
-                      <ChildModeIcon />
+                    <span className="letters-desk-sheet__action-label">
+                      <span className="letters-desk-sheet__row-ic" aria-hidden>
+                        <DeskRequestsIcon />
+                      </span>
+                      <span>{t("requestsTab")}</span>
                     </span>
+                    {pendingRequestCount > 0 ? (
+                      <span className="letters-desk-sheet__action-meta">
+                        {t("letters.deskPendingRequests", { count: pendingRequestCount })}
+                      </span>
+                    ) : (
+                      <span className="letters-desk-sheet__action-chev" aria-hidden>
+                        ›
+                      </span>
+                    )}
                   </button>
+                ) : null}
+
+                {showParentRows ? (
                   <button
                     type="button"
-                    className={appMode === "parent" ? "app-mode-toggle__btn is-active" : "app-mode-toggle__btn"}
+                    className="letters-desk-sheet__action"
                     onClick={() => {
-                      onAppMode("parent")
+                      setDeskPage("settings")
                     }}
-                    aria-pressed={appMode === "parent"}
-                    aria-label={t("mode.parent")}
-                    title={t("mode.parent")}
                   >
-                    <span className="app-mode-toggle__ic" aria-hidden>
-                      <ParentModeIcon />
+                    <span className="letters-desk-sheet__action-label">
+                      <span className="letters-desk-sheet__row-ic" aria-hidden>
+                        <DeskSettingsIcon />
+                      </span>
+                      <span>{t("settings")}</span>
                     </span>
-                  </button>
-                </div>
-              </div>
-              <p className="letters-desk-sheet__row-hint">{t("mode.deskHint")}</p>
-
-              <div className="letters-desk-sheet__row">
-                <span className="letters-desk-sheet__row-label">{t("letters.deskMorningMail")}</span>
-                <button
-                  type="button"
-                  className="switch"
-                  role="switch"
-                  aria-checked={morningDayMailEnabled}
-                  aria-label={t("letters.deskMorningMail")}
-                  onClick={() => {
-                    onMorningDayMailEnabled?.(!morningDayMailEnabled)
-                  }}
-                >
-                  <span className="switch__track" aria-hidden>
-                    <span className="switch__thumb" />
-                  </span>
-                </button>
-              </div>
-              <p className="letters-desk-sheet__row-hint">{t("letters.deskMorningMailHint")}</p>
-
-              <div className="letters-desk-sheet__row">
-                <span className="letters-desk-sheet__row-label">{t("letters.deskWaxSeal")}</span>
-                <button
-                  type="button"
-                  className="switch"
-                  role="switch"
-                  aria-checked={waxSealSendEnabled}
-                  aria-label={t("letters.deskWaxSeal")}
-                  onClick={() => {
-                    onWaxSealSendEnabled?.(!waxSealSendEnabled)
-                  }}
-                >
-                  <span className="switch__track" aria-hidden>
-                    <span className="switch__thumb" />
-                  </span>
-                </button>
-              </div>
-              <p className="letters-desk-sheet__row-hint">{t("letters.deskWaxSealHint")}</p>
-
-              <div className="letters-desk-sheet__row">
-                <span className="letters-desk-sheet__row-label">{t("letters.deskEveningPrecise")}</span>
-                <button
-                  type="button"
-                  className="switch"
-                  role="switch"
-                  aria-checked={eveningSummaryPreciseEnabled}
-                  aria-label={t("letters.deskEveningPrecise")}
-                  onClick={() => {
-                    onEveningSummaryPreciseEnabled?.(!eveningSummaryPreciseEnabled)
-                  }}
-                >
-                  <span className="switch__track" aria-hidden>
-                    <span className="switch__thumb" />
-                  </span>
-                </button>
-              </div>
-              <p className="letters-desk-sheet__row-hint">{t("letters.deskEveningPreciseHint")}</p>
-
-              {showParentRows ? (
-                <div className="letters-desk-sheet__bookmarks">
-                  <h3 className="letters-desk-sheet__bookmarks-title">{t("letters.coReadingDeskTitle")}</h3>
-                  {coReadingBookmarks.length > 0 ? (
-                    <ul className="letters-desk-sheet__bookmarks-list" role="list">
-                      {coReadingBookmarks.map((b) => (
-                        <li key={b.id}>
-                          <button
-                            type="button"
-                            className="letters-desk-sheet__bookmark"
-                            onClick={() => {
-                              onCoReadingNavigate?.(b)
-                              onClose()
-                            }}
-                          >
-                            <span className="letters-desk-sheet__bookmark-chat">{b.chatTitle}</span>
-                            <span className="letters-desk-sheet__bookmark-preview muted small">
-                              {b.preview}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  <p className="letters-desk-sheet__bookmarks-hint" role="status">
-                    {t("letters.coReadingDeviceOnlyHint")}
-                  </p>
-                </div>
-              ) : null}
-
-              {showParentRows ? (
-                <button
-                  type="button"
-                  className="letters-desk-sheet__action"
-                  onClick={() => {
-                    setDeskPage("requests")
-                  }}
-                >
-                  <span>{t("requestsTab")}</span>
-                  {pendingRequestCount > 0 ? (
-                    <span className="letters-desk-sheet__action-meta">
-                      {t("letters.deskPendingRequests", { count: pendingRequestCount })}
-                    </span>
-                  ) : (
                     <span className="letters-desk-sheet__action-chev" aria-hidden>
                       ›
                     </span>
-                  )}
-                </button>
-              ) : null}
+                  </button>
+                ) : null}
 
-              {showParentRows ? (
                 <button
                   type="button"
-                  className="letters-desk-sheet__action"
+                  className="letters-desk-sheet__action letters-desk-sheet__action--danger"
                   onClick={() => {
-                    setDeskPage("settings")
+                    onSignOut()
+                    onClose()
                   }}
                 >
-                  <span>{t("settings")}</span>
-                  <span className="letters-desk-sheet__action-chev" aria-hidden>
-                    ›
+                  <span className="letters-desk-sheet__action-label">
+                    <span className="letters-desk-sheet__signout-ic" aria-hidden>
+                      <SignOutIcon />
+                    </span>
+                    <span>{t("signOut")}</span>
                   </span>
                 </button>
-              ) : null}
-
-              <button
-                type="button"
-                className="letters-desk-sheet__action letters-desk-sheet__action--danger"
-                onClick={() => {
-                  onSignOut()
-                  onClose()
-                }}
-              >
-                <span className="letters-desk-sheet__signout-ic" aria-hidden>
-                  <SignOutIcon />
-                </span>
-                <span>{t("signOut")}</span>
-              </button>
-            </div>
+              </div>
+            </section>
           </>
         )}
       </div>

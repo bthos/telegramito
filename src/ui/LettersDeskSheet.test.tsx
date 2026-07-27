@@ -3,6 +3,8 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { I18nextProvider } from "react-i18next"
 import i18n from "i18next"
 import { initReactI18next } from "react-i18next"
+import { Api } from "telegram"
+import type { Dialog } from "telegram/tl/custom/dialog"
 import { ThemeProvider } from "../context/ThemeContext"
 import { LettersDeskSheet } from "./LettersDeskSheet"
 
@@ -28,6 +30,25 @@ function stubMatchMedia() {
   )
 }
 
+function stubDialog(opts: { key: string; name: string; draft?: Api.TypeDraftMessage }): Dialog {
+  return {
+    dialog: new Api.Dialog({
+      peer: new Api.PeerUser({ userId: BigInt(1) }),
+      draft: opts.draft,
+    }),
+    entity: { id: BigInt(1), firstName: opts.name },
+    id: BigInt(1),
+    name: opts.name,
+    title: opts.name,
+    isUser: true,
+    isGroup: false,
+    isChannel: false,
+    unreadCount: 0,
+    message: null,
+    date: 1,
+  } as unknown as Dialog
+}
+
 async function miniI18n() {
   const inst = i18n.createInstance()
   await inst.use(initReactI18next).init({
@@ -49,13 +70,12 @@ async function miniI18n() {
           letters: {
             deskSheetAria: "Desk sheet",
             deskSheetTitle: "Desk",
+            deskUnfinishedTitle: "On the desk · unfinished letters",
+            deskHouseholdTitle: "Household",
+            deskDraftTo: "To · {{name}}",
             deskPendingRequests: "{{count}} new",
-            deskMorningMail: "Morning day mail",
-            deskMorningMailHint: "First open lands on Day mail.",
-            deskWaxSeal: "Wax-seal send",
-            deskWaxSealHint: "Long-press send to seal.",
-            deskEveningPrecise: "Sharper evening edition",
-            deskEveningPreciseHint: "More accurate evening summary.",
+            draftsEmptyTitle: "The desk is clear — no unfinished letters",
+            continueLetter: "Continue letter",
             coReadingDeskTitle: "To discuss together",
             coReadingDeviceOnlyHint: "Bookmarks stay on this device only.",
           },
@@ -104,9 +124,44 @@ describe("LettersDeskSheet", () => {
     expect(onClose).toHaveBeenCalled()
   })
 
-  it("shows evening precise toggle in child mode", async () => {
+  it("shows unfinished draft cards on the desk", async () => {
     const inst = await miniI18n()
-    const onEvening = vi.fn()
+    const onDraftSelect = vi.fn()
+    const onClose = vi.fn()
+    const draftDialog = stubDialog({
+      key: "u:1",
+      name: "Mom",
+      draft: new Api.DraftMessage({ message: "Dear Mom, unfinished pie", date: 2 }),
+    })
+    render(
+      <I18nextProvider i18n={inst}>
+        <ThemeProvider>
+          <LettersDeskSheet
+            open
+            onClose={onClose}
+            appMode="child"
+            onAppMode={vi.fn()}
+            showParentRows={false}
+            pendingRequestCount={0}
+            dialogs={[draftDialog]}
+            canEditSettings={false}
+            onRequestPin={vi.fn()}
+            onSignOut={vi.fn()}
+            onDraftSelect={onDraftSelect}
+          />
+        </ThemeProvider>
+      </I18nextProvider>,
+    )
+
+    expect(screen.getByRole("heading", { name: "On the desk · unfinished letters" })).toBeTruthy()
+    expect(screen.getByRole("heading", { name: "Household" })).toBeTruthy()
+    fireEvent.click(screen.getByRole("button", { name: /Continue letter/i }))
+    expect(onDraftSelect).toHaveBeenCalledWith(draftDialog)
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it("shows empty state when there are no drafts", async () => {
+    const inst = await miniI18n()
     render(
       <I18nextProvider i18n={inst}>
         <ThemeProvider>
@@ -121,48 +176,12 @@ describe("LettersDeskSheet", () => {
             canEditSettings={false}
             onRequestPin={vi.fn()}
             onSignOut={vi.fn()}
-            eveningSummaryPreciseEnabled={false}
-            onEveningSummaryPreciseEnabled={onEvening}
           />
         </ThemeProvider>
       </I18nextProvider>,
     )
 
-    const toggle = screen.getByRole("switch", { name: "Sharper evening edition" })
-    expect(toggle.getAttribute("aria-checked")).toBe("false")
-    fireEvent.click(toggle)
-    expect(onEvening).toHaveBeenCalledWith(true)
-  })
-
-  it("shows wax-seal and evening precise toggles in parent mode (AC-U6)", async () => {
-    const inst = await miniI18n()
-    const onEvening = vi.fn()
-    render(
-      <I18nextProvider i18n={inst}>
-        <ThemeProvider>
-          <LettersDeskSheet
-            open
-            onClose={vi.fn()}
-            appMode="parent"
-            onAppMode={vi.fn()}
-            showParentRows
-            pendingRequestCount={0}
-            dialogs={[]}
-            canEditSettings
-            onRequestPin={vi.fn()}
-            onSignOut={vi.fn()}
-            eveningSummaryPreciseEnabled={false}
-            onEveningSummaryPreciseEnabled={onEvening}
-          />
-        </ThemeProvider>
-      </I18nextProvider>,
-    )
-
-    expect(screen.getByRole("switch", { name: "Wax-seal send" })).toBeTruthy()
-    const toggle = screen.getByRole("switch", { name: "Sharper evening edition" })
-    expect(toggle.getAttribute("aria-checked")).toBe("false")
-    fireEvent.click(toggle)
-    expect(onEvening).toHaveBeenCalledWith(true)
+    expect(screen.getByText("The desk is clear — no unfinished letters")).toBeTruthy()
   })
 
   it("shows device-only hint for co-reading in parent mode (AC-S1)", async () => {
@@ -187,8 +206,7 @@ describe("LettersDeskSheet", () => {
       </I18nextProvider>,
     )
 
-    const hint = screen.getByRole("status")
-    expect(hint.textContent).toBe("Bookmarks stay on this device only.")
+    const hint = screen.getByText("Bookmarks stay on this device only.")
     expect(screen.getByRole("heading", { level: 3, name: "To discuss together" })).toBeTruthy()
   })
 
@@ -218,10 +236,10 @@ describe("LettersDeskSheet", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Desk > Settings" })).toBeTruthy()
     expect(screen.getByRole("button", { name: "Back" })).toBeTruthy()
     expect(screen.getByText("Settings subpage")).toBeTruthy()
-    expect(screen.queryByRole("heading", { level: 2, name: "Desk" })).toBeNull()
+    expect(screen.queryByRole("heading", { level: 2, name: "Household" })).toBeNull()
 
     fireEvent.click(screen.getByRole("button", { name: "Back" }))
-    expect(screen.getByRole("heading", { level: 2, name: "Desk" })).toBeTruthy()
+    expect(screen.getByRole("heading", { level: 2, name: "Household" })).toBeTruthy()
   })
 
   it("hides settings in child mode", async () => {

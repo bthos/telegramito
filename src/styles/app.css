@@ -444,6 +444,11 @@ select.input {
   flex-direction: column;
   gap: 0.15rem;
 }
+.settings__section-body > .settings__select-wrap {
+  margin-bottom: 0.15rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
 .settings__section--pin {
   background: rgba(0, 0, 0, 0.18);
   margin: 0.4rem -0.35rem 0;
@@ -459,6 +464,11 @@ select.input {
   margin: 0.15rem 0 0.55rem 0;
   max-width: 26rem;
 }
+
+.settings__desc--inline {
+  margin: -0.25rem 0 0.75rem 0;
+}
+
 .settings__row-inline {
   display: flex;
   flex-direction: row;
@@ -586,6 +596,20 @@ select.settings__select:focus,
   background: rgba(80, 140, 200, 0.12);
   border-color: rgba(90, 160, 255, 0.25);
 }
+.settings__field-group {
+  margin: 0.15rem 0;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.settings__field-group .settings__field {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0.35rem;
+}
+.settings__field-group .settings__row-inline {
+  margin-top: 0;
+}
+
 /* Toggle row: label + switch (see Switch.tsx) */
 .settings__field {
   display: flex;
@@ -4063,11 +4087,24 @@ button.msg-bubble-action:hover {
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 1.1rem;
+  font-size: 1rem;
   line-height: 1;
   cursor: pointer;
   box-sizing: border-box;
   transition: background 0.12s ease, filter 0.12s ease;
+}
+.req-access__ico {
+  display: block;
+  flex-shrink: 0;
+}
+.req-access__btn--allowed {
+  color: var(--ok);
+}
+.req-access__btn--pending {
+  color: var(--muted);
+}
+.req-access__btn--denied {
+  color: var(--err);
 }
 .req-access__btn:first-child {
   border-left: 0;

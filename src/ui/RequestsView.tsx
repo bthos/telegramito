@@ -8,9 +8,14 @@ import {
   type PeerAccessState,
 } from "../parental/storage"
 import type { PendingRequest } from "../parental/types"
-import { getPeerInfo, isPrivateUserDialog } from "../telegram/dialogUtils"
+import { getPeerInfo } from "../telegram/dialogUtils"
+import {
+  RequestsAllowedIcon,
+  RequestsDeniedIcon,
+  RequestsPendingIcon,
+} from "./RequestsAccessIcons"
 
-function getPrivateAccessState(
+function getPeerAccessState(
   key: string,
   allow: ReadonlySet<string>,
   requests: PendingRequest[]
@@ -65,16 +70,12 @@ export function RequestsView({ dialogs }: Props) {
     }
     return dialogs.filter((d) => {
       const p = getPeerInfo(d)
-      const isPriv = isPrivateUserDialog(d)
-      const rowState: PeerAccessState = isPriv
-        ? getPrivateAccessState(p.key, allow, requests)
-        : "allowed"
+      const rowState = getPeerAccessState(p.key, allow, requests)
       return rowState === statusFilter
     })
   }, [dialogs, statusFilter, allow, requests])
 
   const onPick = (d: Dialog, state: PeerAccessState) => {
-    if (!isPrivateUserDialog(d)) return
     const p = getPeerInfo(d)
     void (async () => {
       const next = await setPeerAccessState(p.key, p.name, state)
@@ -127,10 +128,7 @@ export function RequestsView({ dialogs }: Props) {
         <ul className="req-list" role="list">
           {filteredDialogs.map((d) => {
             const p = getPeerInfo(d)
-            const isPriv = isPrivateUserDialog(d)
-            const rowState: PeerAccessState = isPriv
-              ? getPrivateAccessState(p.key, allow, requests)
-              : "allowed"
+            const rowState = getPeerAccessState(p.key, allow, requests)
 
             return (
               <li className="request-row" key={p.key}>
@@ -143,44 +141,47 @@ export function RequestsView({ dialogs }: Props) {
                   <button
                     type="button"
                     className={
-                      rowState === "allowed" ? "req-access__btn is-on" : "req-access__btn"
+                      rowState === "allowed"
+                        ? "req-access__btn req-access__btn--allowed is-on"
+                        : "req-access__btn req-access__btn--allowed"
                     }
                     onClick={() => {
                       onPick(d, "allowed")
                     }}
-                    disabled={!isPriv}
                     aria-pressed={rowState === "allowed"}
                     aria-label={t("requests.ariaAllowed")}
                   >
-                    ✅
+                    <RequestsAllowedIcon />
                   </button>
                   <button
                     type="button"
                     className={
-                      rowState === "pending" ? "req-access__btn is-on" : "req-access__btn"
+                      rowState === "pending"
+                        ? "req-access__btn req-access__btn--pending is-on"
+                        : "req-access__btn req-access__btn--pending"
                     }
                     onClick={() => {
                       onPick(d, "pending")
                     }}
-                    disabled={!isPriv}
                     aria-pressed={rowState === "pending"}
                     aria-label={t("requests.ariaPending")}
                   >
-                    ❔
+                    <RequestsPendingIcon />
                   </button>
                   <button
                     type="button"
                     className={
-                      rowState === "denied" ? "req-access__btn is-on" : "req-access__btn"
+                      rowState === "denied"
+                        ? "req-access__btn req-access__btn--denied is-on"
+                        : "req-access__btn req-access__btn--denied"
                     }
                     onClick={() => {
                       onPick(d, "denied")
                     }}
-                    disabled={!isPriv}
                     aria-pressed={rowState === "denied"}
                     aria-label={t("requests.ariaDenied")}
                   >
-                    ❌
+                    <RequestsDeniedIcon />
                   </button>
                 </div>
               </li>

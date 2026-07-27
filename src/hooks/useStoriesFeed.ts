@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { TelegramClient } from "telegram"
-import type { Api } from "telegram"
 import type { AppMode } from "../parental/types"
-import { isPrivateOmittedInChildListForDeny } from "../parental/policy"
+import { isPeerOmittedInChildListForDeny } from "../parental/policy"
 import { getAllStories, orderStoryEntries, type StoryPeerEntry } from "../telegram/storiesFeed"
 
 export type StoriesFeedState = "loading" | "refreshing" | "success" | "empty" | "error" | "locked"
@@ -19,10 +18,6 @@ type Options = {
   nightListHidden: boolean
   appMode: AppMode
   deniedPeerIds: ReadonlySet<string>
-}
-
-function isPrivatePeer(peer: Api.TypePeer): boolean {
-  return peer.className === "PeerUser"
 }
 
 /**
@@ -56,12 +51,11 @@ export function useStoriesFeed({ client, nightListHidden, appMode, deniedPeerIds
           if (gen !== genRef.current) return
           const visible = raw.filter((e) => {
             if (appMode !== "child") return true
-            if (!isPrivatePeer(e.peer)) return true
-            // OQ3: child-mode deny-list omits denied private peers silently —
+            // OQ3: child-mode deny-list omits denied peers silently —
             // falls through to the plain "empty" state when it was the only
             // entry, matching ux-design.md's privacy requirement (a child
             // can't infer who got filtered).
-            return !isPrivateOmittedInChildListForDeny(appMode, true, e.peerKey, deniedPeerIds)
+            return !isPeerOmittedInChildListForDeny(appMode, e.peerKey, deniedPeerIds)
           })
           const ordered = orderStoryEntries(visible)
           setEntries(ordered)

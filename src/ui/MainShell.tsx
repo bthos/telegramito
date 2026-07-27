@@ -13,7 +13,7 @@ import { BP } from "../layout/breakpoints"
 import { getPendingRequests } from "../parental/storage"
 import { getPeerInfo, isBroadcastChannelDialog, isPrivateUserDialog } from "../telegram/dialogUtils"
 import { requestChatAccessForDialog } from "../parental/requestAccess"
-import { isNightListHidden, isPrivateOmittedInChildListForDeny } from "../parental/policy"
+import { isNightListHidden, isPeerOmittedInChildListForDeny } from "../parental/policy"
 import type { AppMode } from "../parental/types"
 import {
   filterDialogsByCorrespondenceTab,
@@ -151,13 +151,9 @@ export function MainShell() {
       return dialogsForCorrespondence
     }
     return dialogsForCorrespondence.filter((d) => {
-      if (!isPrivateUserDialog(d)) {
-        return true
-      }
       const { key } = getPeerInfo(d)
-      return !isPrivateOmittedInChildListForDeny(
+      return !isPeerOmittedInChildListForDeny(
         settings.appMode,
-        true,
         key,
         deniedPeerIds,
       )
@@ -448,18 +444,6 @@ export function MainShell() {
         onAppMode={setAppMode}
         showParentRows={settings.appMode === "parent"}
         pendingRequestCount={pendingRequestCount}
-        morningDayMailEnabled={settings.morningDayMailEnabled}
-        onMorningDayMailEnabled={(enabled) => {
-          void setSettings((prev) => ({ ...prev, morningDayMailEnabled: enabled }))
-        }}
-        waxSealSendEnabled={settings.waxSealSendEnabled}
-        onWaxSealSendEnabled={(enabled) => {
-          void setSettings((prev) => ({ ...prev, waxSealSendEnabled: enabled }))
-        }}
-        eveningSummaryPreciseEnabled={settings.eveningSummaryPreciseEnabled}
-        onEveningSummaryPreciseEnabled={(enabled) => {
-          void setSettings((prev) => ({ ...prev, eveningSummaryPreciseEnabled: enabled }))
-        }}
         coReadingBookmarks={settings.appMode === "parent" ? coReadingBookmarks : []}
         onCoReadingNavigate={handleCoReadingNavigate}
         dialogs={dialogs}
@@ -470,6 +454,7 @@ export function MainShell() {
         onSignOut={() => {
           setSignOutConfirmOpen(true)
         }}
+        onDraftSelect={handleDayMailSelect}
       />
 
       <LettersDayMailSlideOver

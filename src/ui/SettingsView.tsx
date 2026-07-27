@@ -114,49 +114,51 @@ export function SettingsView({ canEdit, onRequestPin }: Props) {
           {t("parental.appliesInChildView")}
         </p>
         <div className="settings__section-body">
-          <Switch
-            idSuffix="night"
-            checked={settings.nightMode.enabled}
-            onChange={(v) => {
-              patchNight({ enabled: v })
-            }}
-            label={t("parental.nightMode")}
-          />
-          {settings.nightMode.enabled
-            ? (
-                <div className="settings__row-inline">
-                  <label className="settings__time-field">
-                    <span className="settings__time-label">
-                      {t("parental.nightStart")}
+          <div className="settings__field-group">
+            <Switch
+              idSuffix="night"
+              checked={settings.nightMode.enabled}
+              onChange={(v) => {
+                patchNight({ enabled: v })
+              }}
+              label={t("parental.nightMode")}
+            />
+            {settings.nightMode.enabled
+              ? (
+                  <div className="settings__row-inline">
+                    <label className="settings__time-field">
+                      <span className="settings__time-label">
+                        {t("parental.nightStart")}
+                      </span>
+                      <TextField
+                        className="input-small"
+                        name="n1"
+                        value={settings.nightMode.start}
+                        onChange={(e) => {
+                          patchNight({ start: e.target.value })
+                        }}
+                      />
+                    </label>
+                    <span className="settings__time-sep" aria-hidden>
+                      →
                     </span>
-                    <TextField
-                      className="input-small"
-                      name="n1"
-                      value={settings.nightMode.start}
-                      onChange={(e) => {
-                        patchNight({ start: e.target.value })
-                      }}
-                    />
-                  </label>
-                  <span className="settings__time-sep" aria-hidden>
-                    →
-                  </span>
-                  <label className="settings__time-field">
-                    <span className="settings__time-label">
-                      {t("parental.nightEnd")}
-                    </span>
-                    <TextField
-                      className="input-small"
-                      name="n2"
-                      value={settings.nightMode.end}
-                      onChange={(e) => {
-                        patchNight({ end: e.target.value })
-                      }}
-                    />
-                  </label>
-                </div>
-              )
-            : null}
+                    <label className="settings__time-field">
+                      <span className="settings__time-label">
+                        {t("parental.nightEnd")}
+                      </span>
+                      <TextField
+                        className="input-small"
+                        name="n2"
+                        value={settings.nightMode.end}
+                        onChange={(e) => {
+                          patchNight({ end: e.target.value })
+                        }}
+                      />
+                    </label>
+                  </div>
+                )
+              : null}
+          </div>
           <Switch
             idSuffix="block"
             checked={settings.blockUnknownPrivate}
@@ -192,6 +194,44 @@ export function SettingsView({ canEdit, onRequestPin }: Props) {
         </div>
       </section>
 
+      <section className="settings__section" aria-labelledby="settings-h-rituals">
+        <h2 className="settings__h" id="settings-h-rituals">
+          {t("letters.deskRitualsGroup")}
+        </h2>
+        <p className="settings__desc">
+          {t("letters.deskRitualsHint")}
+        </p>
+        <div className="settings__section-body">
+          <Switch
+            idSuffix="morning-mail"
+            checked={settings.morningDayMailEnabled}
+            onChange={(v) => {
+              void setSettings({ ...settings, morningDayMailEnabled: v })
+            }}
+            label={t("letters.deskMorningMail")}
+          />
+          <p className="settings__desc settings__desc--inline">{t("letters.deskMorningMailHint")}</p>
+          <Switch
+            idSuffix="wax-seal"
+            checked={settings.waxSealSendEnabled}
+            onChange={(v) => {
+              void setSettings({ ...settings, waxSealSendEnabled: v })
+            }}
+            label={t("letters.deskWaxSeal")}
+          />
+          <p className="settings__desc settings__desc--inline">{t("letters.deskWaxSealHint")}</p>
+          <Switch
+            idSuffix="evening-precise"
+            checked={settings.eveningSummaryPreciseEnabled}
+            onChange={(v) => {
+              void setSettings({ ...settings, eveningSummaryPreciseEnabled: v })
+            }}
+            label={t("letters.deskEveningPrecise")}
+          />
+          <p className="settings__desc settings__desc--inline">{t("letters.deskEveningPreciseHint")}</p>
+        </div>
+      </section>
+
       <section className="settings__section" aria-labelledby="settings-h-lang">
         <h2 className="settings__h" id="settings-h-lang">
           {t("language")}
@@ -224,33 +264,35 @@ export function SettingsView({ canEdit, onRequestPin }: Props) {
         <p className="settings__desc">
           {t("logLevel.hint")}
         </p>
-        <label className="settings__select-wrap" htmlFor="settings-log">
-          <select
-            id="settings-log"
-            className="input settings__select"
-            name="logLevel"
-            value={settings.logLevel}
-            onChange={(e) => {
-              onLogLevel(e.target.value as AppLogLevel)
+        <div className="settings__section-body">
+          <label className="settings__select-wrap" htmlFor="settings-log">
+            <select
+              id="settings-log"
+              className="input settings__select"
+              name="logLevel"
+              value={settings.logLevel}
+              onChange={(e) => {
+                onLogLevel(e.target.value as AppLogLevel)
+              }}
+            >
+              {APP_LOG_LEVELS.map((lvl) => {
+                return (
+                  <option key={lvl} value={lvl}>
+                    {t(`logLevel.level.${lvl}`)}
+                  </option>
+                )
+              })}
+            </select>
+          </label>
+          <Switch
+            idSuffix="msgids"
+            checked={settings.showMessageIds}
+            onChange={(v) => {
+              void setSettings({ ...settings, showMessageIds: v })
             }}
-          >
-            {APP_LOG_LEVELS.map((lvl) => {
-              return (
-                <option key={lvl} value={lvl}>
-                  {t(`logLevel.level.${lvl}`)}
-                </option>
-              )
-            })}
-          </select>
-        </label>
-        <Switch
-          idSuffix="msgids"
-          checked={settings.showMessageIds}
-          onChange={(v) => {
-            void setSettings({ ...settings, showMessageIds: v })
-          }}
-          label={t("parental.showMessageIds")}
-        />
+            label={t("parental.showMessageIds")}
+          />
+        </div>
       </section>
 
       <section className="settings__section settings__section--pin" aria-labelledby="settings-h-pin">

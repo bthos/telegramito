@@ -51,8 +51,8 @@ export type UserChatVisibilityInput = {
 /**
  * In child mode, hide 1-1 with unknown (non-contact, not on allowlist) if rule enabled
  * — shows a "request access" row. Parent mode: do not hide by this rule.
- * Peers the parent set to ❌ in Requests are omitted from the list entirely
- * (see `isPrivateOmittedInChildListForDeny`).
+ * Peers the parent set to denied in Requests are omitted from the list entirely
+ * (see `isPeerOmittedInChildListForDeny`).
  */
 export function isPrivateChatHidden(
   s: UserChatVisibilityInput
@@ -66,18 +66,26 @@ export function isPrivateChatHidden(
 }
 
 /**
- * Child + private 1-1 + parent set ❌ in Requests → do not list the chat (fully hidden;
- * this is not the same as ❔ pending, which can show the request-access row).
+ * Child + parent set denied in Requests → omit the chat from lists (fully hidden;
+ * unlike pending, which may show a request-access row for private unknowns).
  */
-export function isPrivateOmittedInChildListForDeny(
+export function isPeerOmittedInChildListForDeny(
   appMode: AppMode,
-  isPrivate: boolean,
   peerKey: string,
   deniedPeerIds: ReadonlySet<string>
 ): boolean {
   if (appMode !== "child") return false
-  if (!isPrivate) return false
   return deniedPeerIds.has(peerKey)
+}
+
+/** @deprecated Use {@link isPeerOmittedInChildListForDeny}. */
+export function isPrivateOmittedInChildListForDeny(
+  appMode: AppMode,
+  _isPrivate: boolean,
+  peerKey: string,
+  deniedPeerIds: ReadonlySet<string>
+): boolean {
+  return isPeerOmittedInChildListForDeny(appMode, peerKey, deniedPeerIds)
 }
 
 /**

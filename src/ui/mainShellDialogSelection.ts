@@ -17,18 +17,23 @@ export function shouldRetainSelectedDialog(opts: {
   return eligible.has(opts.selectedKey) && loaded.has(opts.selectedKey)
 }
 
-/** Child mode: clear private chat when peer is on denied list. */
+/** Child mode: clear open chat when peer is on denied list. */
+export function shouldClearDeniedPeerSelection(opts: {
+  appMode: AppMode
+  peerKey: string
+  deniedPeerIds: ReadonlySet<string>
+}): boolean {
+  return opts.appMode === "child" && opts.deniedPeerIds.has(opts.peerKey)
+}
+
+/** @deprecated Use {@link shouldClearDeniedPeerSelection}. */
 export function shouldClearDeniedPrivateSelection(opts: {
   appMode: AppMode
   isPrivateUser: boolean
   peerKey: string
   deniedPeerIds: ReadonlySet<string>
 }): boolean {
-  return (
-    opts.appMode === "child" &&
-    opts.isPrivateUser &&
-    opts.deniedPeerIds.has(opts.peerKey)
-  )
+  return shouldClearDeniedPeerSelection(opts)
 }
 
 /** Night list lock in child mode clears any open chat. */

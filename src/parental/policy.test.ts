@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 import {
   isNightListHidden,
+  isPeerOmittedInChildListForDeny,
   isPrivateChatHidden,
-  isPrivateOmittedInChildListForDeny,
   parseTimeToMinutes,
 } from "./policy"
 
@@ -113,23 +113,23 @@ describe("isPrivateChatHidden", () => {
   })
 })
 
-describe("isPrivateOmittedInChildListForDeny", () => {
+describe("isPeerOmittedInChildListForDeny", () => {
   it("omits in child when peer is denied; never in parent", () => {
     const denied = new Set<string>(["p1"])
     expect(
-      isPrivateOmittedInChildListForDeny("child", true, "p1", denied)
+      isPeerOmittedInChildListForDeny("child", "p1", denied)
     ).toBe(true)
     expect(
-      isPrivateOmittedInChildListForDeny("parent", true, "p1", denied)
+      isPeerOmittedInChildListForDeny("parent", "p1", denied)
     ).toBe(false)
     expect(
-      isPrivateOmittedInChildListForDeny("child", true, "p2", denied)
+      isPeerOmittedInChildListForDeny("child", "p2", denied)
     ).toBe(false)
   })
-  it("non-private dialogs are not omitted", () => {
+  it("omits groups and channels when denied in child mode", () => {
     const denied = new Set<string>(["g1"])
     expect(
-      isPrivateOmittedInChildListForDeny("child", false, "g1", denied)
-    ).toBe(false)
+      isPeerOmittedInChildListForDeny("child", "g1", denied)
+    ).toBe(true)
   })
 })

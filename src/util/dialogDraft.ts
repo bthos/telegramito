@@ -33,6 +33,14 @@ export function getDialogDraftText(d: Dialog): string | null {
   return trimmed.length > 0 ? msg : null
 }
 
+function truncateDraftLine(text: string, maxLen: number): string {
+  const line = text.split(/\r?\n/)[0] ?? text
+  if (line.length <= maxLen) {
+    return line
+  }
+  return `${line.slice(0, maxLen - 1)}…`
+}
+
 /** First line of draft for list preview; falls back to attachment label when empty. */
 export function getDialogDraftPreviewLine(
   d: Dialog,
@@ -41,11 +49,20 @@ export function getDialogDraftPreviewLine(
 ): string {
   const text = getDialogDraftText(d)
   if (text) {
-    const line = text.split(/\r?\n/)[0] ?? text
-    if (line.length <= maxLen) {
-      return line
-    }
-    return `${line.slice(0, maxLen - 1)}…`
+    return truncateDraftLine(text, maxLen)
+  }
+  return t("letters.draftsPreviewAttachment")
+}
+
+/** Italic excerpt for desk draft cards; falls back to attachment label when empty. */
+export function getDialogDraftExcerpt(
+  d: Dialog,
+  t: Tr,
+  maxLen = 160,
+): string {
+  const text = getDialogDraftText(d)
+  if (text) {
+    return truncateDraftLine(text, maxLen)
   }
   return t("letters.draftsPreviewAttachment")
 }

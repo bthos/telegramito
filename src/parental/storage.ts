@@ -167,7 +167,7 @@ export async function updateRequest(
 export type PeerAccessState = "allowed" | "pending" | "denied"
 
 /**
- * Set allowlist + per-peer request status for 1-1 (parent Requests UI).
+ * Set allowlist + per-peer request status (parent Requests UI).
  * Persists both parental settings and the requests list.
  */
 export async function setPeerAccessState(
