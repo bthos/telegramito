@@ -28,10 +28,7 @@ import { LettersMobileTabBar } from "./LettersMobileTabBar"
 import { MainShellDesktopChatsLayout } from "./MainShellDesktopChatsLayout"
 import { MainShellMastheadSection } from "./MainShellMastheadSection"
 import { MainShellMobileListPanel } from "./MainShellMobileListPanel"
-import { MainShellSubpageShell } from "./MainShellSubpageShell"
-import { SettingsView } from "./SettingsView"
 import { PinDialog } from "./PinDialog"
-import { RequestsView } from "./RequestsView"
 import { SignOutConfirmDialog } from "./SignOutConfirmDialog"
 import { Button } from "./ds"
 import { BackIcon } from "./BackIcon"
@@ -46,7 +43,7 @@ import { filterDialogsBySearch } from "./mainShellDialogFilter"
 import { useMainShellDialogSelection } from "./useMainShellDialogSelection"
 import { useMainShellMobileChrome } from "./useMainShellMobileChrome"
 
-type Tab = "chats" | "settings" | "requests"
+type Tab = "chats"
 
 export function MainShell() {
   const { t, i18n } = useTranslation()
@@ -127,14 +124,6 @@ export function MainShell() {
       })
     }
   }, [settings.appMode, setParentUnlocked])
-
-  useEffect(() => {
-    if (settings.appMode === "child" && (tab === "requests" || tab === "settings")) {
-      queueMicrotask(() => {
-        setTab("chats")
-      })
-    }
-  }, [settings.appMode, tab])
 
   useEffect(() => {
     void (async () => {
@@ -412,29 +401,6 @@ export function MainShell() {
           )
         ) : null}
 
-        {tab === "settings" ? (
-          <MainShellSubpageShell
-            showBack
-            backLabel={t("common.back")}
-            onBack={() => setTab("chats")}
-          >
-            <SettingsView
-              canEdit={canEditSettings}
-              onRequestPin={() => {
-                setShowPin(true)
-              }}
-            />
-          </MainShellSubpageShell>
-        ) : null}
-        {tab === "requests" ? (
-          <MainShellSubpageShell
-            showBack
-            backLabel={t("common.back")}
-            onBack={() => setTab("chats")}
-          >
-            <RequestsView dialogs={dialogs} />
-          </MainShellSubpageShell>
-        ) : null}
       </div>
 
       {exitArmed ? (
@@ -474,13 +440,10 @@ export function MainShell() {
         }}
         coReadingBookmarks={settings.appMode === "parent" ? coReadingBookmarks : []}
         onCoReadingNavigate={handleCoReadingNavigate}
-        onOpenSettings={() => {
-          setDeskSheetOpen(false)
-          setTab("settings")
-        }}
-        onOpenRequests={() => {
-          setDeskSheetOpen(false)
-          setTab("requests")
+        dialogs={dialogs}
+        canEditSettings={canEditSettings}
+        onRequestPin={() => {
+          setShowPin(true)
         }}
         onSignOut={() => {
           setSignOutConfirmOpen(true)

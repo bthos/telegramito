@@ -2625,7 +2625,8 @@ button.letters-insights__cal-cell {
   color: var(--letters-ink);
 }
 
-.letters-desk-sheet__theme-hint {
+.letters-desk-sheet__theme-hint,
+.letters-desk-sheet__row-hint {
   margin: -4px 0 8px;
   font-size: 11px;
   line-height: 1.4;
@@ -2677,9 +2678,42 @@ button.letters-insights__cal-cell {
 }
 
 .letters-desk-sheet__action--danger {
+  justify-content: flex-start;
+  gap: 8px;
   color: var(--letters-terra);
   border-bottom: none;
   margin-top: 4px;
+}
+
+.letters-desk-sheet__subpage-bar {
+  margin: 0 0 4px;
+}
+
+.letters-desk-sheet__back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--letters-ink-3);
+  font-family: var(--letters-ui);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.letters-desk-sheet__subpage {
+  margin-top: 4px;
+}
+
+.letters-desk-sheet__subpage .settings {
+  margin: 0 0 1rem;
+  max-width: none;
+}
+
+.letters-desk-sheet__subpage .req-view {
+  margin: 0;
 }
 
 .letters-desk-sheet__action-meta {

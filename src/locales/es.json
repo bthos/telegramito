@@ -440,8 +440,11 @@
       "postedToChannels": "Publicó hoy en:"
     },
     "deskMorningMail": "Correo matutino del día",
+    "deskMorningMailHint": "En la primera apertura del día, abre Correo del día en lugar de Cartas.",
     "deskWaxSeal": "Envío con sello (pulsación larga)",
+    "deskWaxSealHint": "Mantenga pulsado enviar para sellar un mensaje con unos segundos para deshacer.",
     "deskEveningPrecise": "Edición vespertina más precisa",
+    "deskEveningPreciseHint": "Obtiene historial reciente para un resumen vespertino más preciso (llamadas API limitadas).",
     "waxSealHint": "Mantenga pulsado para sellar — 5 s para deshacer",
     "waxSealPending": "Sellado — envío en {{seconds}} s",
     "waxSealUndo": "Desellar",
@@ -469,6 +472,7 @@
     "child": "Niño/a",
     "parent": "Adulto",
     "childHint": "Aplica filtros más estrictos. Cambiar ajustes puede requerir PIN.",
+    "deskHint": "Niño/a aplica filtros más estrictos; adulto desbloquea todos los controles.",
     "headerToggle": "Modo (niño/a o adulto)"
   },
   "pin": {

@@ -440,8 +440,11 @@
       "postedToChannels": "You posted today:"
     },
     "deskMorningMail": "Morning day mail",
+    "deskMorningMailHint": "On the first open each day, land on Day mail instead of Letters.",
     "deskWaxSeal": "Wax-seal send (long-press)",
+    "deskWaxSealHint": "Long-press send to seal a message with a few seconds to undo.",
     "deskEveningPrecise": "Sharper evening edition",
+    "deskEveningPreciseHint": "Fetches recent history for a more accurate evening summary (limited API calls).",
     "waxSealHint": "Long-press to seal — 5s to undo",
     "waxSealPending": "Sealed — sending in {{seconds}}s",
     "waxSealUndo": "Unseal",
@@ -469,6 +472,7 @@
     "child": "Child",
     "parent": "Parent",
     "childHint": "Applies stricter local filters. Settings changes require a PIN if set.",
+    "deskHint": "Child applies stricter local filters; parent unlocks full controls.",
     "headerToggle": "User mode (child or parent)"
   },
   "pin": {
