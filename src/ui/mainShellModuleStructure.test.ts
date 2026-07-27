@@ -1,6 +1,5 @@
 /**
  * Structure gate for MainShell refactor (AC2 / AC3).
- * Feature: .tlk/features/2026-07-27-app-code-refactor-mainshell/
  *
  * Post-Cmok assertions are RED until Cmok extracts modules — Bagnik test gate
  * accepts characterization suite green; structure checks run at code QA.
@@ -24,17 +23,13 @@ describe("mainShell module structure (AC2 / AC3)", () => {
     expect(src).toMatch(/export function MainShell/)
   })
 
-  it("documents dialog vs chrome vs desk ownership in tech plan", () => {
-    const techPlan = fs.readFileSync(
-      path.resolve(
-        uiDir,
-        "../../.tlk/archive/2026-07-27-app-code-refactor-mainshell/tech-plan.md",
-      ),
-      "utf8",
-    )
-    expect(techPlan).toMatch(/Ownership map \(AC3\)/)
-    expect(techPlan).toMatch(/Dialog selection/)
-    expect(techPlan).toMatch(/Letters desk/)
+  it("delegates dialog selection, chrome, and letters desk to dedicated modules (AC3)", () => {
+    const mainShell = fs.readFileSync(path.join(uiDir, "MainShell.tsx"), "utf8")
+    expect(mainShell).toMatch(/useMainShellDialogSelection/)
+    expect(mainShell).toMatch(/mainShellChromeGate/)
+    expect(mainShell).toMatch(/useMainShellMobileChrome/)
+    expect(mainShell).toMatch(/LettersDeskSheet/)
+    expect(mainShell).toMatch(/MainShellDesktopChatsLayout/)
   })
 
   it("chrome gate module exists for width/tab predicate dedupe (AC6)", () => {
