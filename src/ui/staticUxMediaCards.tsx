@@ -5,22 +5,7 @@ import { APP_VERSION, TELEGRAM_LAYER_EXPECTED } from "../version"
 import { Button } from "./ds"
 import type { MessageMediaTranslateFn } from "./messageMediaI18n"
 import { ModalChrome } from "./ModalChrome"
-
-function peerLabel(peer: Api.TypePeer | undefined): string {
-  if (!peer) {
-    return "?"
-  }
-  if (peer.className === "PeerUser") {
-    return `user:${(peer as Api.PeerUser).userId}`
-  }
-  if (peer.className === "PeerChannel") {
-    return `channel:${(peer as Api.PeerChannel).channelId}`
-  }
-  if (peer.className === "PeerChat") {
-    return `chat:${(peer as Api.PeerChat).chatId}`
-  }
-  return "?"
-}
+import { messageMediaPeerLabel as peerLabel } from "./messageMediaPeerLabel"
 
 function dicePipCells(val: number): boolean[] {
   const cells = Array.from({ length: 9 }, () => false)
