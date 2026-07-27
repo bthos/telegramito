@@ -1,8 +1,5 @@
-import type { AppMode } from "../parental/types"
 import type { CorrespondenceTab } from "../util/correspondenceFilter"
 import { LettersMasthead } from "./LettersMasthead"
-import type { MainShellTab } from "./useMainShellMobileChrome"
-
 export type MainShellMastheadSectionProps = {
   compactMasthead: boolean
   showDesktopMasthead: boolean
@@ -12,12 +9,6 @@ export type MainShellMastheadSectionProps = {
   search: string
   onSearchChange: (q: string) => void
   onWrite: () => void
-  shellTab: MainShellTab
-  onShellTab: (tab: MainShellTab) => void
-  showParentShellNav: boolean
-  appMode: AppMode
-  onAppMode: (mode: AppMode) => void
-  onSignOut: () => void
   searchExpanded: boolean
   onSearchExpandedChange: (open: boolean) => void
   chromeHidden: boolean
@@ -35,12 +26,6 @@ export function MainShellMastheadSection({
   search,
   onSearchChange,
   onWrite,
-  shellTab,
-  onShellTab,
-  showParentShellNav,
-  appMode,
-  onAppMode,
-  onSignOut,
   searchExpanded,
   onSearchExpandedChange,
   chromeHidden,
@@ -57,12 +42,6 @@ export function MainShellMastheadSection({
         search={search}
         onSearchChange={onSearchChange}
         onWrite={onWrite}
-        shellTab={shellTab}
-        onShellTab={onShellTab}
-        showParentShellNav={showParentShellNav}
-        appMode={appMode}
-        onAppMode={onAppMode}
-        onSignOut={onSignOut}
         compact
         searchExpanded={searchExpanded}
         onSearchExpandedChange={onSearchExpandedChange}
@@ -81,12 +60,6 @@ export function MainShellMastheadSection({
       search={search}
       onSearchChange={onSearchChange}
       onWrite={onWrite}
-      shellTab={shellTab}
-      onShellTab={onShellTab}
-      showParentShellNav={showParentShellNav}
-      appMode={appMode}
-      onAppMode={onAppMode}
-      onSignOut={onSignOut}
       showDayMailButton={showTabletDayMailBtn}
       onOpenDayMail={onOpenDayMail}
       onOpenDesk={onOpenDesk}

@@ -250,49 +250,12 @@ html[data-theme="dark"] .app-root--letters-chats .chats-narrow__thread {
   min-width: min(200px, 100%);
 }
 
-.letters-masthead__shell-nav {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem;
-}
-
 .letters-masthead__tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.45rem;
   flex-shrink: 0;
-}
-
-.letters-masthead .app-mode-toggle {
-  background: color-mix(in srgb, var(--letters-panel) 88%, var(--letters-ink) 3%);
-  border-color: var(--letters-lines);
-}
-
-.letters-masthead .app-mode-toggle__btn {
-  color: var(--letters-ink-3);
-}
-
-.letters-masthead .app-mode-toggle__btn.is-active {
-  background: color-mix(in srgb, var(--letters-terra) 26%, var(--letters-panel));
-  color: var(--letters-ink);
-}
-
-.letters-masthead .app-mode-toggle__btn:focus-visible {
-  outline-color: var(--letters-terra);
-}
-
-/* Ghost sign-out — terracotta-tint hover */
-.letters-masthead .letters-masthead__signout.btn-ghost.btn-ghost--icon {
-  color: var(--letters-ink-3);
-}
-
-.letters-masthead .letters-masthead__signout.btn-ghost.btn-ghost--icon:hover,
-.letters-masthead .letters-masthead__signout.btn-ghost.btn-ghost--icon:focus-visible {
-  color: var(--letters-ink);
-  background: color-mix(in srgb, var(--letters-terra) 8%, transparent);
-  border-color: transparent;
 }
 
 .letters-masthead__wordmark {

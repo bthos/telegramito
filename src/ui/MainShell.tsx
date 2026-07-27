@@ -326,14 +326,6 @@ export function MainShell() {
         search={search}
         onSearchChange={setSearch}
         onWrite={focusComposer}
-        shellTab={tab}
-        onShellTab={setTab}
-        showParentShellNav={settings.appMode === "parent"}
-        appMode={settings.appMode}
-        onAppMode={setAppMode}
-        onSignOut={() => {
-          setSignOutConfirmOpen(true)
-        }}
         searchExpanded={searchExpanded}
         onSearchExpandedChange={setSearchExpanded}
         chromeHidden={mastheadChromeHidden}

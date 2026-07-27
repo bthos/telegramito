@@ -64,12 +64,6 @@ const baseProps = {
   search: "",
   onSearchChange: vi.fn(),
   onWrite: vi.fn(),
-  shellTab: "chats" as const,
-  onShellTab: vi.fn(),
-  showParentShellNav: true,
-  appMode: "parent" as const,
-  onAppMode: vi.fn(),
-  onSignOut: vi.fn(),
 }
 
 describe("LettersMasthead compact", () => {
@@ -133,5 +127,9 @@ describe("LettersMasthead compact", () => {
     expect(deskBtn).toBeTruthy()
     deskBtn.click()
     expect(onOpenDesk).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole("button", { name: "Child" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Parent" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Light (newsprint)" })).toBeNull()
   })
 })
