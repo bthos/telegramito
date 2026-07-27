@@ -23,6 +23,7 @@ import {
 import { formatLiteraryDateLine } from "../util/literaryDate"
 import { ChatView, THREAD_HEADER_ACTIONS_ID, THREAD_HEADER_CENTER_ID } from "./ChatView"
 import { LettersDayMailSlideOver } from "./LettersDayMailSlideOver"
+import { LettersCirclesSlideOver } from "./LettersCirclesSlideOver"
 import { LettersDeskSheet } from "./LettersDeskSheet"
 import { LettersMobileTabBar } from "./LettersMobileTabBar"
 import { MainShellDesktopChatsLayout } from "./MainShellDesktopChatsLayout"
@@ -38,8 +39,13 @@ import {
   showCompactMasthead,
   showMobileTabBar,
   showTabletDayMailButton,
+  showDesktopCirclesButton,
 } from "./mainShellChromeGate"
 import { filterDialogsBySearch } from "./mainShellDialogFilter"
+import {
+  focusLettersComposer,
+  resolveLettersWriteAction,
+} from "./lettersWriteAction"
 import { useMainShellDialogSelection } from "./useMainShellDialogSelection"
 import { useMainShellMobileChrome } from "./useMainShellMobileChrome"
 
@@ -67,12 +73,14 @@ export function MainShell() {
   const deferredSearch = useDeferredValue(search)
   const [deniedPeerIds, setDeniedPeerIds] = useState<ReadonlySet<string>>(() => new Set())
   const [pendingRequestCount, setPendingRequestCount] = useState(0)
+  const [circlesSlideOpen, setCirclesSlideOpen] = useState(false)
   const mobilePanelRef = useRef<HTMLDivElement>(null)
 
   const mobileCompact = useMaxWidth(BP.mobileCompactMax)
   const mobileStack = useNarrowView(BP.mobileCompactMax)
   const lettersThreeCol = useMinWidth(BP.lettersThreeColMin)
   const showTabletDayMailBtn = showTabletDayMailButton({ mobileCompact, lettersThreeCol })
+  const showDesktopCirclesBtn = showDesktopCirclesButton({ mobileCompact })
 
   const literaryDateLine = formatLiteraryDateLine(new Date(), i18n.language)
 
@@ -98,10 +106,6 @@ export function MainShell() {
         }
       })
   }, [dialogs])
-
-  const focusComposer = () => {
-    document.getElementById("letters-compose-textarea")?.focus()
-  }
 
   useEffect(() => {
     if (!client) return
@@ -199,6 +203,48 @@ export function MainShell() {
     dialogs,
     handleDayMailSelect,
   })
+
+  const dialogsForWrite = useMemo(() => {
+    if (settings.appMode !== "child" || deniedPeerIds.size === 0) {
+      return dialogs
+    }
+    return dialogs.filter((d) => {
+      if (!isPrivateUserDialog(d)) {
+        return true
+      }
+      const { key } = getPeerInfo(d)
+      return !isPrivateOmittedInChildListForDeny(
+        settings.appMode,
+        true,
+        key,
+        deniedPeerIds,
+      )
+    })
+  }, [dialogs, settings.appMode, deniedPeerIds])
+
+  const handleWrite = () => {
+    const action = resolveLettersWriteAction({
+      selected,
+      dialogs: dialogsForWrite,
+    })
+    if (action.kind === "focus") {
+      focusLettersComposer()
+      return
+    }
+    if (action.kind === "select") {
+      if (correspondenceTab !== action.correspondenceTab) {
+        setCorrespondenceTab(action.correspondenceTab)
+      }
+      handleSelectChat(action.dialog)
+      focusLettersComposer()
+      return
+    }
+    if (mobileCompact) {
+      setSearchExpanded(true)
+      return
+    }
+    document.querySelector<HTMLInputElement>('input[name="letters-q"]')?.focus()
+  }
 
   useHardwareBackLayer(mobileStack && selected != null, clearSelected)
 
@@ -314,13 +360,17 @@ export function MainShell() {
         onCorrespondenceTab={setCorrespondenceTab}
         search={search}
         onSearchChange={setSearch}
-        onWrite={focusComposer}
+        onWrite={handleWrite}
         searchExpanded={searchExpanded}
         onSearchExpandedChange={setSearchExpanded}
         chromeHidden={mastheadChromeHidden}
         showTabletDayMailBtn={showTabletDayMailBtn}
         onOpenDayMail={() => {
           setDayMailSlideOpen(true)
+        }}
+        showDesktopCirclesBtn={showDesktopCirclesBtn}
+        onOpenCircles={() => {
+          setCirclesSlideOpen(true)
         }}
         onOpenDesk={() => {
           setDeskSheetOpen(true)
@@ -378,7 +428,7 @@ export function MainShell() {
                 nightHidden={nightHidden}
                 nightWindow={nightWindow}
                 deniedPeerIds={deniedPeerIds}
-                onWrite={focusComposer}
+                onWrite={handleWrite}
               />
             )
           ) : (
@@ -459,6 +509,18 @@ export function MainShell() {
         selectedKey={lettersRailSelectedKey}
         onSelect={handleDayMailSelect}
         client={client}
+      />
+
+      <LettersCirclesSlideOver
+        open={circlesSlideOpen}
+        onClose={() => {
+          setCirclesSlideOpen(false)
+        }}
+        client={client}
+        appMode={settings.appMode}
+        nightListHidden={nightHidden}
+        nightWindow={nightWindow}
+        deniedPeerIds={deniedPeerIds}
       />
 
       <PinDialog

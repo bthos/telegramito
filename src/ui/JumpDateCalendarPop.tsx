@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react"
+import { useEffect, useLayoutEffect, useMemo, useState, type RefObject } from "react"
 import { useTranslation } from "react-i18next"
 import { useDismissiblePopover } from "../hooks/useDismissiblePopover"
 import { parseDayKey } from "../util/chatHistoryJump"

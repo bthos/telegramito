@@ -46,3 +46,8 @@ export function showTabletDayMailButton(opts: {
 }): boolean {
   return !opts.mobileCompact && !opts.lettersThreeCol
 }
+
+/** Wider-than-phone: Circles (stories) slide-over trigger in masthead tools. */
+export function showDesktopCirclesButton(opts: { mobileCompact: boolean }): boolean {
+  return !opts.mobileCompact
+}

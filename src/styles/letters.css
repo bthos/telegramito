@@ -3419,6 +3419,19 @@ button.letters-insights__cal-cell {
   color: var(--letters-terra);
 }
 
+.letters-masthead__circles-btn {
+  min-width: 44px;
+  min-height: 44px;
+  font-family: var(--letters-serif);
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--letters-terra);
+}
+
+.letters-circles-slide {
+  padding-top: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .app-root--letters-mobile .letters-masthead--compact {
     transition: none;

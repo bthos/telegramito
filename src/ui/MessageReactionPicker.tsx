@@ -1,6 +1,6 @@
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useDismissiblePopover } from "../hooks/useDismissiblePopover"
 import {
@@ -208,7 +208,7 @@ export function MessageReactionPicker({
     let left = anchorX - w * 0.15
     left = Math.max(pad, Math.min(left, vpW - w - pad))
     setPlace({ top, left })
-  }, [open, anchorX, anchorY, items, loadErr, showMessageBar])
+  }, [open, anchorX, anchorY, items, loadErr, showMessageBar, panelRef])
 
   useEffect(() => {
     if (!open) {
@@ -231,7 +231,7 @@ export function MessageReactionPicker({
       document.removeEventListener("keydown", onKey, true)
       document.removeEventListener("mousedown", onDown, true)
     }
-  }, [open, onClose])
+  }, [open, onClose, panelRef])
 
   const apply = useCallback(
     async (next: readonly Api.TypeReaction[]) => {

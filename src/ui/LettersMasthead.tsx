@@ -21,6 +21,9 @@ type Props = {
   /** Tablet band: ☙ opens day-mail slide-over (not shown when `compact`). */
   showDayMailButton?: boolean
   onOpenDayMail?: () => void
+  /** Tablet / desktop: ◎ opens Circles (stories) slide-over (not shown when `compact`). */
+  showCirclesButton?: boolean
+  onOpenCircles?: () => void
   /** Scroll-hide on list / day-mail screens. */
   chromeHidden?: boolean
 }
@@ -56,6 +59,8 @@ export function LettersMasthead({
   onOpenDesk,
   showDayMailButton = false,
   onOpenDayMail,
+  showCirclesButton = false,
+  onOpenCircles,
   chromeHidden = false,
 }: Props) {
   const { t } = useTranslation()
@@ -224,6 +229,20 @@ export function LettersMasthead({
               }}
             >
               ☙
+            </Button>
+          ) : null}
+          {showCirclesButton ? (
+            <Button
+              variant="ghostIcon"
+              type="button"
+              className="letters-masthead__circles-btn"
+              aria-label={t("letters.mobileTab.circles")}
+              title={t("letters.mobileTab.circles")}
+              onClick={() => {
+                onOpenCircles?.()
+              }}
+            >
+              {t("letters.mobileTabGlyph.circles")}
             </Button>
           ) : null}
         </div>

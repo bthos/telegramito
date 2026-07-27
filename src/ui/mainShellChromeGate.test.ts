@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest"
 import {
   mastheadChromeHideEnabled,
   showCompactMasthead,
+  showDesktopCirclesButton,
   showMobileTabBar,
   showTabletDayMailButton,
 } from "./mainShellChromeGate"
@@ -96,5 +97,12 @@ describe("showTabletDayMailButton", () => {
     expect(
       showTabletDayMailButton({ mobileCompact: false, lettersThreeCol: true }),
     ).toBe(false)
+  })
+})
+
+describe("showDesktopCirclesButton", () => {
+  it("shows on tablet and desktop, not on compact mobile", () => {
+    expect(showDesktopCirclesButton({ mobileCompact: false })).toBe(true)
+    expect(showDesktopCirclesButton({ mobileCompact: true })).toBe(false)
   })
 })

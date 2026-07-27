@@ -125,7 +125,7 @@ export function EmojiPickerPanel({
       document.removeEventListener("pointerdown", onPointerDown, true)
       document.removeEventListener("keydown", onKey)
     }
-  }, [open, onClose, triggerRef])
+  }, [open, onClose, triggerRef, panelRef])
 
   const searchActive = searchQuery.trim().length > 0
   const searchResults = useMemo(
