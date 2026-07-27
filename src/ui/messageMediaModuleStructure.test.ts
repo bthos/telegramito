@@ -1,6 +1,6 @@
 /**
- * Structure gate for media-stack refactor (AC2 / AC3).
- * Feature: .tlk/features/2026-07-27-app-code-refactor-media/
+ * Structure gate for media-stack refactor (AC2).
+ * Feature: .tlk/archive/2026-07-27-app-code-refactor-media/
  *
  * Some assertions are RED until Cmok extracts modules — Bagnik test gate accepts
  * characterization suite green; structure checks run at code QA.
@@ -23,14 +23,6 @@ describe("message media module structure (AC2)", () => {
     const src = fs.readFileSync(path.join(uiDir, "MessageMediaView.tsx"), "utf8")
     expect(src).toMatch(/export function MessageMediaView/)
     expect(src).toMatch(/export type \{ MediaViewerContext \}/)
-  })
-
-  it("documents unwrap → view → full-view boundary in tech plan", () => {
-    const techPlan = fs.readFileSync(
-      path.resolve(uiDir, "../../.tlk/features/2026-07-27-app-code-refactor-media/tech-plan.md"),
-      "utf8",
-    )
-    expect(techPlan).toMatch(/unwrap → view → full-view/)
   })
 })
 
