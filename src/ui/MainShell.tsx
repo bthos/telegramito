@@ -212,7 +212,6 @@ export function MainShell() {
   })
 
   useHardwareBackLayer(mobileStack && selected != null, clearSelected)
-  useHardwareBackLayer(mobileCompact && tab !== "chats", () => setTab("chats"))
 
   const childListDialogs = useMemo(
     () => filterDialogsBySearch(dialogsEligibleToRetainSelection, deferredSearch, t),
@@ -342,6 +341,9 @@ export function MainShell() {
         onOpenDayMail={() => {
           setDayMailSlideOpen(true)
         }}
+        onOpenDesk={() => {
+          setDeskSheetOpen(true)
+        }}
       />
 
       <div className="app-body app-body--fill">
@@ -420,7 +422,7 @@ export function MainShell() {
 
         {tab === "settings" ? (
           <MainShellSubpageShell
-            showBack={mobileCompact}
+            showBack
             backLabel={t("common.back")}
             onBack={() => setTab("chats")}
           >
@@ -434,7 +436,7 @@ export function MainShell() {
         ) : null}
         {tab === "requests" ? (
           <MainShellSubpageShell
-            showBack={mobileCompact}
+            showBack
             backLabel={t("common.back")}
             onBack={() => setTab("chats")}
           >
@@ -457,41 +459,41 @@ export function MainShell() {
         />
       ) : null}
 
-      {mobileCompact ? (
-        <LettersDeskSheet
-          open={deskSheetOpen}
-          onClose={() => {
-            setDeskSheetOpen(false)
-          }}
-          appMode={settings.appMode}
-          onAppMode={setAppMode}
-          showParentRows={settings.appMode === "parent"}
-          pendingRequestCount={pendingRequestCount}
-          morningDayMailEnabled={settings.morningDayMailEnabled}
-          onMorningDayMailEnabled={(enabled) => {
-            void setSettings((prev) => ({ ...prev, morningDayMailEnabled: enabled }))
-          }}
-          waxSealSendEnabled={settings.waxSealSendEnabled}
-          onWaxSealSendEnabled={(enabled) => {
-            void setSettings((prev) => ({ ...prev, waxSealSendEnabled: enabled }))
-          }}
-          eveningSummaryPreciseEnabled={settings.eveningSummaryPreciseEnabled}
-          onEveningSummaryPreciseEnabled={(enabled) => {
-            void setSettings((prev) => ({ ...prev, eveningSummaryPreciseEnabled: enabled }))
-          }}
-          coReadingBookmarks={settings.appMode === "parent" ? coReadingBookmarks : []}
-          onCoReadingNavigate={handleCoReadingNavigate}
-          onOpenSettings={() => {
-            setTab("settings")
-          }}
-          onOpenRequests={() => {
-            setTab("requests")
-          }}
-          onSignOut={() => {
-            setSignOutConfirmOpen(true)
-          }}
-        />
-      ) : null}
+      <LettersDeskSheet
+        open={deskSheetOpen}
+        onClose={() => {
+          setDeskSheetOpen(false)
+        }}
+        appMode={settings.appMode}
+        onAppMode={setAppMode}
+        showParentRows={settings.appMode === "parent"}
+        pendingRequestCount={pendingRequestCount}
+        morningDayMailEnabled={settings.morningDayMailEnabled}
+        onMorningDayMailEnabled={(enabled) => {
+          void setSettings((prev) => ({ ...prev, morningDayMailEnabled: enabled }))
+        }}
+        waxSealSendEnabled={settings.waxSealSendEnabled}
+        onWaxSealSendEnabled={(enabled) => {
+          void setSettings((prev) => ({ ...prev, waxSealSendEnabled: enabled }))
+        }}
+        eveningSummaryPreciseEnabled={settings.eveningSummaryPreciseEnabled}
+        onEveningSummaryPreciseEnabled={(enabled) => {
+          void setSettings((prev) => ({ ...prev, eveningSummaryPreciseEnabled: enabled }))
+        }}
+        coReadingBookmarks={settings.appMode === "parent" ? coReadingBookmarks : []}
+        onCoReadingNavigate={handleCoReadingNavigate}
+        onOpenSettings={() => {
+          setDeskSheetOpen(false)
+          setTab("settings")
+        }}
+        onOpenRequests={() => {
+          setDeskSheetOpen(false)
+          setTab("requests")
+        }}
+        onSignOut={() => {
+          setSignOutConfirmOpen(true)
+        }}
+      />
 
       <LettersDayMailSlideOver
         open={dayMailSlideOpen}

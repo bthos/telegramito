@@ -118,4 +118,20 @@ describe("LettersMasthead compact", () => {
     expect(screen.getByRole("button", { name: "Close" })).toBeTruthy()
     expect(screen.queryByRole("button", { name: "Desk" })).toBeNull()
   })
+
+  it("desktop masthead exposes Desk button on chats tab", async () => {
+    const inst = await miniI18n()
+    const onOpenDesk = vi.fn()
+    render(
+      <I18nextProvider i18n={inst}>
+        <ThemeProvider>
+          <LettersMasthead {...baseProps} onOpenDesk={onOpenDesk} />
+        </ThemeProvider>
+      </I18nextProvider>,
+    )
+    const deskBtn = screen.getByRole("button", { name: "Desk" })
+    expect(deskBtn).toBeTruthy()
+    deskBtn.click()
+    expect(onOpenDesk).toHaveBeenCalledTimes(1)
+  })
 })

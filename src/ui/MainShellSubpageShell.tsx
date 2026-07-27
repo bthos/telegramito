@@ -1,4 +1,5 @@
-import type { ReactNode } from "react"
+import { type ReactNode, useEffect } from "react"
+import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { Button } from "./ds"
 
 export type MainShellSubpageShellProps = {
@@ -14,10 +15,25 @@ export function MainShellSubpageShell({
   onBack,
   children,
 }: MainShellSubpageShellProps) {
+  useHardwareBackLayer(showBack, onBack)
+
+  useEffect(() => {
+    if (!showBack) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onBack()
+      }
+    }
+    document.addEventListener("keydown", onKey)
+    return () => {
+      document.removeEventListener("keydown", onKey)
+    }
+  }, [showBack, onBack])
+
   return (
     <div className="one-col one-col--scroll">
       {showBack ? (
-        <div className="letters-mobile-subpage-bar">
+        <div className="letters-subpage-bar">
           <Button variant="ghost" type="button" onClick={onBack}>
             {backLabel}
           </Button>

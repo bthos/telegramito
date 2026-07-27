@@ -23,6 +23,7 @@ export type MainShellMastheadSectionProps = {
   chromeHidden: boolean
   showTabletDayMailBtn: boolean
   onOpenDayMail: () => void
+  onOpenDesk: () => void
 }
 
 export function MainShellMastheadSection({
@@ -45,6 +46,7 @@ export function MainShellMastheadSection({
   chromeHidden,
   showTabletDayMailBtn,
   onOpenDayMail,
+  onOpenDesk,
 }: MainShellMastheadSectionProps) {
   if (compactMasthead) {
     return (
@@ -87,6 +89,7 @@ export function MainShellMastheadSection({
       onSignOut={onSignOut}
       showDayMailButton={showTabletDayMailBtn}
       onOpenDayMail={onOpenDayMail}
+      onOpenDesk={onOpenDesk}
     />
   )
 }

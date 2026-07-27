@@ -2580,12 +2580,187 @@ button.letters-insights__cal-cell {
   }
 }
 
-/* Desk sheet is mobile-only; wider viewports use masthead tools instead. */
+/* Desk sheet — mobile bottom sheet; wider viewports use centered panel (masthead Desk button). */
+.letters-desk-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ds-z-modal, 1200);
+  background: rgba(28, 24, 21, 0.42);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease-out;
+}
+
+.letters-desk-sheet-backdrop.letters-desk-sheet-backdrop--open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.letters-desk-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: calc(var(--ds-z-modal, 1200) + 1);
+  margin: 0 auto;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 480px;
+  max-height: min(88vh, 640px);
+  overflow-y: auto;
+  background: var(--letters-panel);
+  border: 1px solid var(--letters-lines);
+  border-radius: 16px 16px 0 0;
+  padding: 8px 20px calc(20px + env(safe-area-inset-bottom, 0));
+  color: var(--letters-ink);
+  font-family: var(--letters-ui);
+  box-shadow: 0 -8px 32px rgba(28, 24, 21, 0.18);
+  transform: translateY(100%);
+  transition: transform 0.22s ease-out;
+}
+
+.letters-desk-sheet.letters-desk-sheet--open {
+  transform: translateY(0);
+}
+
+.letters-desk-sheet__grip {
+  width: 36px;
+  height: 4px;
+  margin: 6px auto 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--letters-ink-3) 55%, transparent);
+}
+
+.letters-desk-sheet__title {
+  margin: 0 0 12px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--letters-ink-3);
+}
+
+.letters-desk-sheet__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.letters-desk-sheet__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 54px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--letters-lines);
+}
+
+.letters-desk-sheet__row-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--letters-ink);
+}
+
+.letters-desk-sheet__theme-hint {
+  margin: -4px 0 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--letters-ink-3);
+}
+
+.letters-desk-sheet__seg {
+  display: inline-flex;
+  border: 1px solid var(--letters-lines);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.letters-desk-sheet__seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--letters-ink-3);
+  cursor: pointer;
+}
+
+.letters-desk-sheet__seg-btn.is-active {
+  background: color-mix(in srgb, var(--letters-terra) 14%, transparent);
+  color: var(--letters-ink);
+}
+
+.letters-desk-sheet__action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 1px solid var(--letters-lines);
+  background: transparent;
+  color: var(--letters-ink);
+  font-family: var(--letters-ui);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.letters-desk-sheet__action--danger {
+  color: var(--letters-terra);
+  border-bottom: none;
+  margin-top: 4px;
+}
+
+.letters-desk-sheet__action-meta {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--letters-terra);
+}
+
+.letters-desk-sheet__action-chev {
+  color: var(--letters-ink-3);
+  font-size: 1.1rem;
+}
+
+.letters-subpage-bar {
+  padding: 8px 12px 0;
+  flex-shrink: 0;
+}
+
 @media (min-width: 701px) {
   /* BP.mobileCompactDesktopMin */
-  .letters-desk-sheet-backdrop,
   .letters-desk-sheet {
-    display: none !important;
+    top: 50%;
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    width: min(480px, calc(100vw - 32px));
+    max-height: min(88vh, 640px);
+    border-radius: 16px;
+    padding: 20px 20px 24px;
+    box-shadow: 0 16px 48px rgba(28, 24, 21, 0.22);
+    transform: translate(-50%, calc(-50% + 12px));
+    opacity: 0;
+    transition:
+      transform 0.22s ease-out,
+      opacity 0.22s ease-out;
+  }
+
+  .letters-desk-sheet.letters-desk-sheet--open {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+
+  .letters-desk-sheet__grip {
+    display: none;
   }
 }
 
@@ -2815,160 +2990,6 @@ button.letters-insights__cal-cell {
     padding: 1px 5px;
     border-radius: 0;
     pointer-events: none;
-  }
-
-  .letters-desk-sheet-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: var(--ds-z-modal, 1200);
-    background: rgba(28, 24, 21, 0.42);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.22s ease-out;
-  }
-
-  .letters-desk-sheet-backdrop.letters-desk-sheet-backdrop--open {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .letters-desk-sheet {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: calc(var(--ds-z-modal, 1200) + 1);
-    margin: 0 auto;
-    box-sizing: border-box;
-    width: 100%;
-    max-width: 480px;
-    max-height: min(88vh, 640px);
-    overflow-y: auto;
-    background: var(--letters-panel);
-    border: 1px solid var(--letters-lines);
-    border-radius: 16px 16px 0 0;
-    padding: 8px 20px calc(20px + env(safe-area-inset-bottom, 0));
-    color: var(--letters-ink);
-    font-family: var(--letters-ui);
-    box-shadow: 0 -8px 32px rgba(28, 24, 21, 0.18);
-    transform: translateY(100%);
-    transition: transform 0.22s ease-out;
-  }
-
-  .letters-desk-sheet.letters-desk-sheet--open {
-    transform: translateY(0);
-  }
-
-  .letters-desk-sheet__grip {
-    width: 36px;
-    height: 4px;
-    margin: 6px auto 14px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--letters-ink-3) 55%, transparent);
-  }
-
-  .letters-desk-sheet__title {
-    margin: 0 0 12px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--letters-ink-3);
-  }
-
-  .letters-desk-sheet__rows {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .letters-desk-sheet__row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    min-height: 54px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--letters-lines);
-  }
-
-  .letters-desk-sheet__row-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--letters-ink);
-  }
-
-  .letters-desk-sheet__theme-hint {
-    margin: -4px 0 8px;
-    font-size: 11px;
-    line-height: 1.4;
-    color: var(--letters-ink-3);
-  }
-
-  .letters-desk-sheet__seg {
-    display: inline-flex;
-    border: 1px solid var(--letters-lines);
-    border-radius: 999px;
-    overflow: hidden;
-  }
-
-  .letters-desk-sheet__seg-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 8px 12px;
-    border: none;
-    background: transparent;
-    color: var(--letters-ink-3);
-    cursor: pointer;
-  }
-
-  .letters-desk-sheet__seg-btn.is-active {
-    background: color-mix(in srgb, var(--letters-terra) 14%, transparent);
-    color: var(--letters-ink);
-  }
-
-  .letters-desk-sheet__action {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    width: 100%;
-    min-height: 54px;
-    padding: 10px 0;
-    border: none;
-    border-bottom: 1px solid var(--letters-lines);
-    background: transparent;
-    color: var(--letters-ink);
-    font-family: var(--letters-ui);
-    font-size: 14px;
-    font-weight: 600;
-    text-align: start;
-    cursor: pointer;
-  }
-
-  .letters-desk-sheet__action--danger {
-    color: var(--letters-terra);
-    border-bottom: none;
-    margin-top: 4px;
-  }
-
-  .letters-desk-sheet__action-meta {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--letters-terra);
-  }
-
-  .letters-desk-sheet__action-chev {
-    color: var(--letters-ink-3);
-    font-size: 1.1rem;
-  }
-
-  .letters-mobile-subpage-bar {
-    padding: 8px 12px 0;
-    flex-shrink: 0;
   }
 
   .thread.thread--letters .message-scroll__fab-badge {
