@@ -2720,13 +2720,20 @@ button.letters-insights__cal-cell {
   margin-top: 4px;
 }
 
+.letters-desk-sheet__breadcrumb-sep {
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  opacity: 0.55;
+}
+
 .letters-desk-sheet__subpage-bar {
-  margin: 0 0 4px;
+  margin: 0 0 16px;
 }
 
 .letters-desk-sheet__back {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   min-height: 44px;
   padding: 0;
   border: none;
@@ -2738,17 +2745,129 @@ button.letters-insights__cal-cell {
   cursor: pointer;
 }
 
-.letters-desk-sheet__subpage {
-  margin-top: 4px;
+.letters-desk-sheet__back:focus-visible {
+  outline: 2px solid var(--letters-terra);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
+.letters-desk-sheet__subpage {
+  margin-top: 0;
+}
+
+/* In-desk subpages — flat rows on parchment, no legacy card chrome. */
 .letters-desk-sheet__subpage .settings {
-  margin: 0 0 1rem;
+  margin: 0;
   max-width: none;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.letters-desk-sheet__subpage .settings__section {
+  border-top-color: var(--letters-lines);
+}
+
+.letters-desk-sheet__subpage .settings__section--pin {
+  border-color: var(--letters-lines);
+}
+
+.letters-desk-sheet__subpage .settings__lede {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--letters-ink-3);
 }
 
 .letters-desk-sheet__subpage .req-view {
   margin: 0;
+  padding: 0;
+  max-width: none;
+}
+
+.letters-desk-sheet__subpage .req-view__empty {
+  margin: 0.75rem 0 0;
+  text-align: start;
+  color: var(--letters-ink-3);
+  font-size: 13px;
+}
+
+.letters-desk-sheet__subpage .req-filters {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0;
+  margin: 0 0 8px;
+  padding: 0;
+  border: 1px solid var(--letters-lines);
+  border-radius: 999px;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.letters-desk-sheet__subpage .req-filter__btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 4px;
+  border: none;
+  border-right: 1px solid var(--letters-lines);
+  border-radius: 0;
+  background: transparent;
+  color: var(--letters-ink-3);
+  font-family: var(--letters-ui);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.letters-desk-sheet__subpage .req-filter__btn:last-child {
+  border-right: none;
+}
+
+.letters-desk-sheet__subpage .req-filter__btn.is-active,
+.letters-desk-sheet__subpage .req-filter__btn[aria-selected="true"] {
+  background: var(--letters-desk-control-active);
+  border-color: var(--letters-lines);
+  color: var(--letters-ink);
+}
+
+.letters-desk-sheet__subpage .req-filter__btn:hover:not([aria-selected="true"]) {
+  filter: none;
+  background: color-mix(in srgb, var(--letters-terra) 5%, transparent);
+}
+
+.letters-desk-sheet__subpage .req-filter__btn:focus-visible {
+  outline-color: var(--letters-terra);
+}
+
+.letters-desk-sheet__subpage .req-list {
+  margin: 0;
+  padding: 0;
+  max-width: none;
+}
+
+.letters-desk-sheet__subpage .request-row {
+  max-width: none;
+  margin: 0;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 1px solid var(--letters-lines);
+  border-radius: 0;
+  background: transparent;
+}
+
+.letters-desk-sheet__subpage .request-row__name {
+  font-weight: 600;
+  color: var(--letters-ink);
+}
+
+.letters-desk-sheet__subpage .req-access {
+  border-color: var(--letters-lines);
+  background: transparent;
+}
+
+.letters-desk-sheet__subpage .req-access__btn.is-on {
+  background: var(--letters-desk-control-active);
 }
 
 .letters-desk-sheet__action-meta {

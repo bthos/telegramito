@@ -7,6 +7,7 @@ import { useSheetDragDismiss } from "../hooks/useSheetDragDismiss"
 import { useTheme } from "../context/ThemeContext"
 import type { AppMode } from "../parental/types"
 import type { ThemePreference } from "../theme/storage"
+import { BackIcon } from "./BackIcon"
 import { ChildModeIcon, ParentModeIcon } from "./ModeToggleIcons"
 import { SignOutIcon } from "./SignOutIcon"
 import { DarkThemeIcon, LightThemeIcon, SystemThemeIcon } from "./ThemeToggleIcons"
@@ -97,6 +98,9 @@ export function LettersDeskSheet({
 
   const subpageTitle =
     deskPage === "settings" ? t("settings") : deskPage === "requests" ? t("requestsTab") : null
+  const deskTitle = t("letters.deskSheetTitle")
+  const subpageAriaLabel =
+    subpageTitle != null ? `${deskTitle} > ${subpageTitle}` : t("letters.deskSheetAria")
 
   const node = (
     <>
@@ -116,12 +120,23 @@ export function LettersDeskSheet({
         className={`letters-desk-sheet${open ? " letters-desk-sheet--open" : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-label={subpageTitle ?? t("letters.deskSheetAria")}
+        aria-label={subpageAriaLabel}
         inert={!open}
       >
         <div className="letters-desk-sheet__grip" aria-hidden />
         {deskPage !== "main" ? (
           <>
+            <h2
+              className="letters-desk-sheet__title letters-desk-sheet__breadcrumb"
+              aria-label={subpageAriaLabel}
+            >
+              <span>{deskTitle}</span>
+              <span className="letters-desk-sheet__breadcrumb-sep" aria-hidden>
+                {" "}
+                &gt;{" "}
+              </span>
+              <span>{subpageTitle}</span>
+            </h2>
             <div className="letters-desk-sheet__subpage-bar">
               <button
                 type="button"
@@ -130,10 +145,10 @@ export function LettersDeskSheet({
                   setDeskPage("main")
                 }}
               >
+                <BackIcon />
                 {t("common.back")}
               </button>
             </div>
-            <h2 className="letters-desk-sheet__title">{subpageTitle}</h2>
             <div className="letters-desk-sheet__subpage">
               {deskPage === "settings" ? (
                 <SettingsView canEdit={canEditSettings} onRequestPin={onRequestPin} />

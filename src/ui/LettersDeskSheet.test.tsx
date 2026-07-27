@@ -183,7 +183,8 @@ describe("LettersDeskSheet", () => {
     )
 
     fireEvent.click(screen.getByRole("button", { name: "Settings" }))
-    expect(screen.getByRole("dialog", { name: "Settings" })).toBeTruthy()
+    expect(screen.getByRole("dialog", { name: "Desk > Settings" })).toBeTruthy()
+    expect(screen.getByRole("heading", { level: 2, name: "Desk > Settings" })).toBeTruthy()
     expect(screen.getByRole("button", { name: "Back" })).toBeTruthy()
     expect(screen.getByText("Settings subpage")).toBeTruthy()
     expect(screen.queryByRole("heading", { level: 2, name: "Desk" })).toBeNull()
