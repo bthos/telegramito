@@ -30,22 +30,25 @@ function stubMatchMedia() {
   )
 }
 
-function stubDialog(opts: { key: string; name: string; draft?: Api.TypeDraftMessage }): Dialog {
+function stubDialog(opts: { name: string; draft?: Api.TypeDraftMessage }): Dialog {
+  const dr = {
+    className: "Dialog" as const,
+    peer: { className: "PeerUser", userId: BigInt(1) } as unknown as Api.TypePeer,
+    topMessage: 0,
+    readInboxMaxId: 0,
+    readOutboxMaxId: 0,
+    unreadCount: 0,
+    unreadMentionsCount: 0,
+    unreadReactionsCount: 0,
+    unreadPollVotesCount: 0,
+    draft: opts.draft,
+  } as Api.Dialog
   return {
-    dialog: new Api.Dialog({
-      peer: new Api.PeerUser({ userId: BigInt(1) }),
-      draft: opts.draft,
-    }),
-    entity: { id: BigInt(1), firstName: opts.name },
-    id: BigInt(1),
+    isUser: true,
     name: opts.name,
     title: opts.name,
-    isUser: true,
-    isGroup: false,
-    isChannel: false,
-    unreadCount: 0,
-    message: null,
-    date: 1,
+    entity: { id: BigInt(1), firstName: opts.name } as unknown as Api.User,
+    dialog: dr,
   } as unknown as Dialog
 }
 
@@ -129,7 +132,6 @@ describe("LettersDeskSheet", () => {
     const onDraftSelect = vi.fn()
     const onClose = vi.fn()
     const draftDialog = stubDialog({
-      key: "u:1",
       name: "Mom",
       draft: new Api.DraftMessage({ message: "Dear Mom, unfinished pie", date: 2 }),
     })
