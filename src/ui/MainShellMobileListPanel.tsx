@@ -15,7 +15,7 @@ export type MainShellMobileListPanelProps = {
   mobileTab: MobileShellTab
   correspondenceTab: CorrespondenceTab
   onCorrespondenceTab: (tab: CorrespondenceTab) => void
-  listPanelCommon: ComponentProps<typeof ChatsListPanel>
+  listPanelCommon: Omit<ComponentProps<typeof ChatsListPanel>, "dialogs">
   childListDialogs: Dialog[]
   lettersRailSelectedKey: string | null
   onDayMailSelect: (d: Dialog, opts?: { focusMessageId?: number }) => void

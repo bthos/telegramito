@@ -13,7 +13,7 @@ export type MainShellDesktopChatsLayoutProps = {
   railAsideAria: string
   noChatLabel: string
   emptyHint: string
-  listPanelCommon: ComponentProps<typeof ChatsListPanel>
+  listPanelCommon: Omit<ComponentProps<typeof ChatsListPanel>, "dialogs">
   childListDialogs: Dialog[]
   selected: Dialog | null
   settings: ParentalSettings
