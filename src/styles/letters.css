@@ -3662,7 +3662,7 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
 
 .letters-new-chat-sheet__error {
   margin: 0;
-  color: var(--letters-terra, #b03e1b);
+  color: var(--letters-terra);
   font-size: 0.82rem;
 }
 

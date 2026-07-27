@@ -106,14 +106,13 @@ export function SettingsView({ canEdit, onRequestPin }: Props) {
             </p>
           )
         : null}
-      <p className="settings__lede">
-        {t("parental.appliesInChildView")}
-      </p>
-
-      <section className="settings__section" aria-labelledby="settings-h-night">
-        <h2 className="settings__h" id="settings-h-night">
-          {t("parental.nightGroup")}
+      <section className="settings__section" aria-labelledby="settings-h-child-mode">
+        <h2 className="settings__h" id="settings-h-child-mode">
+          {t("parental.childModeGroup")}
         </h2>
+        <p className="settings__desc">
+          {t("parental.appliesInChildView")}
+        </p>
         <div className="settings__section-body">
           <Switch
             idSuffix="night"
@@ -158,14 +157,6 @@ export function SettingsView({ canEdit, onRequestPin }: Props) {
                 </div>
               )
             : null}
-        </div>
-      </section>
-
-      <section className="settings__section" aria-labelledby="settings-h-filters">
-        <h2 className="settings__h" id="settings-h-filters">
-          {t("filters")}
-        </h2>
-        <div className="settings__section-body">
           <Switch
             idSuffix="block"
             checked={settings.blockUnknownPrivate}
@@ -197,14 +188,6 @@ export function SettingsView({ canEdit, onRequestPin }: Props) {
               void setSettings({ ...settings, allowOutgoingMedia: v })
             }}
             label={t("parental.allowOutgoingMedia")}
-          />
-          <Switch
-            idSuffix="msgids"
-            checked={settings.showMessageIds}
-            onChange={(v) => {
-              void setSettings({ ...settings, showMessageIds: v })
-            }}
-            label={t("parental.showMessageIds")}
           />
         </div>
       </section>
@@ -260,6 +243,14 @@ export function SettingsView({ canEdit, onRequestPin }: Props) {
             })}
           </select>
         </label>
+        <Switch
+          idSuffix="msgids"
+          checked={settings.showMessageIds}
+          onChange={(v) => {
+            void setSettings({ ...settings, showMessageIds: v })
+          }}
+          label={t("parental.showMessageIds")}
+        />
       </section>
 
       <section className="settings__section settings__section--pin" aria-labelledby="settings-h-pin">

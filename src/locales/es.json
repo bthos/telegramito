@@ -505,16 +505,16 @@
     "current": "PIN actual"
   },
   "parental": {
-    "appliesInChildView": "Lo siguiente solo aplica en el modo «Niño/a» (cambia en la cabecera).",
+    "childModeGroup": "Modo niño/a",
+    "appliesInChildView": "Estas opciones solo aplican en el modo «Niño/a». Cambia el modo en la cabecera.",
     "pinProtectHint": "Necesario para cambiar ajustes mientras un niño usa la app, si hay PIN.",
-    "blockUnknownPrivate": "Bloquear privados a desconocidos (modo niño/a)",
-    "hideLinkPreviews": "Ocultar vistas previas de enlaces (modo niño/a)",
-    "filterGifs": "Atenuar muchos GIF/animación en el feed (modo niño/a, limitado)",
-    "nightGroup": "Noche",
-    "nightMode": "Ocultar toda la lista de chats (modo niño/a) por la noche",
+    "blockUnknownPrivate": "Bloquear privados a desconocidos",
+    "hideLinkPreviews": "Ocultar vistas previas de enlaces",
+    "filterGifs": "Atenuar muchos GIF/animación en el feed (limitado)",
+    "nightMode": "Ocultar toda la lista de chats por la noche",
     "nightStart": "Desde (local, HH:MM)",
     "nightEnd": "Hasta (local, HH:MM)",
-    "allowOutgoingMedia": "Permitir enviar fotos y archivos desde el chat (modo niño/a)",
+    "allowOutgoingMedia": "Permitir enviar fotos y archivos desde el chat",
     "showMessageIds": "Mostrar IDs de mensajes de Telegram en las burbujas (para informes de errores)"
   },
   "requests": {
@@ -538,6 +538,5 @@
     "blurred": "La lista de chats está oculta (horas nocturnas).",
     "windowRange": "Hora local: de {{start}} a {{end}}."
   },
-  "filters": "Filtros",
   "resetDefaults": "Valores predeterminados"
 }
