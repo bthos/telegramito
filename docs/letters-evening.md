@@ -39,7 +39,7 @@ terminal — they do not generate an `awaitingReply` entry. The default list liv
 
 ### Tier 2 — targeted API fetch (opt-in)
 
-When a parent enables **«Точнее вечерний выпуск»** (`eveningSummaryPreciseEnabled`) in the Стол
+When **«Точнее вечерний выпуск»** (`eveningSummaryPreciseEnabled`) is enabled in the Стол
 settings, `refineAwaitingReplyTier2` runs after Tier 1.
 
 What it does:

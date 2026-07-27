@@ -363,6 +363,23 @@
     },
     "write": "Write ↗",
     "writeFab": "Write ✎",
+    "newChat": {
+      "title": "New letter",
+      "searchPlaceholder": "Search by name or @username",
+      "searchAria": "Search contacts",
+      "recipientsLabel": "To",
+      "removeRecipient": "Remove {{name}}",
+      "groupTitleLabel": "Group name",
+      "groupTitlePlaceholder": "Name this correspondence",
+      "continue": "Continue",
+      "createGroup": "Create group",
+      "emptyResults": "No one found — try another name or @username.",
+      "loading": "Searching…",
+      "error": "Couldn't open chat. Try again.",
+      "createError": "Couldn't create group. Try again.",
+      "hintSingle": "Pick one person for a private letter.",
+      "hintGroup": "Pick two or more to start a group letter."
+    },
     "mobileTabBarAria": "Letters navigation",
     "mobileTab": {
       "letters": "Letters",

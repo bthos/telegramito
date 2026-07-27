@@ -363,6 +363,23 @@
     },
     "write": "Пісаць ↗",
     "writeFab": "Пісаць ✎",
+    "newChat": {
+      "title": "Новы ліст",
+      "searchPlaceholder": "Пошук па імені або @username",
+      "searchAria": "Пошук кантактаў",
+      "recipientsLabel": "Каму",
+      "removeRecipient": "Выдаліць {{name}}",
+      "groupTitleLabel": "Назва групы",
+      "groupTitlePlaceholder": "Назавіце гэту перапіску",
+      "continue": "Далей",
+      "createGroup": "Стварыць групу",
+      "emptyResults": "Нікога не знайшлі — паспрабуйце іншае імя або @username.",
+      "loading": "Шукаем…",
+      "error": "Не ўдалося адкрыць чат. Паспрабуйце яшчэ раз.",
+      "createError": "Не ўдалося стварыць групу. Паспрабуйце яшчэ раз.",
+      "hintSingle": "Абярыце аднаго чалавека для асабістага ліста.",
+      "hintGroup": "Абярыце двух або больш, каб пачаць групавы ліст."
+    },
     "mobileTabBarAria": "Навігацыя «Пісьмы»",
     "mobileTab": {
       "letters": "Пісьмы",

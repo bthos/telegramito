@@ -115,10 +115,7 @@ export function useChatCompose(opts: UseChatComposeOpts) {
     pendingAttachmentCount: pendingAttachments.length,
   })
 
-  const waxSealEnabled =
-    lettersLayout &&
-    settings.appMode === "parent" &&
-    settings.waxSealSendEnabled === true
+  const waxSealEnabled = lettersLayout && settings.waxSealSendEnabled === true
 
   const resizeComposeTextareaToContent = useCallback(() => {
     const el = textareaRef.current

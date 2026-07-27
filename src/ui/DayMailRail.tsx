@@ -263,8 +263,7 @@ export function DayMailRail({
     [dialogs, eveningEdition, now],
   )
   const [tier2EveningSummary, setTier2EveningSummary] = useState<EveningSummary | null>(null)
-  const eveningPrecise =
-    settings.appMode === "parent" && settings.eveningSummaryPreciseEnabled === true
+  const eveningPrecise = settings.eveningSummaryPreciseEnabled === true
 
   useEffect(() => {
     if (!baseEveningSummary || !eveningPrecise || !client) {

@@ -33,7 +33,7 @@ export type ParentalSettings = {
   morningDayMailEnabled: boolean
   /** Long-press send: wax-seal animation + 5s undo before MTProto send. */
   waxSealSendEnabled: boolean
-  /** Tier 2 evening «awaiting reply» — fetch capped history (parent opt-in, default off). */
+  /** Tier 2 evening «awaiting reply» — fetch capped history (opt-in, default off). */
   eveningSummaryPreciseEnabled: boolean
 }
 

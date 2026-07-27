@@ -2756,7 +2756,9 @@ button.letters-insights__cal-cell {
 }
 
 /* In-desk subpages — flat rows on parchment, no legacy card chrome. */
-.letters-desk-sheet__subpage .settings {
+.letters-desk-sheet .letters-desk-sheet__subpage .settings,
+html[data-theme="light"] .letters-desk-sheet .letters-desk-sheet__subpage .settings,
+html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet__subpage .settings {
   margin: 0;
   max-width: none;
   padding: 0;
@@ -2766,15 +2768,29 @@ button.letters-insights__cal-cell {
   box-shadow: none;
 }
 
-.letters-desk-sheet__subpage .settings__section {
+.letters-desk-sheet .letters-desk-sheet__subpage .settings__section {
   border-top-color: var(--letters-lines);
 }
 
-.letters-desk-sheet__subpage .settings__section--pin {
-  border-color: var(--letters-lines);
+.letters-desk-sheet .letters-desk-sheet__subpage .settings__section--pin {
+  margin: 0.65rem 0 0.35rem;
+  padding: 0.55rem 0 0.75rem;
+  border: none;
+  border-top: 1px solid var(--letters-lines);
+  border-radius: 0;
+  background: transparent;
 }
 
-.letters-desk-sheet__subpage .settings__lede {
+.letters-desk-sheet .letters-desk-sheet__subpage .settings__row-inline,
+html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet__subpage .settings__row-inline {
+  margin: 0.2rem 0 0.15rem;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.letters-desk-sheet .letters-desk-sheet__subpage .settings__lede {
   font-size: 11px;
   line-height: 1.4;
   color: var(--letters-ink-3);
@@ -3550,6 +3566,110 @@ button.letters-insights__cal-cell {
 
 .letters-circles-slide {
   padding-top: 0;
+}
+
+.letters-new-chat-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--ds-z-modal, 1200) + 2);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+  background: color-mix(in srgb, var(--letters-ink) 42%, transparent);
+}
+
+.letters-new-chat-sheet {
+  width: min(100%, 28rem);
+  max-height: min(88vh, 40rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1rem 1.1rem;
+  border: 1px solid var(--letters-hairline, rgba(28, 24, 21, 0.16));
+  background: var(--letters-panel, var(--letters-paper, #dfdbd2));
+  box-shadow: 0 18px 48px rgba(28, 24, 21, 0.18);
+}
+
+.letters-new-chat-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.letters-new-chat-sheet__title {
+  margin: 0;
+  font-family: var(--letters-sc, var(--font-sans));
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.letters-new-chat-sheet__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.letters-new-chat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.55rem;
+  border: 1px solid var(--letters-hairline, rgba(28, 24, 21, 0.16));
+  background: color-mix(in srgb, var(--letters-ink) 5%, transparent);
+  font-family: var(--letters-sc, var(--font-sans));
+  font-size: 0.78rem;
+}
+
+.letters-new-chat-sheet__results {
+  flex: 1 1 auto;
+  min-height: 8rem;
+  overflow: auto;
+  border: 1px solid var(--letters-hairline, rgba(28, 24, 21, 0.12));
+  background: color-mix(in srgb, var(--letters-paper, #dfdbd2) 88%, white);
+}
+
+.letters-new-chat-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 0;
+  border-bottom: 1px solid var(--letters-hairline, rgba(28, 24, 21, 0.08));
+  background: transparent;
+  text-align: left;
+}
+
+.letters-new-chat-row.is-selected {
+  background: color-mix(in srgb, var(--letters-terra) 12%, transparent);
+}
+
+.letters-new-chat-row__name {
+  font-family: var(--letters-serif, Georgia, serif);
+  font-size: 0.98rem;
+}
+
+.letters-new-chat-sheet__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.letters-new-chat-sheet__error {
+  margin: 0;
+  color: var(--letters-terra, #b03e1b);
+  font-size: 0.82rem;
+}
+
+@media (min-width: 701px) {
+  .letters-new-chat-backdrop {
+    align-items: center;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

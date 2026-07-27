@@ -25,6 +25,7 @@ import { ChatView, THREAD_HEADER_ACTIONS_ID, THREAD_HEADER_CENTER_ID } from "./C
 import { LettersDayMailSlideOver } from "./LettersDayMailSlideOver"
 import { LettersCirclesSlideOver } from "./LettersCirclesSlideOver"
 import { LettersDeskSheet } from "./LettersDeskSheet"
+import { LettersNewChatSheet } from "./LettersNewChatSheet"
 import { LettersMobileTabBar } from "./LettersMobileTabBar"
 import { MainShellDesktopChatsLayout } from "./MainShellDesktopChatsLayout"
 import { MainShellMastheadSection } from "./MainShellMastheadSection"
@@ -42,10 +43,7 @@ import {
   showDesktopCirclesButton,
 } from "./mainShellChromeGate"
 import { filterDialogsBySearch } from "./mainShellDialogFilter"
-import {
-  focusLettersComposer,
-  resolveLettersWriteAction,
-} from "./lettersWriteAction"
+import { focusLettersComposer } from "./lettersWriteAction"
 import { useMainShellDialogSelection } from "./useMainShellDialogSelection"
 import { useMainShellMobileChrome } from "./useMainShellMobileChrome"
 
@@ -74,6 +72,7 @@ export function MainShell() {
   const [deniedPeerIds, setDeniedPeerIds] = useState<ReadonlySet<string>>(() => new Set())
   const [pendingRequestCount, setPendingRequestCount] = useState(0)
   const [circlesSlideOpen, setCirclesSlideOpen] = useState(false)
+  const [newChatOpen, setNewChatOpen] = useState(false)
   const mobilePanelRef = useRef<HTMLDivElement>(null)
 
   const mobileCompact = useMaxWidth(BP.mobileCompactMax)
@@ -204,47 +203,20 @@ export function MainShell() {
     handleDayMailSelect,
   })
 
-  const dialogsForWrite = useMemo(() => {
-    if (settings.appMode !== "child" || deniedPeerIds.size === 0) {
-      return dialogs
-    }
-    return dialogs.filter((d) => {
-      if (!isPrivateUserDialog(d)) {
-        return true
-      }
-      const { key } = getPeerInfo(d)
-      return !isPrivateOmittedInChildListForDeny(
-        settings.appMode,
-        true,
-        key,
-        deniedPeerIds,
-      )
-    })
-  }, [dialogs, settings.appMode, deniedPeerIds])
-
   const handleWrite = () => {
-    const action = resolveLettersWriteAction({
-      selected,
-      dialogs: dialogsForWrite,
-    })
-    if (action.kind === "focus") {
-      focusLettersComposer()
-      return
-    }
-    if (action.kind === "select") {
-      if (correspondenceTab !== action.correspondenceTab) {
-        setCorrespondenceTab(action.correspondenceTab)
-      }
-      handleSelectChat(action.dialog)
-      focusLettersComposer()
-      return
-    }
-    if (mobileCompact) {
-      setSearchExpanded(true)
-      return
-    }
-    document.querySelector<HTMLInputElement>('input[name="letters-q"]')?.focus()
+    setNewChatOpen(true)
   }
+
+  const handleNewChatOpened = (dialog: Parameters<typeof handleSelectChat>[0]) => {
+    setNewChatOpen(false)
+    setCorrespondenceTab("letters")
+    handleSelectChat(dialog)
+    focusLettersComposer()
+  }
+
+  useHardwareBackLayer(newChatOpen, () => {
+    setNewChatOpen(false)
+  })
 
   useHardwareBackLayer(mobileStack && selected != null, clearSelected)
 
@@ -521,6 +493,19 @@ export function MainShell() {
         nightListHidden={nightHidden}
         nightWindow={nightWindow}
         deniedPeerIds={deniedPeerIds}
+      />
+
+      <LettersNewChatSheet
+        open={newChatOpen}
+        onClose={() => {
+          setNewChatOpen(false)
+        }}
+        client={client}
+        dialogs={dialogs}
+        refreshDialogs={refreshDialogs}
+        settings={settings}
+        deniedPeerIds={deniedPeerIds}
+        onOpenChat={handleNewChatOpened}
       />
 
       <PinDialog

@@ -241,51 +241,43 @@ export function LettersDeskSheet({
               </div>
               <p className="letters-desk-sheet__row-hint">{t("letters.deskMorningMailHint")}</p>
 
-              {appMode === "parent" ? (
-                <>
-                  <div className="letters-desk-sheet__row">
-                    <span className="letters-desk-sheet__row-label">{t("letters.deskWaxSeal")}</span>
-                    <button
-                      type="button"
-                      className="switch"
-                      role="switch"
-                      aria-checked={waxSealSendEnabled}
-                      aria-label={t("letters.deskWaxSeal")}
-                      onClick={() => {
-                        onWaxSealSendEnabled?.(!waxSealSendEnabled)
-                      }}
-                    >
-                      <span className="switch__track" aria-hidden>
-                        <span className="switch__thumb" />
-                      </span>
-                    </button>
-                  </div>
-                  <p className="letters-desk-sheet__row-hint">{t("letters.deskWaxSealHint")}</p>
-                </>
-              ) : null}
+              <div className="letters-desk-sheet__row">
+                <span className="letters-desk-sheet__row-label">{t("letters.deskWaxSeal")}</span>
+                <button
+                  type="button"
+                  className="switch"
+                  role="switch"
+                  aria-checked={waxSealSendEnabled}
+                  aria-label={t("letters.deskWaxSeal")}
+                  onClick={() => {
+                    onWaxSealSendEnabled?.(!waxSealSendEnabled)
+                  }}
+                >
+                  <span className="switch__track" aria-hidden>
+                    <span className="switch__thumb" />
+                  </span>
+                </button>
+              </div>
+              <p className="letters-desk-sheet__row-hint">{t("letters.deskWaxSealHint")}</p>
 
-              {appMode === "parent" ? (
-                <>
-                  <div className="letters-desk-sheet__row">
-                    <span className="letters-desk-sheet__row-label">{t("letters.deskEveningPrecise")}</span>
-                    <button
-                      type="button"
-                      className="switch"
-                      role="switch"
-                      aria-checked={eveningSummaryPreciseEnabled}
-                      aria-label={t("letters.deskEveningPrecise")}
-                      onClick={() => {
-                        onEveningSummaryPreciseEnabled?.(!eveningSummaryPreciseEnabled)
-                      }}
-                    >
-                      <span className="switch__track" aria-hidden>
-                        <span className="switch__thumb" />
-                      </span>
-                    </button>
-                  </div>
-                  <p className="letters-desk-sheet__row-hint">{t("letters.deskEveningPreciseHint")}</p>
-                </>
-              ) : null}
+              <div className="letters-desk-sheet__row">
+                <span className="letters-desk-sheet__row-label">{t("letters.deskEveningPrecise")}</span>
+                <button
+                  type="button"
+                  className="switch"
+                  role="switch"
+                  aria-checked={eveningSummaryPreciseEnabled}
+                  aria-label={t("letters.deskEveningPrecise")}
+                  onClick={() => {
+                    onEveningSummaryPreciseEnabled?.(!eveningSummaryPreciseEnabled)
+                  }}
+                >
+                  <span className="switch__track" aria-hidden>
+                    <span className="switch__thumb" />
+                  </span>
+                </button>
+              </div>
+              <p className="letters-desk-sheet__row-hint">{t("letters.deskEveningPreciseHint")}</p>
 
               {showParentRows ? (
                 <div className="letters-desk-sheet__bookmarks">

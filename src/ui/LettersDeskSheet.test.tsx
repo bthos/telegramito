@@ -104,7 +104,37 @@ describe("LettersDeskSheet", () => {
     expect(onClose).toHaveBeenCalled()
   })
 
-  it("shows evening precise toggle in parent mode (AC-U6)", async () => {
+  it("shows evening precise toggle in child mode", async () => {
+    const inst = await miniI18n()
+    const onEvening = vi.fn()
+    render(
+      <I18nextProvider i18n={inst}>
+        <ThemeProvider>
+          <LettersDeskSheet
+            open
+            onClose={vi.fn()}
+            appMode="child"
+            onAppMode={vi.fn()}
+            showParentRows={false}
+            pendingRequestCount={0}
+            dialogs={[]}
+            canEditSettings={false}
+            onRequestPin={vi.fn()}
+            onSignOut={vi.fn()}
+            eveningSummaryPreciseEnabled={false}
+            onEveningSummaryPreciseEnabled={onEvening}
+          />
+        </ThemeProvider>
+      </I18nextProvider>,
+    )
+
+    const toggle = screen.getByRole("switch", { name: "Sharper evening edition" })
+    expect(toggle.getAttribute("aria-checked")).toBe("false")
+    fireEvent.click(toggle)
+    expect(onEvening).toHaveBeenCalledWith(true)
+  })
+
+  it("shows wax-seal and evening precise toggles in parent mode (AC-U6)", async () => {
     const inst = await miniI18n()
     const onEvening = vi.fn()
     render(
@@ -128,6 +158,7 @@ describe("LettersDeskSheet", () => {
       </I18nextProvider>,
     )
 
+    expect(screen.getByRole("switch", { name: "Wax-seal send" })).toBeTruthy()
     const toggle = screen.getByRole("switch", { name: "Sharper evening edition" })
     expect(toggle.getAttribute("aria-checked")).toBe("false")
     fireEvent.click(toggle)

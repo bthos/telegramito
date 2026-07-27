@@ -363,6 +363,23 @@
     },
     "write": "Escribir ↗",
     "writeFab": "Escribir ✎",
+    "newChat": {
+      "title": "Nueva carta",
+      "searchPlaceholder": "Buscar por nombre o @usuario",
+      "searchAria": "Buscar contactos",
+      "recipientsLabel": "Para",
+      "removeRecipient": "Quitar {{name}}",
+      "groupTitleLabel": "Nombre del grupo",
+      "groupTitlePlaceholder": "Nombre de esta correspondencia",
+      "continue": "Continuar",
+      "createGroup": "Crear grupo",
+      "emptyResults": "No se encontró a nadie — pruebe otro nombre o @usuario.",
+      "loading": "Buscando…",
+      "error": "No se pudo abrir el chat. Inténtelo de nuevo.",
+      "createError": "No se pudo crear el grupo. Inténtelo de nuevo.",
+      "hintSingle": "Elija una persona para una carta privada.",
+      "hintGroup": "Elija dos o más para iniciar una carta grupal."
+    },
     "mobileTabBarAria": "Navegación de Cartas",
     "mobileTab": {
       "letters": "Cartas",
