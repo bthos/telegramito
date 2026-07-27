@@ -2618,8 +2618,7 @@ button.letters-insights__cal-cell {
   justify-content: space-between;
   gap: 12px;
   min-height: 54px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--letters-lines);
+  padding: 8px 0 0;
 }
 
 .letters-desk-sheet__row-label {
@@ -2630,7 +2629,9 @@ button.letters-insights__cal-cell {
 
 .letters-desk-sheet__theme-hint,
 .letters-desk-sheet__row-hint {
-  margin: -4px 0 8px;
+  margin: -4px 0 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--letters-lines);
   font-size: 11px;
   line-height: 1.4;
   color: var(--letters-ink-3);
