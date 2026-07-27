@@ -1,8 +1,7 @@
-import { useRef, type ReactNode } from "react"
+import { type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
-import { useBodyScrollLockAndEscape } from "../hooks/useBodyScrollLockAndEscape"
-import { useFocusTrap } from "../hooks/useFocusTrap"
+import { useDismissibleLayer } from "../hooks/useDismissibleLayer"
 
 type Props = {
   url: string
@@ -44,9 +43,7 @@ export function PhotoMediaViewer({
   footerActions,
 }: Props) {
   const { t } = useTranslation()
-  const containerRef = useRef<HTMLDivElement>(null)
-  useFocusTrap(containerRef, true)
-  useBodyScrollLockAndEscape(true, onClose)
+  const containerRef = useDismissibleLayer(true, onClose)
   const initials = peerInitials ?? initialsFromTitle(peerTitle)
 
   const node = (

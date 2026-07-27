@@ -10,8 +10,7 @@ import {
 } from "react"
 import { useTranslation } from "react-i18next"
 import { EMOJI_GROUPS, type EmojiItem } from "../data/emojiGroups"
-import { useFocusTrap } from "../hooks/useFocusTrap"
-import { useHardwareBackLayer } from "../hooks/useHardwareBack"
+import { useDismissiblePopover } from "../hooks/useDismissiblePopover"
 import { useMediaQuery } from "../hooks/useMediaQuery"
 import { BP, layoutMq } from "../layout/breakpoints"
 import { EmojiOutlineIcon } from "./ChatChromeIcons"
@@ -52,7 +51,7 @@ export function EmojiPickerPanel({
   const { t } = useTranslation()
   const dialogId = useId()
   const searchId = `${dialogId}-search`
-  const panelRef = useRef<HTMLDivElement | null>(null)
+  const panelRef = useDismissiblePopover(open, onClose)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [recent, setRecent] = useState<string[]>(() => loadRecentEmojis())
@@ -60,9 +59,6 @@ export function EmojiPickerPanel({
     left: number
     top: number
   } | null>(null)
-
-  useFocusTrap(panelRef, open)
-  useHardwareBackLayer(open, onClose)
 
   useEffect(() => {
     if (!open) {

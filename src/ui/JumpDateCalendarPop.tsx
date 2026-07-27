@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react"
 import { useTranslation } from "react-i18next"
-import { useFocusTrap } from "../hooks/useFocusTrap"
-import { useHardwareBackLayer } from "../hooks/useHardwareBack"
+import { useDismissiblePopover } from "../hooks/useDismissiblePopover"
 import { parseDayKey } from "../util/chatHistoryJump"
 import { getLocalDayKey } from "../util/timeFormat"
 
@@ -56,9 +55,7 @@ export function JumpDateCalendarPop({
   onDismiss,
 }: JumpDateCalendarPopProps) {
   const { t, i18n } = useTranslation()
-  const containerRef = useRef<HTMLDivElement>(null)
-  useFocusTrap(containerRef, open)
-  useHardwareBackLayer(open, onDismiss)
+  const containerRef = useDismissiblePopover(open, onDismiss)
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
 
   const minParts = useMemo(() => parseDayKey(minDayKey), [minDayKey])

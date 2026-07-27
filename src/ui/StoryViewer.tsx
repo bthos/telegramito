@@ -3,8 +3,7 @@ import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import type { Api } from "telegram"
 import type { TelegramClient } from "telegram"
-import { useBodyScrollLockAndEscape } from "../hooks/useBodyScrollLockAndEscape"
-import { useFocusTrap } from "../hooks/useFocusTrap"
+import { useDismissibleLayer } from "../hooks/useDismissibleLayer"
 import { usePeriodicTick } from "../hooks/usePeriodicTick"
 import { peerKeyFromPeer } from "../telegram/peerKey"
 import {
@@ -56,7 +55,6 @@ function resumeIndexFor(entry: StoryPeerEntry): number {
  */
 export function StoryViewer({ client, entries, startIndex, onMarkPeerRead, onClose }: Props) {
   const { t } = useTranslation()
-  const rootRef = useRef<HTMLDivElement>(null)
   const [peerIndex, setPeerIndex] = useState(startIndex)
   const [storyIndex, setStoryIndex] = useState(() => resumeIndexFor(entries[startIndex]!))
   const reachedRef = useRef(new Map<string, ReachedRecord>())
@@ -169,8 +167,7 @@ export function StoryViewer({ client, entries, startIndex, onMarkPeerRead, onClo
     return () => clearTimeout(id)
   }, [peerIndex, storyIndex])
 
-  useFocusTrap(rootRef, true)
-  useBodyScrollLockAndEscape(true, closeAll)
+  const rootRef = useDismissibleLayer(true, closeAll)
 
   // usePeriodicTick, not Date.now() directly in render (see its doc comment) —
   // matches DayMailRail/MainShell's existing convention for relative-time display.

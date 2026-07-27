@@ -1,10 +1,8 @@
-import { useRef } from "react"
 import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import type { TelegramClient } from "telegram"
 import type { Dialog } from "telegram/tl/custom/dialog"
-import { useBodyScrollLockAndEscape } from "../hooks/useBodyScrollLockAndEscape"
-import { useFocusTrap } from "../hooks/useFocusTrap"
+import { useDismissibleLayer } from "../hooks/useDismissibleLayer"
 import { getLettersPortalRoot } from "../util/lettersPortalRoot"
 import { DayMailRail } from "./DayMailRail"
 import { Button } from "./ds"
@@ -28,10 +26,7 @@ export function LettersDayMailSlideOver({
   client = null,
 }: Props) {
   const { t } = useTranslation()
-  const panelRef = useRef<HTMLDivElement>(null)
-
-  useFocusTrap(panelRef, open)
-  useBodyScrollLockAndEscape(open, onClose)
+  const panelRef = useDismissibleLayer(open, onClose)
 
   if (!open) {
     return null

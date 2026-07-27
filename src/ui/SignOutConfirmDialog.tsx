@@ -1,7 +1,5 @@
-import { useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { useBodyScrollLockAndEscape } from "../hooks/useBodyScrollLockAndEscape"
-import { useFocusTrap } from "../hooks/useFocusTrap"
+import { useDismissibleLayer } from "../hooks/useDismissibleLayer"
 import { Button } from "./ds"
 
 type Props = {
@@ -12,10 +10,7 @@ type Props = {
 
 export function SignOutConfirmDialog({ open, onConfirm, onClose }: Props) {
   const { t } = useTranslation()
-  const panelRef = useRef<HTMLDivElement>(null)
-
-  useFocusTrap(panelRef, open)
-  useBodyScrollLockAndEscape(open, onClose)
+  const panelRef = useDismissibleLayer(open, onClose)
 
   if (!open) {
     return null

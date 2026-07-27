@@ -1,7 +1,6 @@
 import { useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { useBodyScrollLockAndEscape } from "../hooks/useBodyScrollLockAndEscape"
-import { useFocusTrap } from "../hooks/useFocusTrap"
+import { useDismissibleLayer } from "../hooks/useDismissibleLayer"
 import { formatVideoDuration } from "../telegram/documentVideoMeta"
 
 type Props = {
@@ -41,12 +40,10 @@ export function VideoFullViewer({
   labelVolume,
   variant = "rect",
 }: Props) {
-  const rootRef = useRef<HTMLDivElement>(null)
+  const rootRef = useDismissibleLayer(true, onClose)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(true)
   const [currentSec, setCurrentSec] = useState(0)
-  useFocusTrap(rootRef, true)
-  useBodyScrollLockAndEscape(true, onClose)
 
   const durLabel = durationSec != null ? formatVideoDuration(durationSec) : "—:—"
   const curLabel = formatVideoDuration(Math.floor(currentSec))

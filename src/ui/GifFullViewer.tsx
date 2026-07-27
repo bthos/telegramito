@@ -1,7 +1,5 @@
-import { useRef } from "react"
 import { createPortal } from "react-dom"
-import { useBodyScrollLockAndEscape } from "../hooks/useBodyScrollLockAndEscape"
-import { useFocusTrap } from "../hooks/useFocusTrap"
+import { useDismissibleLayer } from "../hooks/useDismissibleLayer"
 
 export type GifFullViewerProps = {
   src: string
@@ -27,9 +25,7 @@ export function GifFullViewer({
   labelForward,
   labelSave,
 }: GifFullViewerProps) {
-  const rootRef = useRef<HTMLDivElement>(null)
-  useFocusTrap(rootRef, true)
-  useBodyScrollLockAndEscape(true, onClose)
+  const rootRef = useDismissibleLayer(true, onClose)
 
   const node = (
     <div

@@ -6,6 +6,14 @@ import { initReactI18next } from "react-i18next"
 import { ThemeProvider } from "../context/ThemeContext"
 import { LettersDeskSheet } from "./LettersDeskSheet"
 
+vi.mock("./SettingsView", () => ({
+  SettingsView: () => <div>Settings subpage</div>,
+}))
+
+vi.mock("./RequestsView", () => ({
+  RequestsView: () => <div>Requests subpage</div>,
+}))
+
 function stubMatchMedia() {
   vi.stubGlobal(
     "matchMedia",
@@ -37,15 +45,21 @@ async function miniI18n() {
             system: "System (device)",
             dark: "Dark (newsprint)",
           },
-          mode: { child: "Child", parent: "Parent", headerToggle: "Mode", label: "Profile" },
+          mode: { child: "Child", parent: "Parent", headerToggle: "Mode", label: "Profile", deskHint: "Child filters; parent unlocks controls." },
           letters: {
             deskSheetAria: "Desk sheet",
             deskSheetTitle: "Desk",
             deskPendingRequests: "{{count}} new",
+            deskMorningMail: "Morning day mail",
+            deskMorningMailHint: "First open lands on Day mail.",
+            deskWaxSeal: "Wax-seal send",
+            deskWaxSealHint: "Long-press send to seal.",
             deskEveningPrecise: "Sharper evening edition",
+            deskEveningPreciseHint: "More accurate evening summary.",
             coReadingDeskTitle: "To discuss together",
             coReadingDeviceOnlyHint: "Bookmarks stay on this device only.",
           },
+          common: { back: "Back" },
         },
       },
     },
@@ -74,8 +88,9 @@ describe("LettersDeskSheet", () => {
             onAppMode={vi.fn()}
             showParentRows
             pendingRequestCount={2}
-            onOpenSettings={vi.fn()}
-            onOpenRequests={vi.fn()}
+            dialogs={[]}
+            canEditSettings
+            onRequestPin={vi.fn()}
             onSignOut={vi.fn()}
           />
         </ThemeProvider>
@@ -102,8 +117,9 @@ describe("LettersDeskSheet", () => {
             onAppMode={vi.fn()}
             showParentRows
             pendingRequestCount={0}
-            onOpenSettings={vi.fn()}
-            onOpenRequests={vi.fn()}
+            dialogs={[]}
+            canEditSettings
+            onRequestPin={vi.fn()}
             onSignOut={vi.fn()}
             eveningSummaryPreciseEnabled={false}
             onEveningSummaryPreciseEnabled={onEvening}
@@ -130,8 +146,9 @@ describe("LettersDeskSheet", () => {
             onAppMode={vi.fn()}
             showParentRows
             pendingRequestCount={0}
-            onOpenSettings={vi.fn()}
-            onOpenRequests={vi.fn()}
+            dialogs={[]}
+            canEditSettings
+            onRequestPin={vi.fn()}
             onSignOut={vi.fn()}
             coReadingBookmarks={[]}
           />
@@ -142,6 +159,61 @@ describe("LettersDeskSheet", () => {
     const hint = screen.getByRole("status")
     expect(hint.textContent).toBe("Bookmarks stay on this device only.")
     expect(screen.getByRole("heading", { level: 3, name: "To discuss together" })).toBeTruthy()
+  })
+
+  it("opens settings inside the desk with a back control", async () => {
+    const inst = await miniI18n()
+    render(
+      <I18nextProvider i18n={inst}>
+        <ThemeProvider>
+          <LettersDeskSheet
+            open
+            onClose={vi.fn()}
+            appMode="parent"
+            onAppMode={vi.fn()}
+            showParentRows
+            pendingRequestCount={0}
+            dialogs={[]}
+            canEditSettings
+            onRequestPin={vi.fn()}
+            onSignOut={vi.fn()}
+          />
+        </ThemeProvider>
+      </I18nextProvider>,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }))
+    expect(screen.getByRole("dialog", { name: "Settings" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Back" })).toBeTruthy()
+    expect(screen.getByText("Settings subpage")).toBeTruthy()
+    expect(screen.queryByRole("heading", { level: 2, name: "Desk" })).toBeNull()
+
+    fireEvent.click(screen.getByRole("button", { name: "Back" }))
+    expect(screen.getByRole("heading", { level: 2, name: "Desk" })).toBeTruthy()
+  })
+
+  it("hides settings in child mode", async () => {
+    const inst = await miniI18n()
+    render(
+      <I18nextProvider i18n={inst}>
+        <ThemeProvider>
+          <LettersDeskSheet
+            open
+            onClose={vi.fn()}
+            appMode="child"
+            onAppMode={vi.fn()}
+            showParentRows={false}
+            pendingRequestCount={0}
+            dialogs={[]}
+            canEditSettings={false}
+            onRequestPin={vi.fn()}
+            onSignOut={vi.fn()}
+          />
+        </ThemeProvider>
+      </I18nextProvider>,
+    )
+
+    expect(screen.queryByRole("button", { name: "Settings" })).toBeNull()
   })
 
   it("hides co-reading section in child mode", async () => {
@@ -156,8 +228,9 @@ describe("LettersDeskSheet", () => {
             onAppMode={vi.fn()}
             showParentRows={false}
             pendingRequestCount={0}
-            onOpenSettings={vi.fn()}
-            onOpenRequests={vi.fn()}
+            dialogs={[]}
+            canEditSettings
+            onRequestPin={vi.fn()}
             onSignOut={vi.fn()}
             coReadingBookmarks={[
               {

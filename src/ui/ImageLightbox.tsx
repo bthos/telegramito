@@ -1,7 +1,5 @@
-import { useRef } from "react"
 import { createPortal } from "react-dom"
-import { useBodyScrollLockAndEscape } from "../hooks/useBodyScrollLockAndEscape"
-import { useFocusTrap } from "../hooks/useFocusTrap"
+import { useDismissibleLayer } from "../hooks/useDismissibleLayer"
 
 type Props = {
   url: string
@@ -14,9 +12,7 @@ type Props = {
  * Full-screen image overlay (SPA-friendly — no navigation).
  */
 export function ImageLightbox({ url, onClose, labelClose, labelBackdrop }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  useFocusTrap(containerRef, true)
-  useBodyScrollLockAndEscape(true, onClose)
+  const containerRef = useDismissibleLayer(true, onClose)
 
   const node = (
     <div
