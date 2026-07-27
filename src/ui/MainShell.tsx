@@ -665,39 +665,41 @@ export function MainShell() {
         />
       ) : null}
 
-      <LettersDeskSheet
-        open={deskSheetOpen}
-        onClose={() => {
-          setDeskSheetOpen(false)
-        }}
-        appMode={settings.appMode}
-        onAppMode={setAppMode}
-        showParentRows={settings.appMode === "parent"}
-        pendingRequestCount={pendingRequestCount}
-        morningDayMailEnabled={settings.morningDayMailEnabled}
-        onMorningDayMailEnabled={(enabled) => {
-          void setSettings((prev) => ({ ...prev, morningDayMailEnabled: enabled }))
-        }}
-        waxSealSendEnabled={settings.waxSealSendEnabled}
-        onWaxSealSendEnabled={(enabled) => {
-          void setSettings((prev) => ({ ...prev, waxSealSendEnabled: enabled }))
-        }}
-        eveningSummaryPreciseEnabled={settings.eveningSummaryPreciseEnabled}
-        onEveningSummaryPreciseEnabled={(enabled) => {
-          void setSettings((prev) => ({ ...prev, eveningSummaryPreciseEnabled: enabled }))
-        }}
-        coReadingBookmarks={settings.appMode === "parent" ? coReadingBookmarks : []}
-        onCoReadingNavigate={handleCoReadingNavigate}
-        onOpenSettings={() => {
-          setTab("settings")
-        }}
-        onOpenRequests={() => {
-          setTab("requests")
-        }}
-        onSignOut={() => {
-          setSignOutConfirmOpen(true)
-        }}
-      />
+      {mobileCompact ? (
+        <LettersDeskSheet
+          open={deskSheetOpen}
+          onClose={() => {
+            setDeskSheetOpen(false)
+          }}
+          appMode={settings.appMode}
+          onAppMode={setAppMode}
+          showParentRows={settings.appMode === "parent"}
+          pendingRequestCount={pendingRequestCount}
+          morningDayMailEnabled={settings.morningDayMailEnabled}
+          onMorningDayMailEnabled={(enabled) => {
+            void setSettings((prev) => ({ ...prev, morningDayMailEnabled: enabled }))
+          }}
+          waxSealSendEnabled={settings.waxSealSendEnabled}
+          onWaxSealSendEnabled={(enabled) => {
+            void setSettings((prev) => ({ ...prev, waxSealSendEnabled: enabled }))
+          }}
+          eveningSummaryPreciseEnabled={settings.eveningSummaryPreciseEnabled}
+          onEveningSummaryPreciseEnabled={(enabled) => {
+            void setSettings((prev) => ({ ...prev, eveningSummaryPreciseEnabled: enabled }))
+          }}
+          coReadingBookmarks={settings.appMode === "parent" ? coReadingBookmarks : []}
+          onCoReadingNavigate={handleCoReadingNavigate}
+          onOpenSettings={() => {
+            setTab("settings")
+          }}
+          onOpenRequests={() => {
+            setTab("requests")
+          }}
+          onSignOut={() => {
+            setSignOutConfirmOpen(true)
+          }}
+        />
+      ) : null}
 
       <LettersDayMailSlideOver
         open={dayMailSlideOpen}

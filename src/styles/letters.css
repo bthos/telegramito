@@ -2580,6 +2580,15 @@ button.letters-insights__cal-cell {
   }
 }
 
+/* Desk sheet is mobile-only; wider viewports use masthead tools instead. */
+@media (min-width: 701px) {
+  /* BP.mobileCompactDesktopMin */
+  .letters-desk-sheet-backdrop,
+  .letters-desk-sheet {
+    display: none !important;
+  }
+}
+
 /* —— Mobile compact shell —— */
 @media (max-width: 700px) {
   /* BP.mobileCompactMax */
