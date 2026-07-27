@@ -206,7 +206,7 @@ describe("LettersDeskSheet", () => {
       </I18nextProvider>,
     )
 
-    const hint = screen.getByText("Bookmarks stay on this device only.")
+    expect(screen.getByText("Bookmarks stay on this device only.")).toBeTruthy()
     expect(screen.getByRole("heading", { level: 3, name: "To discuss together" })).toBeTruthy()
   })
 
