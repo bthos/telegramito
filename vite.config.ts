@@ -160,6 +160,11 @@ export default defineConfig({
     /** Telegram`s dependency graph is huge — run test files one at a time to avoid fork OOM. */
     maxWorkers: 1,
     fileParallelism: false,
-    execArgv: ["--max-old-space-size=16384"],
+    /**
+     * Do not set `execArgv: ["--max-old-space-size=…"]` here: Node 22+ rejects that
+     * flag for worker_threads (ERR_WORKER_INVALID_EXEC_ARGV), which also breaks
+     * CLI pool overrides (`--pool=vmThreads`). Prefer `NODE_OPTIONS=--max-old-space-size=16384`
+     * on the parent `npm test` / CI job when a heap bump is needed.
+     */
   },
 })
