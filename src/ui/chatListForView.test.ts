@@ -1,25 +1,9 @@
 /**
  * Characterization of ChatView unread-only list filtering (AC1).
- *
- * Mirrors ChatView.tsx:
- *   if (!messagesUnreadOnly) return list
- *   const readMax = readInboxMaxIdForThread(...)
- *   return list.filter((m) => isInboundUnreadForThread(m, readMax))
  */
 import { Api } from "telegram"
 import { describe, expect, it } from "vitest"
-import { isInboundUnreadForThread } from "../telegram/messageUnread"
-
-function filterListForView(
-  list: Api.Message[],
-  messagesUnreadOnly: boolean,
-  readInboxMaxId: number,
-): Api.Message[] {
-  if (!messagesUnreadOnly) {
-    return list
-  }
-  return list.filter((m) => isInboundUnreadForThread(m, readInboxMaxId))
-}
+import { filterListForView } from "./chatListForView"
 
 function msg(id: number, out: boolean): Api.Message {
   return new Api.Message({

@@ -9,25 +9,11 @@ import {
   minMessageId,
   toMessageList,
   uniqueMessagesSort,
-  compareMessagesChronological,
 } from "../telegram/messageList"
-import {
-  getForumThreadMessages,
-  getForumReplyToTopId,
-} from "../telegram/forum"
-import {
-  BULK_GET_MESSAGES_BY_IDS_CHUNK,
-  MESSAGE_HISTORY_RECONCILE_POLICY,
-  SEQUENTIAL_ID_GAP_MAX_SPAN,
-  chunkIdsForGetMessages,
-  findSequentialIdGapsInSortedMessages,
-  historyReconcileAttemptKey,
-  mediaPlaceholderRefetchIds,
-  messageAllowedForGapFetch,
-  messageInActiveThread,
-} from "../telegram/messageHistoryReconcile"
+import { getForumThreadMessages } from "../telegram/forum"
 import { rememberEveningThreadMessages } from "../util/eveningThreadCache"
 import { withTransientRetry } from "../telegram/invokeWithTransientRetry"
+import { useChatHistoryRecovery } from "./useChatHistoryRecovery"
 
 /** Max extra history pages when unread-only filter matches nothing (after refreshing head). */
 const UNREAD_SEEK_MAX_OLDER_PAGES = 40
@@ -75,7 +61,6 @@ export function useChatMessages(opts: {
   const listRef = useRef(list)
   const historyReconcileAttemptedRef = useRef<Set<string>>(new Set())
   const mediaPlaceholderRefetchAttemptsRef = useRef<Map<number, number>>(new Map())
-  const mediaPlaceholderRefetchInFlightRef = useRef(false)
 
   useEffect(() => {
     listRef.current = list
@@ -407,171 +392,20 @@ export function useChatMessages(opts: {
     loadOlder,
   ])
 
-  /**
-   * Search-based thread history (`messages.search` + `topMsgId`) can omit message ids.
-   * Reconcile small sequential holes with chunked `getMessages({ ids })` (same pattern would
-   * apply to any sparse search-driven list; forum threads are the only such source today).
-   */
-  useEffect(() => {
-    if (!client || dialog.entity == null) {
-      return
-    }
-    if (!isForum || topicId == null) {
-      return
-    }
-    if (blocked && appMode === "child") {
-      return
-    }
-    if (loadedConvKeyRef.current !== convKey) {
-      return
-    }
-    if (list.length < 2) {
-      return
-    }
-    const sorted = [...list].filter((m) => m.id != null).sort(compareMessagesChronological)
-    const candidateGaps = findSequentialIdGapsInSortedMessages(
-      sorted,
-      SEQUENTIAL_ID_GAP_MAX_SPAN,
-      getForumReplyToTopId,
-    )
-    const gaps = candidateGaps.filter(
-      (g) =>
-        !historyReconcileAttemptedRef.current.has(
-          historyReconcileAttemptKey(MESSAGE_HISTORY_RECONCILE_POLICY, g.lo, g.hi),
-        ),
-    )
-    if (gaps.length === 0) {
-      return
-    }
-    const allIds = [...new Set(gaps.flatMap((g) => g.ids))]
-    for (const g of gaps) {
-      historyReconcileAttemptedRef.current.add(
-        historyReconcileAttemptKey(MESSAGE_HISTORY_RECONCILE_POLICY, g.lo, g.hi),
-      )
-    }
-    void (async () => {
-      try {
-        const mergedById = new Map<number, Api.Message>()
-        for (const slice of chunkIdsForGetMessages(allIds, BULK_GET_MESSAGES_BY_IDS_CHUNK)) {
-          const fetched = await withTransientRetry(client, () =>
-            client.getMessages(dialog.entity as never, { ids: slice }),
-          )
-          const msgs = toMessageList(fetched)
-          for (const m of msgs) {
-            if (!messageAllowedForGapFetch(m, gaps, topicId)) {
-              continue
-            }
-            if (m.id != null) {
-              mergedById.set(Number(m.id), m)
-            }
-          }
-        }
-        const allowed = [...mergedById.values()]
-        if (allowed.length === 0) {
-          return
-        }
-        if (loadedConvKeyRef.current !== convKey) {
-          return
-        }
-        setList((prev) => uniqueMessagesSort([...allowed, ...prev]))
-      } catch {
-        for (const g of gaps) {
-          historyReconcileAttemptedRef.current.delete(
-            historyReconcileAttemptKey(MESSAGE_HISTORY_RECONCILE_POLICY, g.lo, g.hi),
-          )
-        }
-      }
-    })()
-  }, [list, isForum, topicId, client, dialog.entity, convKey, blocked, appMode])
-
-  /**
-   * Batch `getMessages` by id sometimes yields {@link Api.MessageMediaUnsupported} placeholders;
-   * single-id refetch often returns full media (MTProto quirk). Forum `messages.search` hits it
-   * most; the same recovery helps regular chats after chunked id fetches.
-   */
-  useEffect(() => {
-    if (!client || dialog.entity == null) {
-      return
-    }
-    if (isForum && topicId == null) {
-      return
-    }
-    if (blocked && appMode === "child") {
-      return
-    }
-    if (loadedConvKeyRef.current !== convKey) {
-      return
-    }
-    if (mediaPlaceholderRefetchInFlightRef.current) {
-      return
-    }
-
-    const unsupportedIdsInListOrder = list
-      .filter(
-        (m) =>
-          m.className === "Message"
-          && m.id != null
-          && m.media?.className === "MessageMediaUnsupported",
-      )
-      .map((m) => Number(m.id))
-    const targets = mediaPlaceholderRefetchIds(
-      unsupportedIdsInListOrder,
-      mediaPlaceholderRefetchAttemptsRef.current,
-    )
-
-    if (targets.length === 0) {
-      return
-    }
-
-    mediaPlaceholderRefetchInFlightRef.current = true
-    void (async () => {
-      try {
-        const results = await Promise.all(
-          targets.map(async (id) => {
-            mediaPlaceholderRefetchAttemptsRef.current.set(
-              id,
-              (mediaPlaceholderRefetchAttemptsRef.current.get(id) ?? 0) + 1,
-            )
-            try {
-              const fetched = await withTransientRetry(client, () =>
-                client.getMessages(dialog.entity as never, { ids: [id] }),
-              )
-              const msgs = toMessageList(fetched)
-              const u = msgs.find((x) => Number(x.id) === id)
-              if (!u || (isForum && topicId != null && !messageInActiveThread(u, topicId))) return null
-              if (u.media?.className === "MessageMediaUnsupported") return null
-              return [id, u] as [number, Api.Message]
-            } catch {
-              return null
-            }
-          }),
-        )
-        const collected = new Map<number, Api.Message>(
-          results.filter((r): r is [number, Api.Message] => r !== null),
-        )
-        if (collected.size === 0) {
-          return
-        }
-        if (loadedConvKeyRef.current !== convKey) {
-          return
-        }
-        setList((prev) => {
-          const byId = new Map<number, Api.Message>()
-          for (const p of prev) {
-            if (p.id != null) {
-              byId.set(Number(p.id), p)
-            }
-          }
-          for (const [id, u] of collected) {
-            byId.set(id, u)
-          }
-          return uniqueMessagesSort([...byId.values()])
-        })
-      } finally {
-        mediaPlaceholderRefetchInFlightRef.current = false
-      }
-    })()
-  }, [list, isForum, topicId, client, dialog.entity, convKey, blocked, appMode])
+  useChatHistoryRecovery({
+    client,
+    dialog,
+    convKey,
+    isForum,
+    topicId,
+    blocked,
+    appMode,
+    list,
+    setList,
+    loadedConvKeyRef,
+    historyReconcileAttemptedRef,
+    mediaPlaceholderRefetchAttemptsRef,
+  })
 
   return {
     list,
