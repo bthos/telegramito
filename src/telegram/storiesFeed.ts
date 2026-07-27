@@ -111,6 +111,15 @@ function buildNameIndex(users: Api.TypeUser[], chats: Api.TypeChat[]): Map<strin
 /**
  * AC1 — fetches the viewer's Stories feed. OQ4 default: always a full
  * refetch (`hidden: false`), never `state`/`next` incremental paging.
+ *
+ * Only peers with at least one renderable, non-expired story are eligible
+ * (AC1's literal "non-expired story (`expireDate` in the future)" wording).
+ * `GetAllStories` routinely returns `StoryItemSkipped`/`StoryItemDeleted`
+ * placeholders alongside real `StoryItem`s — the common space-saving case,
+ * not an edge case — and a genuine `StoryItem` can itself be past
+ * `expireDate`. Both are filtered out below; a peer left with zero stories
+ * is dropped entirely rather than surfaced as an empty, unopenable entry
+ * (opening one crashes `StoryViewer`, which indexes into `stories[0]`).
  */
 export async function getAllStories(client: TelegramClient): Promise<{ entries: StoryPeerEntry[] }> {
   const res = await client.invoke(new Api.stories.GetAllStories({ hidden: false }))
@@ -118,21 +127,26 @@ export async function getAllStories(client: TelegramClient): Promise<{ entries: 
     return { entries: [] }
   }
   const nameIndex = buildNameIndex(res.users, res.chats)
-  const entries: StoryPeerEntry[] = res.peerStories.map((ps) => {
-    const peerKey = storyPeerDialogKey(ps.peer)
-    const stories = ps.stories.filter((s): s is Api.StoryItem => s.className === "StoryItem")
-    // Decision Record 3: own-peer detection via StoryItem.out (every story in
-    // the stack posted by the viewer) rather than threading an ownUserId prop.
-    const isOwn = stories.length > 0 && stories.every((s) => s.out === true)
-    return {
-      peer: ps.peer,
-      peerKey,
-      name: nameIndex.get(peerKey) ?? "?",
-      isOwn,
-      maxReadId: ps.maxReadId ?? 0,
-      stories,
-    }
-  })
+  const nowSec = Math.floor(Date.now() / 1000)
+  const entries: StoryPeerEntry[] = res.peerStories
+    .map((ps) => {
+      const peerKey = storyPeerDialogKey(ps.peer)
+      const stories = ps.stories.filter(
+        (s): s is Api.StoryItem => s.className === "StoryItem" && isStoryActive(s, nowSec),
+      )
+      // Decision Record 3: own-peer detection via StoryItem.out (every story in
+      // the stack posted by the viewer) rather than threading an ownUserId prop.
+      const isOwn = stories.length > 0 && stories.every((s) => s.out === true)
+      return {
+        peer: ps.peer,
+        peerKey,
+        name: nameIndex.get(peerKey) ?? "?",
+        isOwn,
+        maxReadId: ps.maxReadId ?? 0,
+        stories,
+      }
+    })
+    .filter((e) => e.stories.length > 0) // AC1: no renderable active story => not an eligible peer
   return { entries }
 }
 

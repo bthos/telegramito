@@ -20,15 +20,30 @@ function peer(userId: number): Api.TypePeer {
   return new Api.PeerUser({ userId: bigInt(userId) })
 }
 
+// Anchored to real wall-clock time, not `id + 86400` (a tiny fixed epoch
+// offset that reads as expired in 1970) — getAllStories now enforces AC1's
+// expireDate-in-the-future predicate for real, so a default-constructed story
+// must actually be active unless a test explicitly overrides expireDate.
 function story(id: number, opts: Partial<Api.StoryItem> = {}): Api.StoryItem {
   return {
     className: "StoryItem",
     id,
     date: id,
-    expireDate: id + 86400,
+    expireDate: Math.floor(Date.now() / 1000) + 86400,
     media: { className: "MessageMediaPhoto" } as unknown as Api.TypeMessageMedia,
     ...opts,
   } as unknown as Api.StoryItem
+}
+
+// GetAllStories routinely returns these placeholders alongside real StoryItems
+// (the space-saving common case) — neither carries an expireDate/media, and
+// getAllStories must filter both out (AC1).
+function skippedStory(id: number): Api.TypeStoryItem {
+  return { className: "StoryItemSkipped", id } as unknown as Api.TypeStoryItem
+}
+
+function deletedStory(id: number): Api.TypeStoryItem {
+  return { className: "StoryItemDeleted", id } as unknown as Api.TypeStoryItem
 }
 
 function entry(overrides: Partial<StoryPeerEntry> & { peerKey: string }): StoryPeerEntry {
@@ -162,6 +177,66 @@ describe("getAllStories", () => {
     } as never
     const { entries } = await getAllStories(client)
     expect(entries).toEqual([])
+  })
+
+  it("drops a peer whose items are all StoryItemSkipped/StoryItemDeleted placeholders (AC1)", async () => {
+    const res = {
+      className: "stories.AllStories",
+      hasMore: false,
+      count: 1,
+      state: "s1",
+      peerStories: [
+        {
+          className: "PeerStories",
+          peer: peer(1),
+          maxReadId: 0,
+          stories: [skippedStory(1), deletedStory(2)],
+        },
+      ],
+      users: [new Api.User({ id: bigInt(1), firstName: "Anna" })],
+      chats: [],
+      stealthMode: { className: "StoriesStealthMode" },
+    }
+    const client = { invoke: vi.fn().mockResolvedValue(res) } as never
+    const { entries } = await getAllStories(client)
+    expect(entries).toEqual([])
+  })
+
+  it("drops an expired StoryItem, dropping the peer entirely when that was its only story (AC1)", async () => {
+    const nowSec = Math.floor(Date.now() / 1000)
+    const res = {
+      className: "stories.AllStories",
+      hasMore: false,
+      count: 2,
+      state: "s1",
+      peerStories: [
+        {
+          className: "PeerStories",
+          peer: peer(1),
+          maxReadId: 0,
+          // One expired, one still active — only the active one should survive.
+          stories: [story(1, { expireDate: nowSec - 100 }), story(2, { expireDate: nowSec + 100 })],
+        },
+        {
+          className: "PeerStories",
+          peer: peer(2),
+          maxReadId: 0,
+          // Only story is expired — the whole peer should be dropped.
+          stories: [story(3, { expireDate: nowSec - 100 })],
+        },
+      ],
+      users: [
+        new Api.User({ id: bigInt(1), firstName: "Anna" }),
+        new Api.User({ id: bigInt(2), firstName: "Marco" }),
+      ],
+      chats: [],
+      stealthMode: { className: "StoriesStealthMode" },
+    }
+    const client = { invoke: vi.fn().mockResolvedValue(res) } as never
+    const { entries } = await getAllStories(client)
+    expect(entries).toHaveLength(1)
+    expect(entries[0]!.peerKey).toBe("1")
+    expect(entries[0]!.stories.map((s) => s.id)).toEqual([2])
   })
 })
 

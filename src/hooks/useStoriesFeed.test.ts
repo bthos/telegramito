@@ -11,12 +11,16 @@ function peerUser(id: number): Api.TypePeer {
   return new Api.PeerUser({ userId: bigInt(id) })
 }
 
+// Anchored to real wall-clock time, not `id + 86400` (a tiny fixed epoch
+// offset that reads as expired in 1970) — getAllStories now enforces AC1's
+// expireDate-in-the-future predicate for real, so a default-constructed story
+// must actually be active unless a test explicitly overrides expireDate.
 function storyItem(id: number, opts: Partial<Api.StoryItem> = {}): Api.StoryItem {
   return {
     className: "StoryItem",
     id,
     date: id,
-    expireDate: id + 86400,
+    expireDate: Math.floor(Date.now() / 1000) + 86400,
     media: { className: "MessageMediaPhoto" } as unknown as Api.TypeMessageMedia,
     ...opts,
   } as unknown as Api.StoryItem
@@ -89,6 +93,21 @@ describe("useStoriesFeed", () => {
     await waitFor(() => {
       expect(result.current.state).toBe("empty")
     })
+  })
+
+  it("resolves to empty when every peer's stories have all expired (AC1, ux-design.md:123)", async () => {
+    const expiredAt = Math.floor(Date.now() / 1000) - 100
+    const invoke = vi.fn().mockResolvedValue(
+      allStoriesResponse([peerStories(1, 0, [storyItem(1, { expireDate: expiredAt })])]),
+    )
+    const client = makeClient(invoke)
+    const { result } = renderHook(() =>
+      useStoriesFeed({ client, nightListHidden: false, appMode: "parent", deniedPeerIds: NO_DENIED }),
+    )
+    await waitFor(() => {
+      expect(result.current.state).toBe("empty")
+    })
+    expect(result.current.entries).toEqual([])
   })
 
   it("resolves to error and keeps entries empty when the fetch rejects", async () => {
