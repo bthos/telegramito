@@ -1,6 +1,7 @@
 import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { getPeerId } from "telegram/Utils"
+import { withTransientRetry } from "./invokeWithTransientRetry"
 
 export type StoryPeerEntry = {
   peer: Api.TypePeer
@@ -122,7 +123,9 @@ function buildNameIndex(users: Api.TypeUser[], chats: Api.TypeChat[]): Map<strin
  * (opening one crashes `StoryViewer`, which indexes into `stories[0]`).
  */
 export async function getAllStories(client: TelegramClient): Promise<{ entries: StoryPeerEntry[] }> {
-  const res = await client.invoke(new Api.stories.GetAllStories({ hidden: false }))
+  const res = await withTransientRetry(client, () =>
+    client.invoke(new Api.stories.GetAllStories({ hidden: false })),
+  )
   if (res.className === "stories.AllStoriesNotModified") {
     return { entries: [] }
   }

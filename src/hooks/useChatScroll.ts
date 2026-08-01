@@ -85,12 +85,23 @@ export function useChatScroll(opts: {
     }
     const p = pendingScrollFixRef.current
     if (p) {
+      if (loadingOlder) {
+        // Fetch still in flight: do NOT reapply the compensation against the
+        // original baseline here. `list` (and this effect) can re-fire for
+        // reasons unrelated to the pending prepend (e.g. an unrelated incoming
+        // message) while `loadingOlder` is still true — recomputing against a
+        // stale `prevHeight` on those firings snaps scrollTop back to
+        // `prevTop`, which looks like the view being frozen/reset. Just wait.
+        syncStickyChatDateShortList()
+        return
+      }
+      // `loadOlder` has settled (success or failure — see withTransientRetry's
+      // per-attempt timeout). `setList` (on success) and `setLoadingOlder(false)`
+      // land in the same commit, so `scrollHeight` here already reflects any
+      // prepended messages. Apply the compensation exactly once, then clear.
       const h = el.scrollHeight
       el.scrollTop = p.prevTop + (h - p.prevHeight)
-      // Older fetch: `loadingOlder` toggles before `list` updates (load-older hint). Keep baseline until done.
-      if (!loadingOlder) {
-        pendingScrollFixRef.current = null
-      }
+      pendingScrollFixRef.current = null
       syncStickyChatDateShortList()
       return
     }

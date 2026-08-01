@@ -71,7 +71,7 @@ describe("VoiceMessageInline preview", () => {
           src="blob:v"
           durationSec={42}
           unplayed
-          viewerContext={{ sentAtLabel: "12:34", caption: "", peerTitle: "Peer" }}
+          viewerContext={{ sentAtLabel: "12:34", caption: "", peerTitle: "Peer", captionAbove: false }}
         />
       </I18nextProvider>,
     )
@@ -116,7 +116,7 @@ describe("AudioTrackInline preview", () => {
         <AudioTrackInline
           src="blob:a"
           doc={makeAudioDoc(false)}
-          viewerContext={{ sentAtLabel: "09:15", caption: "", peerTitle: "Peer" }}
+          viewerContext={{ sentAtLabel: "09:15", caption: "", peerTitle: "Peer", captionAbove: false }}
         />
       </I18nextProvider>,
     )
@@ -155,7 +155,7 @@ describe("DocumentAttachmentInline preview", () => {
           name="report.pdf"
           sizeStr="1.2 MB"
           doc={null}
-          viewerContext={{ sentAtLabel: "10:00", caption: "", peerTitle: "Peer" }}
+          viewerContext={{ sentAtLabel: "10:00", caption: "", peerTitle: "Peer", captionAbove: false }}
         />
       </I18nextProvider>,
     )

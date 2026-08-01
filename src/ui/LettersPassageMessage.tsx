@@ -201,6 +201,7 @@ export function LettersPassageMessage({
               client={client}
               resolveRepliedMessage={resolveRepliedMessage}
               onGoToQuoted={onGoToQuoted}
+              onNeedsResolve={(replyId) => { void refreshMessagesById([replyId]) }}
             />
             <div className="msg-media-thumb">
               <MessageMediaView
@@ -213,6 +214,7 @@ export function LettersPassageMessage({
                   peerTitle: peerDisplayName,
                   sentAtLabel: timeFmt,
                   caption: mediaViewerCaption,
+                  captionAbove: m.className === "Message" ? Boolean(m.invertMedia) : false,
                 }}
                 pollVoter={
                   client && entity

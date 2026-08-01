@@ -246,6 +246,7 @@ export function ChatView({
     refreshMessagesById,
     loadOlder,
     patchMessageReactions,
+    initialLoadDone,
   } = useChatMessages({
     client,
     dialog,
@@ -464,6 +465,7 @@ export function ChatView({
     setPanelOpen,
     lettersJumpToMessageId,
     onLettersJumpToMessageConsumed,
+    initialLoadDone,
   })
 
   const compose = useChatCompose({
@@ -658,6 +660,7 @@ export function ChatView({
   /** Hide duplicate masthead heading when ribbon already shows peer name (forums always; others when no forum-topic strand). */
   const lettersTitleVisuallyHidden =
     !searchMode &&
+    !stripLettersChromeFromCenterMasthead &&
     (isGroup || isBroadcastChannel || isPrivateUserDialog(dialog)) &&
     (forumTopicTitlePlain.trim().length === 0 || isForum)
 

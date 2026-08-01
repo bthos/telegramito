@@ -275,7 +275,7 @@ describe("AudioTrackInline full modal", () => {
         <AudioTrackInline
           src="blob:a"
           doc={makeAudioDoc(false)}
-          viewerContext={{ sentAtLabel: "09:15", caption: "", peerTitle: "Peer" }}
+          viewerContext={{ sentAtLabel: "09:15", caption: "", peerTitle: "Peer", captionAbove: false }}
         />
       </I18nextProvider>,
     )
@@ -324,7 +324,7 @@ describe("DocumentAttachmentInline full modal", () => {
           name="report.pdf"
           sizeStr="1.2 MB"
           doc={null}
-          viewerContext={{ sentAtLabel: "10:00", caption: "", peerTitle: "Peer" }}
+          viewerContext={{ sentAtLabel: "10:00", caption: "", peerTitle: "Peer", captionAbove: false }}
           {...extra}
         />
       </I18nextProvider>,
@@ -381,7 +381,7 @@ describe("VoiceMessageInline full modal", () => {
         <VoiceMessageInline
           src="blob:voice"
           durationSec={30}
-          viewerContext={{ sentAtLabel: "14:00", caption, peerTitle: "Peer" }}
+          viewerContext={{ sentAtLabel: "14:00", caption, peerTitle: "Peer", captionAbove: false }}
         />
       </I18nextProvider>,
     )

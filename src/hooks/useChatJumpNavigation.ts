@@ -35,6 +35,8 @@ type JumpNavOpts = {
   setPanelOpen: (next: boolean | ((prev: boolean) => boolean)) => void
   lettersJumpToMessageId?: number | null
   onLettersJumpToMessageConsumed?: () => void
+  /** True once the target conversation's initial history page has settled — `refreshMessagesById` no-ops before this. */
+  initialLoadDone: boolean
 }
 
 export function useChatJumpNavigation(opts: JumpNavOpts) {
@@ -55,6 +57,7 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
     setPanelOpen,
     lettersJumpToMessageId = null,
     onLettersJumpToMessageConsumed,
+    initialLoadDone,
   } = opts
 
   const [searchMode, setSearchMode] = useState(false)
@@ -63,22 +66,34 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
   const messageScrollTopBeforeSearchRef = useRef(0)
   const highlightTimerRef = useRef<number | null>(null)
   const pendingScrollToMessageIdRef = useRef<number | null>(null)
+  /** Gives up a pending jump if the target message never lands in `datedList`
+   * (e.g. the fetch failed) instead of leaving it dangling forever. */
+  const pendingScrollGiveUpTimerRef = useRef<number | null>(null)
   const lettersJumpRunSeq = useRef(0)
+
+  const clearPendingScrollGiveUpTimer = useCallback(() => {
+    if (pendingScrollGiveUpTimerRef.current != null) {
+      clearTimeout(pendingScrollGiveUpTimerRef.current)
+      pendingScrollGiveUpTimerRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
     return () => {
       if (highlightTimerRef.current != null) {
         clearTimeout(highlightTimerRef.current)
       }
+      clearPendingScrollGiveUpTimer()
     }
-  }, [])
+  }, [clearPendingScrollGiveUpTimer])
 
   useEffect(() => {
     pendingScrollToMessageIdRef.current = null
+    clearPendingScrollGiveUpTimer()
     queueMicrotask(() => {
       setSearchMode(false)
     })
-  }, [convKey])
+  }, [convKey, clearPendingScrollGiveUpTimer])
 
   const openSearchMode = useCallback(() => {
     const el = scrollRef.current
@@ -118,8 +133,21 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
       await refreshMessagesById([id])
       pendingScrollToMessageIdRef.current = id
       setScrollLayoutBump((b) => b + 1)
+      clearPendingScrollGiveUpTimer()
+      pendingScrollGiveUpTimerRef.current = window.setTimeout(() => {
+        pendingScrollGiveUpTimerRef.current = null
+        if (pendingScrollToMessageIdRef.current === id) {
+          // The fetch above already ran; the target still never showed up in
+          // the rendered transcript (e.g. it's outside any window we can
+          // reach, or the fetch failed). Stop waiting on a `datedList` change
+          // that may never come instead of leaving this dangling forever.
+          pendingScrollToMessageIdRef.current = null
+          appLog.warn("jumpToMessageById: target message never resolved", { id })
+        }
+      }, 4000)
     },
     [
+      clearPendingScrollGiveUpTimer,
       closeSearchMode,
       refreshMessagesById,
       setMessagesUnreadOnly,
@@ -171,6 +199,12 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
           }
           return
         }
+        if (!initialLoadDone) {
+          // Initial history page for this convKey hasn't settled yet — `refreshMessagesById`
+          // silently no-ops until it does. Wait for `initialLoadDone` to flip and retry
+          // (it's a dep below) instead of losing the jump.
+          return
+        }
         if (isForum && topicsLoading) {
           return
         }
@@ -215,6 +249,7 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
     setTopicId,
     client,
     dialog.entity,
+    initialLoadDone,
   ])
 
   useLayoutEffect(() => {
@@ -232,12 +267,13 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
       expandToRowIndex(idx)
     })
     pendingScrollToMessageIdRef.current = null
+    clearPendingScrollGiveUpTimer()
     const root = scrollRef.current
     const node = root?.querySelector(
       `[data-chat-message-id="${CSS.escape(String(id))}"]`,
     ) as HTMLElement | null
     node?.scrollIntoView({ block: "center", behavior: "smooth" })
-  }, [datedList, expandToRowIndex, scrollLayoutBump, scrollRef])
+  }, [clearPendingScrollGiveUpTimer, datedList, expandToRowIndex, scrollLayoutBump, scrollRef])
 
   return {
     searchMode,

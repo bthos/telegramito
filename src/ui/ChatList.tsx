@@ -42,7 +42,6 @@ export function ChatList({
   hasMoreDialogs = false,
   loadMoreDialogs,
   dialogsLoadingMore = false,
-  loadedDialogCount,
   client,
   draftsMode = false,
 }: Props) {
@@ -187,9 +186,9 @@ export function ChatList({
         </li>
       ) : null}
     </ul>
-    {!hasMoreDialogs && (loadedDialogCount ?? dialogs.length) >= 100 ? (
+    {!hasMoreDialogs && dialogs.length >= 100 ? (
       <p className="small muted chat-list-footer">
-        {t("chat.dialogsListNote", { n: String(loadedDialogCount ?? dialogs.length) })}
+        {t("chat.dialogsListNote", { n: String(dialogs.length) })}
       </p>
     ) : null}
     </Fragment>

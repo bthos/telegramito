@@ -37,6 +37,8 @@ export function useChatMessages(opts: {
   refreshMessagesById: (ids: readonly number[]) => Promise<void>
   loadOlder: () => Promise<void>
   patchMessageReactions: (messageId: number, next: Api.MessageReactions) => void
+  /** True once the initial history page for the current `convKey` has settled (success or error). */
+  initialLoadDone: boolean
 } {
   const {
     client,
@@ -54,6 +56,7 @@ export function useChatMessages(opts: {
   const [list, setList] = useState<Api.Message[]>([])
   const [hasMoreOlder, setHasMoreOlder] = useState(true)
   const [loadingOlder, setLoadingOlder] = useState(false)
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
 
   const loadGenRef = useRef(0)
   const loadedConvKeyRef = useRef<string | null>(null)
@@ -267,6 +270,7 @@ export function useChatMessages(opts: {
     lastTickSyncedRef.current = null
     historyReconcileAttemptedRef.current.clear()
     mediaPlaceholderRefetchAttemptsRef.current.clear()
+    setInitialLoadDone(false)
     queueMicrotask(() => {
       setList([])
       setHasMoreOlder(true)
@@ -298,6 +302,7 @@ export function useChatMessages(opts: {
         setHasMoreOlder(head.length > 0)
         loadedConvKeyRef.current = convKey
         lastTickSyncedRef.current = lastMessageTickRef.current
+        setInitialLoadDone(true)
       } catch {
         if (loadGenRef.current !== gen) {
           return
@@ -306,6 +311,7 @@ export function useChatMessages(opts: {
         setHasMoreOlder(true)
         loadedConvKeyRef.current = convKey
         lastTickSyncedRef.current = lastMessageTickRef.current
+        setInitialLoadDone(true)
       }
     })()
   }, [client, convKey, dialog.entity, isForum, topicId, blocked, appMode])
@@ -415,5 +421,6 @@ export function useChatMessages(opts: {
     refreshMessagesById,
     loadOlder,
     patchMessageReactions,
+    initialLoadDone,
   }
 }

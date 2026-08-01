@@ -14,7 +14,7 @@
   min-height: 2.5rem;
 }
 
-.ds-media-loading .media-placeholder {
+.ds-media-loading .media-placeholder:not(.media-placeholder--sticker) {
   width: 100%;
 }
 
@@ -44,7 +44,7 @@
   min-height: 2.5rem;
 }
 
-.ds-media-pending .media-placeholder {
+.ds-media-pending .media-placeholder:not(.media-placeholder--sticker) {
   width: 100%;
 }
 

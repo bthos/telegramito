@@ -186,6 +186,14 @@ export function ChatsListPanel({
           <p className="letters-drafts-empty__title">{t("letters.draftsEmptyTitle")}</p>
           <p className="letters-drafts-empty__sub muted small">{t("letters.draftsEmptySub")}</p>
         </div>
+      ) : correspondenceTab === "returned" && (lettersMode ? peopleDialogs : dialogs).length === 0 ? (
+        <div className="letters-drafts-empty" role="status">
+          <p className="letters-drafts-empty__mark" aria-hidden>
+            ✎
+          </p>
+          <p className="letters-drafts-empty__title">{t("letters.returnedEmptyTitle")}</p>
+          <p className="letters-drafts-empty__sub muted small">{t("letters.returnedEmptySub")}</p>
+        </div>
       ) : (
         <ChatList
           nightListHidden={nightListHidden}

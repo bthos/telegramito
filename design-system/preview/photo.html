@@ -39,11 +39,15 @@
     background: rgba(0,0,0,.18);
   }
 
-  /* full-screen viewer */
+  /* full-screen viewer — content column (left) + image stage (right) */
   .viewer {
     position: relative;
     width: 100%; height: 100%;
-    display: grid; grid-template-rows: auto 1fr auto;
+    display: flex;
+  }
+  .viewer-content {
+    display: flex; flex-direction: column;
+    flex: 0 0 40%; min-width: 0;
   }
   .viewer-top {
     display: flex; align-items: center; gap: 12px;
@@ -59,17 +63,15 @@
   .viewer-top .who span { font-size: 11px; color: var(--on-overlay-2); }
   .viewer-top .spacer { flex: 1; }
   .viewer-top .icn {
-    width: 28px; height: 28px; display: grid; place-items: center;
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
     color: var(--on-overlay-2);
   }
 
   .viewer-photo {
-    align-self: center; justify-self: center;
-    width: 88%; max-height: 100%;
-    aspect-ratio: 4/3;
+    flex: 1 1 60%;
+    width: 100%; height: 100%;
     background:
       linear-gradient(135deg, #ffb88a 0%, #ff7a59 35%, #c14a8b 70%, #5b3aa1 100%);
-    border-radius: 4px;
     position: relative;
     overflow: hidden;
   }
@@ -89,13 +91,20 @@
   }
 
   .viewer-bottom {
+    display: flex; flex-direction: column;
+    flex: 1 1 auto; min-height: 0;
     padding: 14px 18px 18px;
     color: var(--on-overlay);
     font-size: 14px;
-    display: flex; align-items: center; gap: 16px;
   }
   .viewer-bottom .caption { flex: 1; }
-  .viewer-bottom .actions { display: flex; gap: 18px; color: var(--on-overlay-2); }
+  .viewer-bottom .actions {
+    display: flex; align-items: center; justify-content: flex-end; gap: 16px;
+    color: var(--on-overlay-2);
+  }
+  .viewer-bottom .actions svg {
+    width: 20px; height: 20px; display: block;
+  }
 </style>
 </head>
 <body>
@@ -166,29 +175,37 @@
     <section class="state" data-kind="full">
       <div class="state-head"><span class="dot"></span> Full view · viewer</div>
       <div class="stage" data-mode="overlay">
+        <!-- Default order: image leads (left), content follows (right) — captions normally sit
+             below the media in the bubble. When the message has Telegram's invertMedia flag set
+             (caption shown above the media), PhotoMediaViewer swaps this order so content leads. -->
         <div class="viewer">
-          <div class="viewer-top">
-            <div class="avatar"></div>
-            <div class="who"><b>Marina K.</b><span>Today at 14:32</span></div>
-            <div class="spacer"></div>
-            <div class="icn">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 7l7 6 7-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="icn">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="4" cy="10" r="1.4" fill="currentColor"/><circle cx="10" cy="10" r="1.4" fill="currentColor"/><circle cx="16" cy="10" r="1.4" fill="currentColor"/></svg>
-            </div>
-          </div>
           <div class="viewer-photo">
             <div class="sun"></div>
             <div class="horizon"></div>
             <div class="ridge"></div>
           </div>
-          <div class="viewer-bottom">
-            <div class="caption">Sunset above the ridge — pretty unreal tonight 🌄</div>
-            <div class="actions">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 17s-6-3.5-6-8a4 4 0 017-2.6A4 4 0 0118 9c0 4.5-6 8-6 8z" stroke="currentColor" stroke-width="1.5"/></svg>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 3h11l3 3v11H3z" stroke="currentColor" stroke-width="1.5"/><path d="M3 8h14" stroke="currentColor" stroke-width="1.5"/></svg>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 11l4 4 7-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="viewer-content">
+            <div class="viewer-top">
+              <div class="avatar"></div>
+              <div class="who"><b>Marina K.</b><span>Today at 14:32</span></div>
+              <div class="spacer"></div>
+              <div class="icn">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 7l7 6 7-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="icn">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="4" cy="10" r="1.4" fill="currentColor"/><circle cx="10" cy="10" r="1.4" fill="currentColor"/><circle cx="16" cy="10" r="1.4" fill="currentColor"/></svg>
+              </div>
+            </div>
+            <div class="viewer-bottom">
+              <div class="caption">Sunset above the ridge — pretty unreal tonight 🌄</div>
+              <div class="actions">
+                <!-- favourite -->
+                <svg viewBox="0 0 20 20" fill="none"><path d="M10 17s-6-3.5-6-8a4 4 0 017-2.6A4 4 0 0118 9c0 4.5-6 8-6 8z" stroke="currentColor" stroke-width="1.5"/></svg>
+                <!-- save (bookmark) -->
+                <svg viewBox="0 0 20 20" fill="none"><path d="M6 3.5h8a1 1 0 011 1V17l-5-3.2L5 17V4.5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                <!-- share (export arrow) -->
+                <svg viewBox="0 0 20 20" fill="none"><path d="M10 13V3m0 0L6.5 6.5M10 3l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12v4a1 1 0 001 1h10a1 1 0 001-1v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
             </div>
           </div>
         </div>

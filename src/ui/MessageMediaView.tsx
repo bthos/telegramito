@@ -2,6 +2,7 @@ import { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { usePeerName } from "../hooks/usePeerName"
 import { getMessageDocument, formatDocumentSize } from "../telegram/documentFile"
 import { getMessageMediaTypeLabel } from "../telegram/dialogPreview"
 import { isRoundVideoDoc, isStickerDoc } from "../telegram/documentMediaKind"
@@ -74,6 +75,8 @@ export function MessageMediaView({
   viewerContext?: MediaViewerContext | null
 }) {
   const { t: te } = useTranslation()
+  const senderFromId = message.className === "Message" ? message.fromId : undefined
+  const senderPeerName = usePeerName(senderFromId, client)
   const paidBundleSlots = useMemo(() => {
     if (message.media?.className !== "MessageMediaPaidMedia") {
       return null
@@ -461,9 +464,15 @@ export function MessageMediaView({
         </div>
       )
     }
-    const peerTitle = viewerContext?.peerTitle ?? te("chat.mediaViewerPeerFallback")
+    const chatTitleFallback = viewerContext?.peerTitle ?? te("chat.mediaViewerPeerFallback")
+    const senderTrimmed = senderPeerName.trim()
+    const postAuthorTrimmed = typeof message.postAuthor === "string" ? message.postAuthor.trim() : ""
+    const senderLabel = message.out
+      ? te("chat.mediaViewerYou")
+      : senderTrimmed || postAuthorTrimmed || chatTitleFallback
     const sentAt = viewerContext?.sentAtLabel ?? ""
     const caption = viewerContext?.caption ?? ""
+    const captionAbove = viewerContext?.captionAbove ?? false
     return (
       <div className="msg-media msg-media--photo" data-media-state="preview">
         <button
@@ -485,9 +494,10 @@ export function MessageMediaView({
             }}
             labelClose={te("chat.imageViewerClose")}
             labelBackdrop={te("chat.imageViewerBackdrop")}
-            peerTitle={peerTitle}
+            peerTitle={senderLabel}
             sentAtLabel={sentAt}
             caption={caption}
+            captionAbove={captionAbove}
           />
         ) : null}
       </div>

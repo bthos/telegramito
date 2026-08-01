@@ -342,6 +342,7 @@ export function ChatMessageList({
             client={client}
             resolveRepliedMessage={resolveRepliedMessage}
             onGoToQuoted={goToQuotedMessage}
+            onNeedsResolve={(replyId) => { void refreshMessagesById([replyId]) }}
           />
           <div className="msg-media-thumb">
             <MessageMediaView
@@ -354,6 +355,7 @@ export function ChatMessageList({
                 peerTitle: peerDisplayName,
                 sentAtLabel: formatMessageTime(m.date, i18n.language),
                 caption: typeof m.message === "string" ? m.message.trim() : "",
+                captionAbove: m.className === "Message" ? Boolean(m.invertMedia) : false,
               }}
               pollVoter={
                 client && dialog.entity

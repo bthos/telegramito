@@ -142,6 +142,7 @@ export default defineConfig({
       "telegram/Helpers",
       "telegram/Utils",
       "telegram/client/downloads",
+      "telegram/tl/custom/dialog",
       "buffer",
       "util",
       "events",

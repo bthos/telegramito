@@ -164,20 +164,41 @@ button.msg-video-play.msg-video-thumb-play-fab {
 /* --- Rich photo viewer (full) --- */
 .photo-viewer.media-lightbox {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 16px;
   background: var(--ds-overlay, rgba(10, 18, 28, 0.92));
 }
 
+/* The rich photo viewer has its own opaque header/footer chrome, so the
+   generic .media-lightbox top/bottom vignette (::before/::after, app.css)
+   must not render here — those are position:absolute z-index:0, which paints
+   *above* the shell's in-flow content, washing out the header and bleeding
+   into the caption/image boundary. */
+.photo-viewer.media-lightbox::before,
+.photo-viewer.media-lightbox::after {
+  content: none;
+}
+
+/* Desktop/tablet: content (header, caption, actions) on the left, image
+   filling the right column. Narrow viewports revert to the stacked
+   image-over-content layout below (`max-width: 720px`). */
 .photo-viewer__shell {
   display: flex;
-  flex-direction: column;
-  width: min(520px, 100vw);
-  min-height: 100vh;
-  min-height: 100dvh;
+  align-items: stretch;
+  width: min(880px, 96vw);
+  height: min(620px, 88vh);
+  border-radius: var(--ds-r-card, 12px);
+  overflow: hidden;
   background: var(--ds-overlay, rgba(10, 18, 28, 0.92));
   color: var(--ds-on-overlay, #fff);
+}
+
+.photo-viewer__content {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 40%;
+  min-width: 0;
 }
 
 .photo-viewer__top {
@@ -227,8 +248,12 @@ button.msg-video-play.msg-video-thumb-play-fab {
 }
 
 .photo-viewer__icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 40px;
   height: 40px;
+  padding: 0;
   border: none;
   border-radius: 10px;
   background: transparent;
@@ -244,28 +269,33 @@ button.msg-video-play.msg-video-thumb-play-fab {
 }
 
 .photo-viewer__stage {
-  flex: 1;
+  flex: 1 1 60%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px;
-  min-height: 0;
+  min-width: 0;
   background: color-mix(in srgb, var(--ds-overlay) 88%, #000);
 }
 
 .photo-viewer__img {
-  max-width: 100%;
-  max-height: min(70vh, 560px);
-  object-fit: contain;
-  border-radius: var(--ds-r-card, 8px);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .photo-viewer__bottom {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 14px 16px 20px;
   border-top: 1px solid color-mix(in srgb, var(--ds-on-overlay) 14%, transparent);
 }
 
 .photo-viewer__caption {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   font-size: 14px;
   line-height: 1.45;
   color: var(--ds-on-overlay, #fff);
@@ -284,9 +314,65 @@ button.msg-video-play.msg-video-thumb-play-fab {
 .photo-viewer__act-ico {
   width: 28px;
   height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--ds-on-overlay) 22%, transparent);
-  opacity: 0.6;
+  background: transparent;
+  color: var(--ds-on-overlay-2, rgba(255, 255, 255, 0.72));
+  cursor: pointer;
+  font: inherit;
+}
+
+.photo-viewer__act-ico svg {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.photo-viewer__act-ico:hover {
+  background: color-mix(in srgb, var(--ds-on-overlay) 12%, transparent);
+  color: var(--ds-on-overlay, #fff);
+}
+
+/* Narrow viewports: stack image above content instead of splitting columns —
+   a 40/60 side-by-side card doesn't leave enough width for either pane. */
+@media (max-width: 720px) {
+  .photo-viewer.media-lightbox {
+    padding: 0;
+  }
+
+  .photo-viewer__shell {
+    flex-direction: column;
+    width: min(520px, 100vw);
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .photo-viewer__content {
+    flex: 0 0 auto;
+  }
+
+  .photo-viewer__stage {
+    flex: 1;
+    padding: 12px;
+  }
+
+  .photo-viewer__img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: min(70vh, 560px);
+    object-fit: contain;
+    border-radius: var(--ds-r-card, 8px);
+  }
+
+  .photo-viewer__bottom {
+    flex: 0 0 auto;
+    max-height: min(45vh, 320px);
+  }
 }
 
 /* --- Full-screen video (full) --- */
@@ -1870,8 +1956,3 @@ button.msg-video-play.msg-video-thumb-play-fab {
   border-color: var(--tg-blue);
 }
 
-/* photo-viewer action button reset (default no-op actions are now <button>) */
-.photo-viewer__act-ico {
-  border: none;
-  cursor: pointer;
-}
