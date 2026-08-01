@@ -929,6 +929,185 @@ html[data-theme="dark"] .letters-day-mail__item.is-active {
   min-height: 0;
 }
 
+/* Passages — cross-chat message hits, first section while a search is active. */
+.letters-aside-accordion__trigger--passages {
+  padding: 0.65rem 0.85rem 0.35rem;
+}
+
+.letters-passages__label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  flex: 1;
+  font-family: var(--letters-ui);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--letters-ink-3);
+}
+
+.letters-aside-accordion__trigger--passages:hover .letters-passages__label {
+  color: var(--letters-ink-2);
+}
+
+.letters-passages__glyph {
+  font-family: var(--letters-serif);
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.letters-aside-accordion__panel--passages {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.letters-passages__live {
+  margin: 0;
+  padding: 0.15rem 0.85rem 0.35rem;
+}
+
+.letters-passages__cluster {
+  padding: 0.35rem 0.6rem 0.6rem;
+  border-bottom: 1px solid var(--letters-lines);
+}
+
+.letters-passages__cluster-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.25rem 0.35rem;
+}
+
+.letters-passages__ava {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--letters-hairline);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--letters-accent-soft);
+  font-family: var(--letters-serif);
+  font-size: 0.75rem;
+  color: var(--letters-ink-2);
+}
+
+.letters-passages__cluster-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--letters-ui);
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--letters-ink);
+}
+
+.letters-passages__cluster-count {
+  flex: 0 0 auto;
+  font-family: var(--letters-ui);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--letters-ink-3);
+}
+
+.letters-passages__hits {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.letters-passages__hit {
+  cursor: pointer;
+  border-radius: var(--radius-sm, 6px);
+}
+
+.letters-passages__hit:hover {
+  background: var(--letters-accent-soft);
+}
+
+.letters-passages__hit:focus-visible {
+  outline: 2px solid var(--letters-terra);
+  outline-offset: -2px;
+}
+
+.letters-passages__hit.is-jump-error {
+  opacity: 0.75;
+}
+
+.letters-passages__jump-error {
+  margin: 0.25rem 0 0 2.25rem;
+  color: var(--err, var(--letters-terra));
+}
+
+.letters-passages__see-all {
+  display: inline-block;
+  margin: 0.25rem 0 0 2.25rem;
+  padding: 0.25rem 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--letters-ui);
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: var(--letters-terra);
+}
+
+.letters-passages__see-all:focus-visible {
+  outline: 2px solid var(--letters-terra);
+  outline-offset: 2px;
+}
+
+/* Accordion-scale empty state: `.letters-drafts-empty` shape at panel scale. */
+.letters-compact-empty {
+  padding: 1.75rem 1.1rem;
+  text-align: center;
+}
+
+.letters-compact-empty__mark {
+  margin: 0 0 0.4rem;
+  font-size: 1.4rem;
+  line-height: 1;
+  opacity: 0.45;
+}
+
+.letters-compact-empty__title {
+  margin: 0 0 0.25rem;
+  font-family: var(--letters-serif, inherit);
+  font-size: 0.95rem;
+  color: var(--letters-ink);
+}
+
+.letters-compact-empty__sub {
+  margin: 0;
+  max-width: 16rem;
+  margin-inline: auto;
+  font-style: italic;
+}
+
+.letters-compact-empty__action {
+  margin-top: 0.65rem;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--letters-terra);
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  color: var(--letters-terra);
+  cursor: pointer;
+  font-family: var(--letters-ui);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.letters-compact-empty__action:focus-visible {
+  outline: 2px solid var(--letters-terra);
+  outline-offset: 2px;
+}
+
 .chat-list-toolbar {
   border-bottom-color: var(--letters-lines);
 }

@@ -61,9 +61,13 @@ export function findDialogForUser(
   )
 }
 
-async function fetchDialogForEntity(
+/**
+ * Load a single `Dialog` for a peer that may not be in the locally paged dialog list
+ * (global search hits, new chats). `entity` may be an already-resolved `InputPeer`.
+ */
+export async function fetchDialogForEntity(
   client: TelegramClient,
-  entity: Api.TypeUser | Api.TypeChat | Api.Channel,
+  entity: Api.TypeUser | Api.TypeChat | Api.Channel | Api.TypeInputPeer,
 ): Promise<DialogType> {
   const inputPeer = getInputPeer(entity)
   const res = (await withTransientRetry(client, () =>

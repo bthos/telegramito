@@ -71,10 +71,13 @@ type Props = {
   lettersLayout?: boolean
   /** Desktop three-pane Letters layout: chat info + calendar dock into the right rail instead of an overlay. */
   lettersThreePane?: boolean
-  /** Letters day mail rail: scroll to this message id once; parent clears via `onLettersJumpToMessageConsumed`. */
+  /** Focus id from any jump source (day mail, co-reading, Passages); parent clears via `onLettersJumpToMessageConsumed`. */
   lettersJumpToMessageId?: number | null
   onLettersJumpToMessageConsumed?: () => void
   onCoReadingBookmarked?: () => void
+  /** Opens in-chat search pre-filled with this query once (Passages "see all in this chat"). */
+  lettersInChatSearchSeed?: string | null
+  onLettersInChatSearchSeedConsumed?: () => void
 }
 
 type ChatListItem = ChatDatedItem
@@ -94,6 +97,8 @@ export function ChatView({
   lettersJumpToMessageId = null,
   onLettersJumpToMessageConsumed,
   onCoReadingBookmarked,
+  lettersInChatSearchSeed = null,
+  onLettersInChatSearchSeedConsumed,
 }: Props) {
   const { t, i18n } = useTranslation()
   const { client, lastMessageTick, refreshDialogs } = useTelegram()
@@ -468,6 +473,23 @@ export function ChatView({
     initialLoadDone,
   })
 
+  const [inChatSearchSeed, setInChatSearchSeed] = useState<string | null>(null)
+
+  useEffect(() => {
+    const seed = lettersInChatSearchSeed?.trim()
+    if (!seed) {
+      return
+    }
+    setInChatSearchSeed(seed)
+    openSearchMode()
+    onLettersInChatSearchSeedConsumed?.()
+  }, [lettersInChatSearchSeed, openSearchMode, onLettersInChatSearchSeedConsumed])
+
+  const closeInChatSearch = useCallback(() => {
+    setInChatSearchSeed(null)
+    closeSearchMode()
+  }, [closeSearchMode])
+
   const compose = useChatCompose({
     client,
     dialog,
@@ -815,39 +837,17 @@ export function ChatView({
 
   const lettersRailContextChrome = lettersPanelChromeBundles.rail
 
+  /** Search moved to the thread header (AC4), so this row is unread-only now. */
   const lettersPanelTools = useMemo(() => {
-    if (!lettersLayout) {
+    if (!lettersLayout || !showUnreadToggle) {
       return null
     }
     return (
       <div className="context-panel__letters-tools-row">
-        {!isForum ? (
-          <button
-            type="button"
-            className="btn-icon"
-            aria-label={t("chat.searchInChat")}
-            title={t("chat.searchInChat")}
-            onClick={() => {
-              openSearchMode()
-            }}
-          >
-            <SearchInChatIcon />
-          </button>
-        ) : null}
-        {showUnreadToggle ? (
-          <UnreadOnlyMessagesToggle active={messagesUnreadOnly} onToggle={toggleUnreadOnly} />
-        ) : null}
+        <UnreadOnlyMessagesToggle active={messagesUnreadOnly} onToggle={toggleUnreadOnly} />
       </div>
     )
-  }, [
-    isForum,
-    lettersLayout,
-    messagesUnreadOnly,
-    openSearchMode,
-    showUnreadToggle,
-    t,
-    toggleUnreadOnly,
-  ])
+  }, [lettersLayout, messagesUnreadOnly, showUnreadToggle, toggleUnreadOnly])
 
   useEffect(() => {
     if (!dockInfoInLettersRail || !lettersRailCtx) {
@@ -998,7 +998,8 @@ export function ChatView({
               forumDisabled={isForum && topicId == null}
               topicId={isForum ? (topicId ?? undefined) : undefined}
               peerDisplayName={name}
-              onClose={closeSearchMode}
+              seedQuery={inChatSearchSeed}
+              onClose={closeInChatSearch}
               onPickMessage={(msg) => {
                 void jumpToMessageFromSearch(msg)
               }}
@@ -1035,6 +1036,16 @@ export function ChatView({
               jumpStrip={null}
             />
             <div className="thread-header__actions">
+              {/* AC4: direct in-chat search, always shown — forum-no-topic is explained inside the bar. */}
+              <button
+                type="button"
+                className="btn-icon"
+                aria-label={t("chat.searchInChat")}
+                title={t("chat.searchInChat")}
+                onClick={openSearchMode}
+              >
+                <SearchInChatIcon />
+              </button>
               <button
                 type="button"
                 aria-label={t("chat.info")}
@@ -1086,7 +1097,8 @@ export function ChatView({
                 forumDisabled={isForum && topicId == null}
                 topicId={isForum ? (topicId ?? undefined) : undefined}
                 peerDisplayName={name}
-                onClose={closeSearchMode}
+                seedQuery={inChatSearchSeed}
+                onClose={closeInChatSearch}
                 onPickMessage={(msg) => {
                   void jumpToMessageFromSearch(msg)
                 }}
@@ -1105,18 +1117,30 @@ export function ChatView({
         ? createPortal(
             lettersLayout ? (
               !searchMode ? (
-                <button
-                  type="button"
-                  className={isPanelOpen ? "btn-icon btn-icon--active" : "btn-icon"}
-                  aria-label={t("chat.info")}
-                  aria-pressed={isPanelOpen}
-                  title={t("chat.info")}
-                  onClick={() => {
-                    setPanelOpen((v) => !v)
-                  }}
-                >
-                  <ChatInfoIcon />
-                </button>
+                <>
+                  {/* AC4: same direct search affordance as the wide Letters header. */}
+                  <button
+                    type="button"
+                    className="btn-icon"
+                    aria-label={t("chat.searchInChat")}
+                    title={t("chat.searchInChat")}
+                    onClick={openSearchMode}
+                  >
+                    <SearchInChatIcon />
+                  </button>
+                  <button
+                    type="button"
+                    className={isPanelOpen ? "btn-icon btn-icon--active" : "btn-icon"}
+                    aria-label={t("chat.info")}
+                    aria-pressed={isPanelOpen}
+                    title={t("chat.info")}
+                    onClick={() => {
+                      setPanelOpen((v) => !v)
+                    }}
+                  >
+                    <ChatInfoIcon />
+                  </button>
+                </>
               ) : null
             ) : (
               <>

@@ -21,24 +21,23 @@ export function useMainShellDialogSelection(opts: UseMainShellDialogSelectionOpt
     opts
 
   const [selected, setSelected] = useState<Dialog | null>(null)
-  const [lettersDayMailFocusMessageId, setLettersDayMailFocusMessageId] = useState<
-    number | null
-  >(null)
+  const [lettersFocusMessageId, setLettersFocusMessageId] = useState<number | null>(null)
 
   const consumeLettersJump = useCallback(() => {
-    setLettersDayMailFocusMessageId(null)
+    setLettersFocusMessageId(null)
   }, [])
 
   const handleSelectChat = useCallback((d: Dialog) => {
-    setLettersDayMailFocusMessageId(null)
+    setLettersFocusMessageId(null)
     setSelected(d)
   }, [])
 
-  const handleDayMailSelect = useCallback(
+  /** Select a dialog and optionally focus one message in it (day mail, co-reading, Passages). */
+  const handleJumpToDialogMessage = useCallback(
     (d: Dialog, focusOpts?: { focusMessageId?: number }) => {
       setSelected(d)
       const fid = focusOpts?.focusMessageId
-      setLettersDayMailFocusMessageId(typeof fid === "number" && fid > 0 ? fid : null)
+      setLettersFocusMessageId(typeof fid === "number" && fid > 0 ? fid : null)
     },
     [],
   )
@@ -106,10 +105,10 @@ export function useMainShellDialogSelection(opts: UseMainShellDialogSelectionOpt
   return {
     selected,
     setSelected,
-    lettersDayMailFocusMessageId,
+    lettersFocusMessageId,
     consumeLettersJump,
     handleSelectChat,
-    handleDayMailSelect,
+    handleJumpToDialogMessage,
     handleBulletinSelect,
     clearSelected,
   }

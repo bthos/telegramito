@@ -11,7 +11,7 @@ import { useScrollChromeHide } from "../hooks/useScrollChromeHide"
 import { installHardwareBackRoot, useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { BP } from "../layout/breakpoints"
 import { getPendingRequests } from "../parental/storage"
-import { getPeerInfo, isBroadcastChannelDialog, isPrivateUserDialog } from "../telegram/dialogUtils"
+import { getPeerInfo, isLettersCirclesDialog, isPrivateUserDialog } from "../telegram/dialogUtils"
 import { requestChatAccessForDialog } from "../parental/requestAccess"
 import { isNightListHidden, isPeerOmittedInChildListForDeny } from "../parental/policy"
 import type { AppMode } from "../parental/types"
@@ -46,6 +46,7 @@ import { filterDialogsBySearch } from "./mainShellDialogFilter"
 import { focusLettersComposer } from "./lettersWriteAction"
 import { useMainShellDialogSelection } from "./useMainShellDialogSelection"
 import { useMainShellMobileChrome } from "./useMainShellMobileChrome"
+import { useMainShellPassages } from "./useMainShellPassages"
 
 type Tab = "chats"
 
@@ -152,11 +153,7 @@ export function MainShell() {
     }
     return dialogsForCorrespondence.filter((d) => {
       const { key } = getPeerInfo(d)
-      return !isPeerOmittedInChildListForDeny(
-        settings.appMode,
-        key,
-        deniedPeerIds,
-      )
+      return !isPeerOmittedInChildListForDeny(settings.appMode, key, deniedPeerIds)
     })
   }, [dialogsForCorrespondence, settings.appMode, deniedPeerIds])
 
@@ -164,10 +161,10 @@ export function MainShell() {
 
   const {
     selected,
-    lettersDayMailFocusMessageId,
+    lettersFocusMessageId,
     consumeLettersJump,
     handleSelectChat,
-    handleDayMailSelect,
+    handleJumpToDialogMessage,
     handleBulletinSelect,
     clearSelected,
   } = useMainShellDialogSelection({
@@ -196,8 +193,20 @@ export function MainShell() {
     morningDayMailEnabled: settings.morningDayMailEnabled,
     appMode: settings.appMode,
     dialogs,
-    handleDayMailSelect,
+    handleJumpToDialogMessage,
   })
+
+  const { passagesPanelProps, lettersInChatSearchSeed, consumeInChatSearchSeed } =
+    useMainShellPassages({
+      client,
+      query: search,
+      disabled: nightHidden,
+      appMode: settings.appMode,
+      deniedPeerIds,
+      dialogs,
+      refreshDialogs,
+      onJumpToDialogMessage: handleJumpToDialogMessage,
+    })
 
   const handleWrite = () => {
     setNewChatOpen(true)
@@ -226,20 +235,22 @@ export function MainShell() {
     [childListDialogs],
   )
   const lettersCirclesDialogs = useMemo(
-    () =>
-      childListDialogs.filter(
-        (d) => !isPrivateUserDialog(d) && !isBroadcastChannelDialog(d),
-      ),
+    () => childListDialogs.filter(isLettersCirclesDialog),
     [childListDialogs],
+  )
+  /** Pre-search counterpart — tells the AC6 empty states "none yet" from "none match". */
+  const lettersUnfilteredCirclesDialogs = useMemo(
+    () => dialogsEligibleToRetainSelection.filter(isLettersCirclesDialog),
+    [dialogsEligibleToRetainSelection],
   )
 
   const lettersRailDigest = useMemo(
     () => ({
       dialogs: childListDialogs,
       selectedKey: selected ? getPeerInfo(selected).key : null,
-      onSelect: handleDayMailSelect,
+      onSelect: handleJumpToDialogMessage,
     }),
-    [childListDialogs, selected, handleDayMailSelect],
+    [childListDialogs, selected, handleJumpToDialogMessage],
   )
   const lettersRailSelectedKey = selected ? getPeerInfo(selected).key : null
   const dayMailBadgeCount = useMemo(() => countDayMailBadge(dialogs), [dialogs])
@@ -311,9 +322,11 @@ export function MainShell() {
     showSearch: !mobileCompact,
     correspondentsDialogs: lettersCorrespondentsDialogs,
     circlesDialogs: lettersCirclesDialogs,
+    unfilteredCirclesDialogs: lettersUnfilteredCirclesDialogs,
     bulletinChannelPeers: bulletinPeers,
     onSelectBulletinPeer: handleBulletinSelect,
     correspondenceTab,
+    ...passagesPanelProps,
   }
 
   return (
@@ -375,9 +388,11 @@ export function MainShell() {
                     settings={settings}
                     showTitle={false}
                     lettersLayout
-                    lettersJumpToMessageId={lettersDayMailFocusMessageId}
+                    lettersJumpToMessageId={lettersFocusMessageId}
                     onLettersJumpToMessageConsumed={consumeLettersJump}
                     onCoReadingBookmarked={refreshCoReadingBookmarks}
+                    lettersInChatSearchSeed={lettersInChatSearchSeed}
+                    onLettersInChatSearchSeedConsumed={consumeInChatSearchSeed}
                   />
                 </div>
               </div>
@@ -390,7 +405,7 @@ export function MainShell() {
                 listPanelCommon={listPanelCommon}
                 childListDialogs={childListDialogs}
                 lettersRailSelectedKey={lettersRailSelectedKey}
-                onDayMailSelect={handleDayMailSelect}
+                onDayMailSelect={handleJumpToDialogMessage}
                 client={client}
                 settings={settings}
                 nightHidden={nightHidden}
@@ -410,9 +425,11 @@ export function MainShell() {
               childListDialogs={childListDialogs}
               selected={selected}
               settings={settings}
-              lettersDayMailFocusMessageId={lettersDayMailFocusMessageId}
+              lettersFocusMessageId={lettersFocusMessageId}
               onLettersJumpConsumed={consumeLettersJump}
               onCoReadingBookmarked={refreshCoReadingBookmarks}
+              lettersInChatSearchSeed={lettersInChatSearchSeed}
+              onLettersInChatSearchSeedConsumed={consumeInChatSearchSeed}
               lettersRailDigest={lettersRailDigest}
               lettersRailSelectedKey={lettersRailSelectedKey}
             />
@@ -454,7 +471,7 @@ export function MainShell() {
         onSignOut={() => {
           setSignOutConfirmOpen(true)
         }}
-        onDraftSelect={handleDayMailSelect}
+        onDraftSelect={handleJumpToDialogMessage}
       />
 
       <LettersDayMailSlideOver
@@ -464,7 +481,7 @@ export function MainShell() {
         }}
         dialogs={childListDialogs}
         selectedKey={lettersRailSelectedKey}
-        onSelect={handleDayMailSelect}
+        onSelect={handleJumpToDialogMessage}
         client={client}
       />
 

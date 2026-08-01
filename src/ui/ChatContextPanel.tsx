@@ -44,9 +44,9 @@ type Props = {
   onAfterBlock?: () => void
   /** Letters two-pane desktop: masthead widgets (ribbon, insights calendar) rendered above peer header. */
   lettersThreadChrome?: ReactNode | null
-  /** Letters chats: row (search + unread filter) rendered at top of panel after {@link lettersThreadChrome}. */
+  /** Letters chats: unread-filter row rendered at top of panel after {@link lettersThreadChrome}. */
   lettersPanelTools?: ReactNode | null
-  /** When true, hides the textual "Search in chat" quick action ({@link lettersPanelTools} provides search). */
+  /** When true, hides the textual "Search in chat" quick action (the thread header owns that entry point). */
   omitQuickInChatSearch?: boolean
 }
 

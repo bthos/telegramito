@@ -1,7 +1,8 @@
-import type { LiHTMLAttributes, ReactNode } from "react"
+import type { LiHTMLAttributes } from "react"
 import { Api } from "telegram"
 import type { TFunction } from "i18next"
 import { formatSearchResultRowDate } from "../util/timeFormat"
+import { searchExcerptParts } from "../util/searchExcerptParts"
 import { cn } from "../util/cn"
 
 export function plainMessagePreview(m: Api.Message, noTextLabel: string): string {
@@ -27,30 +28,6 @@ export function searchResultSenderLabel(
   return peerDisplayName
 }
 
-function excerptParts(text: string, query: string, maxLen: number): ReactNode {
-  const t = text.length > maxLen ? `${text.slice(0, maxLen - 1)}…` : text
-  const qt = query.trim()
-  if (!qt) {
-    return t
-  }
-  const lower = t.toLowerCase()
-  const ql = qt.toLowerCase()
-  const qi = lower.indexOf(ql)
-  if (qi < 0) {
-    return t
-  }
-  const before = t.slice(0, qi)
-  const mid = t.slice(qi, qi + ql.length)
-  const after = t.slice(qi + ql.length)
-  return (
-    <>
-      {before}
-      <strong>{mid}</strong>
-      {after}
-    </>
-  )
-}
-
 type Props = {
   message: Api.Message
   query: string
@@ -60,7 +37,10 @@ type Props = {
   optionProps: LiHTMLAttributes<HTMLLIElement>
 }
 
-/** Single search hit: sender, relative date, excerpt with match emphasis (~80 chars). */
+/**
+ * Single search hit: sender, relative date, ~80-char excerpt anchored on the
+ * earliest query-token match with every token bolded (see {@link searchExcerptParts}).
+ */
 export function SearchResultRow({
   message,
   query,
@@ -74,7 +54,7 @@ export function SearchResultRow({
     return null
   }
   const plain = plainMessagePreview(message, noTextLabel)
-  const excerpt = excerptParts(plain, query, 80)
+  const excerpt = searchExcerptParts(plain, query, 80)
   const dateLabel = formatSearchResultRowDate(message.date, locale)
   const { className: optClass, ...optionRest } = optionProps
 

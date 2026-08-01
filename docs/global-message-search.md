@@ -13,19 +13,20 @@ happen in parallel:
 - **Dialog filter** — Correspondents, Groups, and Channels are narrowed to names that match your
   query. This works instantly, with no server round-trip.
 - **Global search** — Telegramito searches message history across all your chats and shows the hits
-  in a new **Passages** section that appears above Correspondents in the sidebar.
+  in a **§ Passages** section that appears above Correspondents in the sidebar.
 
-Passages groups results by chat. Each chat cluster shows up to three matching excerpts. The words
-you searched for are shown in **bold** wherever they appear in each excerpt, even when the server
-matched them as separate words rather than a literal phrase.
+Passages groups results by chat. Each chat cluster shows up to three matching excerpts, with a
+count of how many matches were found in that chat on the current page. The words you searched for
+are shown in **bold** wherever they appear in each excerpt, even when the server matched them as
+separate words rather than a literal phrase.
 
 ### Navigating Passages
 
 | Action | Result |
 |---|---|
 | Tap a passage row | Opens that chat and jumps straight to that message |
-| Tap "See all N in this chat →" | Opens in-chat search in that chat, pre-filled with your query, so you can page through all hits in that thread |
-| Tap the **Passages** accordion header | Collapses or expands the section (tap again to toggle) |
+| Tap "See all in this chat →" | Opens in-chat search in that chat, pre-filled with your query, so you can page through all hits in that thread |
+| Tap the **§ Passages** accordion header | Collapses or expands the section (tap again to toggle) |
 
 ### Cross-chat jump
 
@@ -108,7 +109,6 @@ The same applies to Channels.
 
 *Global search is implemented via `useGlobalMessageSearch` (new hook calling
 `Api.messages.SearchGlobal`) surfaced as a "Passages" accordion section in `ChatsListPanel.tsx`.
-Result clicks reuse the Day-mail jump mechanism in `useMainShellDialogSelection.ts` /
-`useChatJumpNavigation.ts`. The direct in-chat search icon lives in `ChatView.tsx`'s Letters thread
+Result clicks use `handleJumpToDialogMessage` in `useMainShellPassages.ts` / `useMainShellDialogSelection.ts`. The direct in-chat search icon lives in `ChatView.tsx`'s Letters thread
 header. Per-word excerpt highlighting is in `SearchResultRow.tsx`. If search or jump behaviour
 changes, update this page to match.*

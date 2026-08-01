@@ -20,7 +20,7 @@ export type UseMainShellMobileChromeOpts = {
   morningDayMailEnabled: boolean
   appMode: AppMode
   dialogs: Dialog[]
-  handleDayMailSelect: (d: Dialog, opts?: { focusMessageId?: number }) => void
+  handleJumpToDialogMessage: (d: Dialog, opts?: { focusMessageId?: number }) => void
 }
 
 export function useMainShellMobileChrome(opts: UseMainShellMobileChromeOpts) {
@@ -30,7 +30,7 @@ export function useMainShellMobileChrome(opts: UseMainShellMobileChromeOpts) {
     morningDayMailEnabled,
     appMode,
     dialogs,
-    handleDayMailSelect,
+    handleJumpToDialogMessage,
   } = opts
 
   const [mobileTab, setMobileTab] = useState<MobileShellTab>("letters")
@@ -96,13 +96,13 @@ export function useMainShellMobileChrome(opts: UseMainShellMobileChromeOpts) {
       if (!di) {
         return
       }
-      handleDayMailSelect(di, { focusMessageId: bookmark.messageId })
+      handleJumpToDialogMessage(di, { focusMessageId: bookmark.messageId })
       setDeskSheetOpen(false)
       if (mobileCompact) {
         setMobileTab("letters")
       }
     },
-    [dialogs, handleDayMailSelect, mobileCompact],
+    [dialogs, handleJumpToDialogMessage, mobileCompact],
   )
 
   return {

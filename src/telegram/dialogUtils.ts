@@ -13,6 +13,11 @@ export function isBroadcastChannelDialog(d: Dialog): boolean {
   return isBroadcastChannelEntity(d.entity)
 }
 
+/** Letters sidebar "circles" bucket: everything split into the Groups / Channels accordions. */
+export function isLettersCirclesDialog(d: Dialog): boolean {
+  return !isPrivateUserDialog(d) && !isBroadcastChannelDialog(d)
+}
+
 /**
  * Basic (`Chat`) and megagroup (`Channel` + megagroup) dialogs — multi-member chats.
  */

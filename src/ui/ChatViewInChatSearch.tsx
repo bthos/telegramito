@@ -1,7 +1,7 @@
 import type { Api } from "telegram"
 import type { TelegramClient } from "telegram"
 import type { Dialog } from "telegram/tl/custom/dialog"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { useInChatSearch } from "../hooks/useInChatSearch"
 import { ChatSearchBar } from "./ChatSearchBar"
@@ -13,6 +13,8 @@ type Props = {
   /** Open forum topic id; scopes search to that topic (see {@link useInChatSearch}). */
   topicId?: number
   peerDisplayName: string
+  /** Query to pre-fill once, e.g. from a Passages "see all in this chat" hand-off. */
+  seedQuery?: string | null
   onClose: () => void
   onPickMessage: (msg: Api.Message) => void | Promise<void>
 }
@@ -26,6 +28,7 @@ export function ChatViewInChatSearch({
   forumDisabled,
   topicId,
   peerDisplayName,
+  seedQuery = null,
   onClose,
   onPickMessage,
 }: Props) {
@@ -43,6 +46,15 @@ export function ChatViewInChatSearch({
   })
 
   const [resultIndex, setResultIndex] = useState(0)
+
+  const appliedSeedRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (seedQuery == null || seedQuery === appliedSeedRef.current) {
+      return
+    }
+    appliedSeedRef.current = seedQuery
+    setQuery(seedQuery)
+  }, [seedQuery, setQuery])
 
   useEffect(() => {
     queueMicrotask(() => {

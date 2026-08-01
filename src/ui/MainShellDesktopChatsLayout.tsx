@@ -17,9 +17,12 @@ export type MainShellDesktopChatsLayoutProps = {
   childListDialogs: Dialog[]
   selected: Dialog | null
   settings: ParentalSettings
-  lettersDayMailFocusMessageId: number | null
+  /** Focus id from any jump source (day mail, co-reading, Passages). */
+  lettersFocusMessageId: number | null
   onLettersJumpConsumed: () => void
   onCoReadingBookmarked: () => void
+  lettersInChatSearchSeed: string | null
+  onLettersInChatSearchSeedConsumed: () => void
   lettersRailDigest: {
     dialogs: Dialog[]
     selectedKey: string | null
@@ -38,9 +41,11 @@ export function MainShellDesktopChatsLayout({
   childListDialogs,
   selected,
   settings,
-  lettersDayMailFocusMessageId,
+  lettersFocusMessageId,
   onLettersJumpConsumed,
   onCoReadingBookmarked,
+  lettersInChatSearchSeed,
+  onLettersInChatSearchSeedConsumed,
   lettersRailDigest,
   lettersRailSelectedKey,
 }: MainShellDesktopChatsLayoutProps) {
@@ -58,9 +63,11 @@ export function MainShellDesktopChatsLayout({
               settings={settings}
               lettersLayout
               lettersThreePane={lettersThreeCol}
-              lettersJumpToMessageId={lettersDayMailFocusMessageId}
+              lettersJumpToMessageId={lettersFocusMessageId}
               onLettersJumpToMessageConsumed={onLettersJumpConsumed}
               onCoReadingBookmarked={onCoReadingBookmarked}
+              lettersInChatSearchSeed={lettersInChatSearchSeed}
+              onLettersInChatSearchSeedConsumed={onLettersInChatSearchSeedConsumed}
             />
           ) : (
             <div className="empty-chat" role="status">
