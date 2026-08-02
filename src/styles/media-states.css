@@ -1022,7 +1022,13 @@ button.msg-video-play.msg-video-thumb-play-fab {
   max-width: min(100%, 20rem);
 }
 
-/* Fetching file: progress ring inside icon badge (same mock — loading section) */
+/* Fetching file: progress ring inside icon badge (same mock — loading section).
+   Documents are explicitly out of scope for this feature's box-reservation mechanism
+   (spec Decision 4 / AC7) — kept as the pre-existing bare single-class selector.
+   Do NOT bump this to the `.msg-media.msg-media--X-fetch` compound form used by
+   video/gif/photo above: doing so swaps the existing loading/loaded size mismatch
+   for a different one (long-filename doc rows narrow while downloading, widen again
+   on completion), which is worse and still out of scope regardless. */
 .msg-media--doc-fetch {
   display: block;
   width: 100%;
@@ -1063,7 +1069,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 .msg-video-deferred {
   display: block;
   width: 100%;
-  max-width: min(100%, 280px);
+  max-width: min(100%, var(--msg-media-w, 280px));
 }
 
 .msg-video-deferred__hit {
@@ -1084,7 +1090,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 .msg-video-deferred__frame {
   position: relative;
   width: 100%;
-  aspect-ratio: 280 / 200;
+  aspect-ratio: var(--msg-media-ar, 280 / 200);
   border-radius: var(--ds-radius-lg);
   overflow: hidden;
   background:
@@ -1120,16 +1126,32 @@ button.msg-video-play.msg-video-thumb-play-fab {
   transform: none;
 }
 
-.msg-media--video-fetch {
+/* Compound selector (not just `.msg-media--video-fetch`): this root div also carries
+   the generic `.msg-media { max-width: 100% }` (app.css). Both are single-class
+   selectors (equal specificity), and app.css is @imported after this file, so a bare
+   `.msg-media--video-fetch` rule loses the max-width tie-break to the generic one —
+   silently dropping the reserved box and letting the loading placeholder grow to
+   whatever ancestor has a definite width (often near full screen width).
+   A SECOND, equally-specific collision exists: every real render site wraps
+   `<MessageMediaView>` in a `.msg-media-thumb` div (LettersPassageMessage.tsx /
+   ChatMessageList.tsx), and app.css also defines `.msg-media-thumb .msg-media {
+   max-width: 100% }` — also 2-class specificity, also later in the cascade than this
+   file, so `.msg-media.msg-media--video-fetch` alone ties with it and still loses.
+   Live-verified 2026-08-02 via getBoundingClientRect() during AC8 verification: a
+   loading video rendered at 1077px instead of its reserved ~320px box. The
+   `.msg-media-thumb` ancestor variant below breaks that second tie by specificity
+   instead of relying on import order again. */
+.msg-media.msg-media--video-fetch,
+.msg-media-thumb .msg-media.msg-media--video-fetch {
   width: 100%;
-  max-width: min(100%, 280px);
+  max-width: min(100%, var(--msg-media-w, 280px));
 }
 
-/* Rect inline video thumb — mock 280×200 */
+/* Rect inline video thumb — reserved box from real metadata; 280×200 is the no-metadata fallback */
 .msg-video-wrap:not(.msg-video-wrap--round) {
   width: 100%;
-  max-width: min(100%, 280px);
-  aspect-ratio: 280 / 200;
+  max-width: min(100%, var(--msg-media-w, 280px));
+  aspect-ratio: var(--msg-media-ar, 280 / 200);
 }
 
 .msg-video-wrap:not(.msg-video-wrap--round) .msg-video {
@@ -1137,13 +1159,13 @@ button.msg-video-play.msg-video-thumb-play-fab {
   height: 100%;
   max-width: none;
   max-height: none;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: var(--ds-radius-lg);
 }
 
 .msg-media--gif .msg-video-wrap:not(.msg-video-wrap--round) {
-  max-width: min(100%, 240px);
-  aspect-ratio: 240 / 200;
+  max-width: min(100%, var(--msg-media-w, 240px));
+  aspect-ratio: var(--msg-media-ar, 240 / 200);
 }
 
 .msg-media--video-fetch--round .msg-video-deferred__frame--round {
@@ -1255,7 +1277,12 @@ button.msg-video-play.msg-video-thumb-play-fab {
   transform: none;
 }
 
-.msg-media--photo-fetch {
+/* Compound selector — see the `.msg-media.msg-media--video-fetch` comment above for why
+   a bare `.msg-media--photo-fetch` loses the max-width cascade tie to app.css's `.msg-media`,
+   and why the `.msg-media-thumb` ancestor variant is also needed (second, equally-specific
+   collision with app.css's `.msg-media-thumb .msg-media { max-width: 100% }`). */
+.msg-media.msg-media--photo-fetch,
+.msg-media-thumb .msg-media.msg-media--photo-fetch {
   width: 100%;
   max-width: min(100%, var(--msg-media-w, 280px));
 }
@@ -1264,7 +1291,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 .msg-gif-deferred {
   display: block;
   width: 100%;
-  max-width: min(100%, 240px);
+  max-width: min(100%, var(--msg-media-w, 240px));
 }
 
 .msg-gif-deferred__hit {
@@ -1285,7 +1312,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 .msg-gif-deferred__canvas {
   position: relative;
   width: 100%;
-  aspect-ratio: 240 / 200;
+  aspect-ratio: var(--msg-media-ar, 240 / 200);
   border-radius: var(--ds-radius-lg);
   overflow: hidden;
   background:
@@ -1360,9 +1387,14 @@ button.msg-video-play.msg-video-thumb-play-fab {
   transform: none;
 }
 
-.msg-media--gif-fetch {
+/* Compound selector — see the `.msg-media.msg-media--video-fetch` comment above for why
+   a bare `.msg-media--gif-fetch` loses the max-width cascade tie to app.css's `.msg-media`,
+   and why the `.msg-media-thumb` ancestor variant is also needed (second, equally-specific
+   collision with app.css's `.msg-media-thumb .msg-media { max-width: 100% }`). */
+.msg-media.msg-media--gif-fetch,
+.msg-media-thumb .msg-media.msg-media--gif-fetch {
   width: 100%;
-  max-width: min(100%, 240px);
+  max-width: min(100%, var(--msg-media-w, 240px));
 }
 
 .doc-preview-modal {
@@ -1454,6 +1486,16 @@ button.msg-video-play.msg-video-thumb-play-fab {
   max-width: 140px;
   max-height: 140px;
   display: block;
+}
+
+/* Reserved box from real sticker metadata — scoped to the chat-bubble thumb only.
+   Must NOT be a bare .msg-sticker-img rule: .msg-sticker-img--lg (full-view modal,
+   portaled outside .msg-media--sticker) shares this class and must keep rendering
+   at its natural/220px-capped size, unaffected by the bubble's reserved box. */
+.msg-media--sticker .msg-sticker-img {
+  width: var(--msg-media-w, 112px);
+  aspect-ratio: var(--msg-media-ar, 1 / 1);
+  object-fit: contain;
 }
 
 .msg-sticker-img--lg {

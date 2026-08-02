@@ -1,10 +1,12 @@
 import { Api } from "telegram"
 import { getMessageDocument } from "./documentFile"
-import { isRoundVideoDoc, isStickerDoc } from "./documentMediaKind"
+import { isCustomEmojiDoc, isRoundVideoDoc, isStickerDoc } from "./documentMediaKind"
 
 /** Message-bubble media box cap — mirrors `.msg-img`'s CSS clamp (app.css). */
 const MAX_WIDTH_PX = 320
 const MAX_HEIGHT_PX = 288
+/** Sticker/custom-emoji box cap — mirrors `.msg-sticker-img`'s CSS clamp (media-states.css). */
+const MAX_STICKER_PX = 140
 
 export interface MediaBoxDimensions {
   width: number
@@ -27,40 +29,50 @@ function pickLargestPhotoSize(
   return best
 }
 
-function clampToMessageBox(width: number, height: number): MediaBoxDimensions {
+function clampToBox(width: number, height: number, maxW: number, maxH: number): MediaBoxDimensions {
   const aspect = height / width
-  let w = Math.min(width, MAX_WIDTH_PX)
+  let w = Math.min(width, maxW)
   let h = Math.round(w * aspect)
-  if (h > MAX_HEIGHT_PX) {
-    h = MAX_HEIGHT_PX
+  if (h > maxH) {
+    h = maxH
     w = Math.round(h / aspect)
   }
   return { width: Math.max(1, w), height: Math.max(1, h) }
 }
 
+function clampToMessageBox(width: number, height: number): MediaBoxDimensions {
+  return clampToBox(width, height, MAX_WIDTH_PX, MAX_HEIGHT_PX)
+}
+
+function clampToStickerBox(width: number, height: number): MediaBoxDimensions {
+  return clampToBox(width, height, MAX_STICKER_PX, MAX_STICKER_PX)
+}
+
 /**
- * Final on-screen box for a message's photo/video, computed from dimensions
- * already present in the Telegram API response (`photo.sizes` /
+ * Final on-screen box for a message's photo/video/sticker, computed from
+ * dimensions already present in the Telegram API response (`photo.sizes` /
  * `DocumentAttributeVideo` / `DocumentAttributeImageSize`) — mirrors Telegram
  * Web's own media-sizing approach, so placeholder/download/loaded states can
  * all reserve the same box up front instead of shifting once bytes decode.
- * Returns `null` for stickers, round video notes (fixed square elsewhere),
- * and media with no usable size metadata.
+ * Stickers and custom emoji clamp to a smaller box (matches `.msg-sticker-img`);
+ * everything else clamps to the message-bubble box. Returns `null` for round
+ * video notes (fixed circle elsewhere) and media with no usable size metadata.
  */
 export function getMediaBoxDimensions(resolved: Api.Message): MediaBoxDimensions | null {
   const doc = getMessageDocument(resolved)
-  if (doc && !isStickerDoc(doc) && !isRoundVideoDoc(doc)) {
+  if (doc && !isRoundVideoDoc(doc)) {
+    const clamp = (isStickerDoc(doc) || isCustomEmojiDoc(doc)) ? clampToStickerBox : clampToMessageBox
     const videoAttr = doc.attributes?.find(
       (a): a is Api.DocumentAttributeVideo => a.className === "DocumentAttributeVideo",
     )
     if (videoAttr && videoAttr.w > 0 && videoAttr.h > 0) {
-      return clampToMessageBox(videoAttr.w, videoAttr.h)
+      return clamp(videoAttr.w, videoAttr.h)
     }
     const imgAttr = doc.attributes?.find(
       (a): a is Api.DocumentAttributeImageSize => a.className === "DocumentAttributeImageSize",
     )
     if (imgAttr && imgAttr.w > 0 && imgAttr.h > 0) {
-      return clampToMessageBox(imgAttr.w, imgAttr.h)
+      return clamp(imgAttr.w, imgAttr.h)
     }
   }
   if (resolved.media?.className === "MessageMediaPhoto") {

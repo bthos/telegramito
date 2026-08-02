@@ -291,6 +291,7 @@ export function MessageMediaView({
           footHint={te("chat.mediaTapToLoadHint")}
           sentAtLabel={viewerContext?.sentAtLabel ?? null}
           thumbDataUrl={inlineThumb?.dataUrl}
+          style={mediaBoxStyle}
         />
       )
     }
@@ -302,6 +303,7 @@ export function MessageMediaView({
           footHint={te("chat.mediaTapToLoadHint")}
           sentAtLabel={viewerContext?.sentAtLabel ?? null}
           thumbDataUrl={inlineThumb?.dataUrl}
+          style={mediaBoxStyle}
         />
       )
     }
@@ -335,7 +337,7 @@ export function MessageMediaView({
             requestLoad()
           }}
         >
-          <MediaPlaceholder type={placeholderType} shimmer={false} variant="pending" />
+          <MediaPlaceholder type={placeholderType} shimmer={false} variant="pending" style={mediaBoxStyle} />
         </button>
         {!compact ? (
           <div className="media-pending-foot" role="status">
@@ -384,6 +386,7 @@ export function MessageMediaView({
           sizeStr={sizeStr}
           onCancel={cancelLoad}
           cancelLabel={cancelLabel}
+          style={mediaBoxStyle}
         />
       )
     }
@@ -395,6 +398,7 @@ export function MessageMediaView({
           thumbDataUrl={inlineThumb?.dataUrl}
           onCancel={cancelLoad}
           cancelLabel={cancelLabel}
+          style={mediaBoxStyle}
         />
       )
     }
@@ -444,7 +448,7 @@ export function MessageMediaView({
         }
         data-media-state="loading"
       >
-        <MediaPlaceholder type={placeholderType} shimmer />
+        <MediaPlaceholder type={placeholderType} shimmer style={mediaBoxStyle} />
         <TgProgressIndeterminate onCancel={cancelLoad} cancelLabel={cancelLabel} />
         {!compact ? (
           <div className="media-loading-foot" role="status">
@@ -466,7 +470,7 @@ export function MessageMediaView({
     const d = getMessageDocument(resolved)
     if (d && isStickerDoc(d)) {
       return (
-        <div className="msg-media msg-media--sticker" data-media-state="preview">
+        <div className="msg-media msg-media--sticker" data-media-state="preview" style={mediaBoxStyle}>
           <StickerInline url={s.u} doc={d} />
         </div>
       )
@@ -524,7 +528,7 @@ export function MessageMediaView({
       round ? "msg-media--round-video" : "",
     ].filter(Boolean).join(" ")
     return (
-      <div className={wrapClass} data-media-state="preview">
+      <div className={wrapClass} data-media-state="preview" style={mediaBoxStyle}>
         <VideoInlinePlayer
           src={s.u}
           loop={s.loop}

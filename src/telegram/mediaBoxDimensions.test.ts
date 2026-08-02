@@ -59,12 +59,32 @@ describe("getMediaBoxDimensions", () => {
     expect(dims.height).toBe(180)
   })
 
+  it("reads DocumentAttributeImageSize dimensions for a legacy image-backed animated GIF", () => {
+    const m = {
+      className: "Message",
+      media: {
+        className: "MessageMediaDocument",
+        document: {
+          className: "Document",
+          mimeType: "image/gif",
+          attributes: [
+            { className: "DocumentAttributeAnimated" },
+            { className: "DocumentAttributeImageSize", w: 480, h: 320 },
+          ],
+        },
+      },
+    } as unknown as Api.Message
+    const dims = getMediaBoxDimensions(m)!
+    expect(dims.width).toBe(320)
+    expect(dims.height).toBe(213)
+  })
+
   it("returns null for round video notes", () => {
     const m = videoMessage(240, 240, { roundMessage: true })
     expect(getMediaBoxDimensions(m)).toBeNull()
   })
 
-  it("returns null for stickers", () => {
+  it("returns null for stickers with no dimension attribute", () => {
     const m = {
       className: "Message",
       media: {
@@ -81,6 +101,99 @@ describe("getMediaBoxDimensions", () => {
 
   it("returns null when no size metadata is present", () => {
     const m = photoMessage([])
+    expect(getMediaBoxDimensions(m)).toBeNull()
+  })
+
+  it("clamps a sticker with DocumentAttributeImageSize to the 140×140 sticker box, not the 320×288 message box", () => {
+    const m = {
+      className: "Message",
+      media: {
+        className: "MessageMediaDocument",
+        document: {
+          className: "Document",
+          mimeType: "image/webp",
+          attributes: [
+            { className: "DocumentAttributeSticker", alt: "", stickerset: {} },
+            { className: "DocumentAttributeImageSize", w: 512, h: 256 },
+          ],
+        },
+      },
+    } as unknown as Api.Message
+    const dims = getMediaBoxDimensions(m)!
+    expect(dims.width).toBe(140)
+    expect(dims.height).toBe(70)
+  })
+
+  it("clamps a video-backed (webm) sticker with DocumentAttributeVideo to the sticker box", () => {
+    const m = {
+      className: "Message",
+      media: {
+        className: "MessageMediaDocument",
+        document: {
+          className: "Document",
+          mimeType: "video/webm",
+          attributes: [
+            { className: "DocumentAttributeSticker", alt: "", stickerset: {} },
+            { className: "DocumentAttributeVideo", duration: 3, w: 100, h: 200 },
+          ],
+        },
+      },
+    } as unknown as Api.Message
+    const dims = getMediaBoxDimensions(m)!
+    expect(dims.height).toBe(140)
+    expect(dims.width).toBe(70)
+  })
+
+  it("clamps a custom-emoji doc to the sticker box, not the message box", () => {
+    const m = {
+      className: "Message",
+      media: {
+        className: "MessageMediaDocument",
+        document: {
+          className: "Document",
+          mimeType: "image/webp",
+          attributes: [
+            { className: "DocumentAttributeCustomEmoji", alt: "", stickerset: {} },
+            { className: "DocumentAttributeImageSize", w: 512, h: 256 },
+          ],
+        },
+      },
+    } as unknown as Api.Message
+    const dims = getMediaBoxDimensions(m)!
+    // Sticker-box clamp (140 cap) -> {140,70}; message-box clamp (320 cap) would
+    // give {320,160} instead, so this fixture actually discriminates the two
+    // clamp paths (regression guard for [FIX G5]'s isCustomEmojiDoc branch).
+    expect(dims.width).toBe(140)
+    expect(dims.height).toBe(70)
+  })
+
+  it("returns null for an audio document (no video/image-size attribute)", () => {
+    const m = {
+      className: "Message",
+      media: {
+        className: "MessageMediaDocument",
+        document: {
+          className: "Document",
+          mimeType: "audio/ogg",
+          attributes: [{ className: "DocumentAttributeAudio", voice: false, duration: 42 }],
+        },
+      },
+    } as unknown as Api.Message
+    expect(getMediaBoxDimensions(m)).toBeNull()
+  })
+
+  it("returns null for a generic document attachment (no video/image-size attribute)", () => {
+    const m = {
+      className: "Message",
+      media: {
+        className: "MessageMediaDocument",
+        document: {
+          className: "Document",
+          mimeType: "application/pdf",
+          attributes: [{ className: "DocumentAttributeFilename", fileName: "report.pdf" }],
+        },
+      },
+    } as unknown as Api.Message
     expect(getMediaBoxDimensions(m)).toBeNull()
   })
 })

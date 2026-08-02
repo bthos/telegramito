@@ -27,6 +27,8 @@ interface MediaPlaceholderProps {
    * `pending` — tap-to-load shell inside a control; decorative only (matches UX preview column, not loading skeleton).
    */
   variant?: "default" | "pending"
+  /** Extra inline style merged onto the root (e.g. `--msg-media-w`/`--msg-media-ar` for sticker box reservation). */
+  style?: React.CSSProperties
 }
 
 /**
@@ -109,6 +111,7 @@ export function MediaPlaceholder({
   height,
   shimmer = true,
   variant = "default",
+  style: styleProp,
 }: MediaPlaceholderProps) {
   const { t } = useTranslation()
   const label = t("chat.mediaLoading")
@@ -119,7 +122,7 @@ export function MediaPlaceholder({
     ? { role: "presentation" as const, "aria-hidden": true as const }
     : { role: "status" as const, "aria-label": label, "aria-busy": true as const }
 
-  const style: React.CSSProperties = {}
+  const style: React.CSSProperties = { ...styleProp }
   if (width != null) style.width = typeof width === "number" ? `${width}px` : width
   if (height != null) style.height = typeof height === "number" ? `${height}px` : height
 

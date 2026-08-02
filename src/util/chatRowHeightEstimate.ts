@@ -33,9 +33,9 @@ export function estimateChatRowHeight(row: ChatDatedItem | undefined): number {
     return Math.min(880, base + 300 + n * 72)
   }
   if (media.className === "MessageMediaPhoto") {
-    // Photos render at their real aspect ratio (see `mediaBoxDimensions.ts`) —
-    // unlike video/gif, which are always cropped into a fixed-size thumb —
-    // so a generic flat guess here would systematically mismatch tall/wide photos.
+    // Photos, video, GIF, and stickers all render at their real aspect ratio
+    // (see `mediaBoxDimensions.ts`) — a generic flat guess would systematically
+    // mismatch tall/wide media.
     const dims = getMediaBoxDimensions(m)
     if (dims) {
       return Math.min(680, base + dims.height + 24)
@@ -43,6 +43,10 @@ export function estimateChatRowHeight(row: ChatDatedItem | undefined): number {
     return Math.min(620, base + 288)
   }
   if (media.className === "MessageMediaDocument" || media.className === "MessageMediaWebPage") {
+    const dims = getMediaBoxDimensions(m)
+    if (dims) {
+      return Math.min(680, base + dims.height + 24)
+    }
     return Math.min(620, base + 288)
   }
   return Math.min(560, base + 188)

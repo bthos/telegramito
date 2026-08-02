@@ -267,15 +267,17 @@ export function GifDeferredPending({
   footHint,
   sentAtLabel,
   thumbDataUrl,
+  style,
 }: {
   onActivate: () => void
   tapLabel: string
   footHint: string
   sentAtLabel: string | null
   thumbDataUrl?: string
+  style?: CSSProperties
 }) {
   return (
-    <div className="msg-gif-deferred" data-media-state="preview">
+    <div className="msg-gif-deferred" data-media-state="preview" style={style}>
       <button
         type="button"
         className="msg-gif-deferred__hit"
@@ -312,15 +314,17 @@ export function GifDeferredLoading({
   thumbDataUrl,
   onCancel,
   cancelLabel,
+  style,
 }: {
   hint: string
   timeLabel: string | null
   thumbDataUrl?: string
   onCancel?: () => void
   cancelLabel?: string
+  style?: CSSProperties
 }) {
   return (
-    <div className="msg-media msg-media--gif-fetch" data-media-state="loading">
+    <div className="msg-media msg-media--gif-fetch" data-media-state="loading" style={style}>
       <div className="msg-gif-deferred__canvas msg-gif-deferred__canvas--busy" aria-hidden>
         {thumbDataUrl ? (
           <img src={thumbDataUrl} className="msg-media-stripped-thumb" aria-hidden alt="" />
@@ -352,6 +356,7 @@ export function VideoDeferredPending({
   footHint,
   sentAtLabel,
   thumbDataUrl,
+  style,
 }: {
   resolved: Api.Message
   onActivate: () => void
@@ -359,6 +364,7 @@ export function VideoDeferredPending({
   footHint: string
   sentAtLabel: string | null
   thumbDataUrl?: string
+  style?: CSSProperties
 }) {
   const d = getMessageDocument(resolved)
   const round = d ? isRoundVideoDoc(d) : false
@@ -373,6 +379,7 @@ export function VideoDeferredPending({
         round ? "msg-video-deferred msg-video-deferred--round" : "msg-video-deferred"
       }
       data-media-state="preview"
+      style={style}
     >
       <button
         type="button"
@@ -438,6 +445,7 @@ export function VideoDeferredLoading({
   sizeStr,
   onCancel,
   cancelLabel,
+  style,
 }: {
   hint: string
   timeLabel: string | null
@@ -447,6 +455,7 @@ export function VideoDeferredLoading({
   sizeStr?: string | null
   onCancel?: () => void
   cancelLabel?: string
+  style?: CSSProperties
 }) {
   const frameClass = round
     ? "msg-video-deferred__frame msg-video-deferred__frame--busy msg-video-deferred__frame--round"
@@ -458,6 +467,7 @@ export function VideoDeferredLoading({
         round ? "msg-media msg-media--video-fetch msg-media--video-fetch--round" : "msg-media msg-media--video-fetch"
       }
       data-media-state="loading"
+      style={style}
     >
       <div className={frameClass}>
         {thumbDataUrl ? (
