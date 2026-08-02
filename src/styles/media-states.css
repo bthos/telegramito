@@ -1154,7 +1154,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 .msg-photo-deferred {
   display: block;
   width: 100%;
-  max-width: min(100%, 280px);
+  max-width: min(100%, var(--msg-media-w, 280px));
 }
 
 .msg-photo-deferred__hit {
@@ -1175,7 +1175,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 .msg-photo-deferred__canvas {
   position: relative;
   width: 100%;
-  aspect-ratio: 280 / 200;
+  aspect-ratio: var(--msg-media-ar, 280 / 200);
   border-radius: var(--ds-radius-lg);
   overflow: hidden;
   background:
@@ -1257,7 +1257,7 @@ button.msg-video-play.msg-video-thumb-play-fab {
 
 .msg-media--photo-fetch {
   width: 100%;
-  max-width: min(100%, 280px);
+  max-width: min(100%, var(--msg-media-w, 280px));
 }
 
 /* Deferred GIF — `design-system/preview/gif.html` */

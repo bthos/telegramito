@@ -2203,8 +2203,9 @@ html[data-theme="light"] .msg-media--unsupported.msg-media--card {
   display: block;
   max-width: min(100%, 20rem);
   max-height: 18rem;
-  width: auto;
+  width: var(--msg-media-w, auto);
   height: auto;
+  aspect-ratio: var(--msg-media-ar, auto);
   object-fit: contain;
   border-radius: 0.3rem;
 }

@@ -7,7 +7,6 @@ import {
   useState,
   type RefObject,
 } from "react"
-import { flushSync } from "react-dom"
 import type { Dialog } from "telegram/tl/custom/dialog"
 import type { TelegramClient } from "telegram"
 import { toMessageList } from "../telegram/messageList"
@@ -37,6 +36,15 @@ type JumpNavOpts = {
   onLettersJumpToMessageConsumed?: () => void
   /** True once the target conversation's initial history page has settled — `refreshMessagesById` no-ops before this. */
   initialLoadDone: boolean
+  /**
+   * Mirrors `pendingScrollToMessageIdRef`'s pending/settled lifecycle for
+   * `useChatScroll` to read — true from the moment a jump starts resolving
+   * until `scrollIntoView` actually lands (or the jump gives up). See
+   * `useChatScroll`'s `jumpSettlingRef` doc for why this must outlive
+   * `lettersJumpToMessageId` itself (which clears as soon as this hook takes
+   * ownership of the jump, well before the scroll position actually lands).
+   */
+  jumpSettlingRef?: RefObject<boolean>
 }
 
 export function useChatJumpNavigation(opts: JumpNavOpts) {
@@ -58,6 +66,7 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
     lettersJumpToMessageId = null,
     onLettersJumpToMessageConsumed,
     initialLoadDone,
+    jumpSettlingRef,
   } = opts
 
   const [searchMode, setSearchMode] = useState(false)
@@ -104,8 +113,11 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
     setPanelOpen(false)
   }, [scrollRef, setPanelOpen])
 
-  const closeSearchMode = useCallback(() => {
+  const closeSearchMode = useCallback((opts?: { restoreScroll?: boolean }) => {
     setSearchMode(false)
+    if (opts?.restoreScroll === false) {
+      return
+    }
     window.setTimeout(() => {
       const el = scrollRef.current
       if (el) {
@@ -120,7 +132,8 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
         return
       }
       setMessagesUnreadOnly(false)
-      closeSearchMode()
+      // Jump owns scroll position — do not restore the pre-search scrollTop.
+      closeSearchMode({ restoreScroll: false })
       setPanelOpen(false)
       if (highlightTimerRef.current != null) {
         clearTimeout(highlightTimerRef.current)
@@ -132,6 +145,9 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
       }, 1500)
       await refreshMessagesById([id])
       pendingScrollToMessageIdRef.current = id
+      if (jumpSettlingRef) {
+        jumpSettlingRef.current = true
+      }
       setScrollLayoutBump((b) => b + 1)
       clearPendingScrollGiveUpTimer()
       pendingScrollGiveUpTimerRef.current = window.setTimeout(() => {
@@ -142,6 +158,9 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
           // reach, or the fetch failed). Stop waiting on a `datedList` change
           // that may never come instead of leaving this dangling forever.
           pendingScrollToMessageIdRef.current = null
+          if (jumpSettlingRef) {
+            jumpSettlingRef.current = false
+          }
           appLog.warn("jumpToMessageById: target message never resolved", { id })
         }
       }, 4000)
@@ -149,6 +168,7 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
     [
       clearPendingScrollGiveUpTimer,
       closeSearchMode,
+      jumpSettlingRef,
       refreshMessagesById,
       setMessagesUnreadOnly,
       setPanelOpen,
@@ -189,11 +209,24 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
     if (id == null || id <= 0) {
       return
     }
+    // Set as early as possible (this effect fires right after the commit that
+    // set `lettersJumpToMessageId`) so `useChatScroll`'s auto-pagination
+    // guard is armed before any of the topic-resolution / refetch work below
+    // — narrowing, though not fully closing, the window before the target
+    // even lands where a stray scroll event could queue a compensation that
+    // later gets misapplied (that misapplication is itself guarded
+    // separately, see `useChatScroll`'s `jumpSettlingRef` check).
+    if (jumpSettlingRef) {
+      jumpSettlingRef.current = true
+    }
     const seq = ++lettersJumpRunSeq.current
     let cancelled = false
     void (async () => {
       try {
         if (!client || !dialog.entity) {
+          if (jumpSettlingRef) {
+            jumpSettlingRef.current = false
+          }
           if (!cancelled && seq === lettersJumpRunSeq.current) {
             onLettersJumpToMessageConsumed?.()
           }
@@ -227,6 +260,9 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
         }
         await jumpToMessageById(id)
       } catch {
+        if (jumpSettlingRef) {
+          jumpSettlingRef.current = false
+        }
         appLog.warn("lettersJumpToMessage failed", { id })
       }
       if (cancelled || seq !== lettersJumpRunSeq.current) {
@@ -240,6 +276,7 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
   }, [
     lettersJumpToMessageId,
     convKey,
+    jumpSettlingRef,
     jumpToMessageById,
     onLettersJumpToMessageConsumed,
     isForum,
@@ -263,17 +300,35 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
     if (idx < 0) {
       return
     }
-    flushSync(() => {
-      expandToRowIndex(idx)
-    })
-    pendingScrollToMessageIdRef.current = null
-    clearPendingScrollGiveUpTimer()
+    expandToRowIndex(idx)
     const root = scrollRef.current
     const node = root?.querySelector(
       `[data-chat-message-id="${CSS.escape(String(id))}"]`,
     ) as HTMLElement | null
-    node?.scrollIntoView({ block: "center", behavior: "smooth" })
-  }, [clearPendingScrollGiveUpTimer, datedList, expandToRowIndex, scrollLayoutBump, scrollRef])
+    if (node == null) {
+      // expand committed in React but the row DOM is not mounted yet —
+      // keep pending and retry on the next frame instead of giving up.
+      requestAnimationFrame(() => {
+        if (pendingScrollToMessageIdRef.current === id) {
+          setScrollLayoutBump((b) => b + 1)
+        }
+      })
+      return
+    }
+    pendingScrollToMessageIdRef.current = null
+    clearPendingScrollGiveUpTimer()
+    node.scrollIntoView({ block: "center", behavior: "instant" })
+    if (jumpSettlingRef) {
+      jumpSettlingRef.current = false
+    }
+  }, [
+    clearPendingScrollGiveUpTimer,
+    datedList,
+    expandToRowIndex,
+    jumpSettlingRef,
+    scrollLayoutBump,
+    scrollRef,
+  ])
 
   return {
     searchMode,

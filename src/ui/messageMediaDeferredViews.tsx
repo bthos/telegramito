@@ -178,15 +178,17 @@ export function PhotoDeferredPending({
   footHint,
   sentAtLabel,
   thumbDataUrl,
+  style,
 }: {
   onActivate: () => void
   tapLabel: string
   footHint: string
   sentAtLabel: string | null
   thumbDataUrl?: string
+  style?: CSSProperties
 }) {
   return (
-    <div className="msg-photo-deferred" data-media-state="preview">
+    <div className="msg-photo-deferred" data-media-state="preview" style={style}>
       <button
         type="button"
         className="msg-photo-deferred__hit"
@@ -224,15 +226,17 @@ export function PhotoDeferredLoading({
   thumbDataUrl,
   onCancel,
   cancelLabel,
+  style,
 }: {
   hint: string
   timeLabel: string | null
   thumbDataUrl?: string
   onCancel?: () => void
   cancelLabel?: string
+  style?: CSSProperties
 }) {
   return (
-    <div className="msg-media msg-media--photo-fetch" data-media-state="loading">
+    <div className="msg-media msg-media--photo-fetch" data-media-state="loading" style={style}>
       <div className="msg-photo-deferred__canvas msg-photo-deferred__canvas--busy" aria-hidden>
         {thumbDataUrl ? (
           <img src={thumbDataUrl} className="msg-media-stripped-thumb" aria-hidden alt="" />

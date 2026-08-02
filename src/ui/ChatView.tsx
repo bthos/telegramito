@@ -108,6 +108,8 @@ export function ChatView({
     [dialog.entity, client],
   )
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  /** Shared between `useChatScroll` and `useChatJumpNavigation` — see `useChatScroll`'s `jumpSettlingRef` doc. */
+  const jumpSettlingRef = useRef(false)
   const jumpDateButtonRef = useRef<HTMLButtonElement | null>(null)
   const [jumpCalOpen, setJumpCalOpen] = useState(false)
   const [freshMailDismissed, setFreshMailDismissed] = useState(false)
@@ -423,6 +425,8 @@ export function ChatView({
     hasMoreOlder,
     loadOlder,
     convKey,
+    hasPendingJump: lettersJumpToMessageId != null && lettersJumpToMessageId > 0,
+    jumpSettlingRef,
   })
 
   const {
@@ -471,6 +475,7 @@ export function ChatView({
     lettersJumpToMessageId,
     onLettersJumpToMessageConsumed,
     initialLoadDone,
+    jumpSettlingRef,
   })
 
   const [inChatSearchSeed, setInChatSearchSeed] = useState<string | null>(null)

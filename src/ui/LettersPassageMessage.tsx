@@ -32,6 +32,8 @@ type Props = {
   noPreview: boolean
   patchMessageReactions: (id: number, next: Api.MessageReactions) => void
   refreshMessagesById: (ids: number[]) => void | Promise<void>
+  /** Batched counterpart of `refreshMessagesById` for `MessageReplyView`'s `onNeedsResolve` — see `useBatchedReplyResolve`. */
+  onNeedsResolveReply: (replyId: number) => void
   /** Letters: opens emoji reaction picker — only this control triggers it (not the message body). */
   onLettersReactionPicker?: (e: MouseEvent<HTMLButtonElement>, m: Api.Message) => void
   mediaViewerCaption: string
@@ -65,6 +67,7 @@ export function LettersPassageMessage({
   onLettersReactionPicker,
   patchMessageReactions,
   refreshMessagesById,
+  onNeedsResolveReply,
   mediaViewerCaption,
   resolveRepliedMessage,
   onGoToQuoted,
@@ -201,7 +204,7 @@ export function LettersPassageMessage({
               client={client}
               resolveRepliedMessage={resolveRepliedMessage}
               onGoToQuoted={onGoToQuoted}
-              onNeedsResolve={(replyId) => { void refreshMessagesById([replyId]) }}
+              onNeedsResolve={onNeedsResolveReply}
             />
             <div className="msg-media-thumb">
               <MessageMediaView

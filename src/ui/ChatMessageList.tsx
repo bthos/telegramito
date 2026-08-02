@@ -20,6 +20,7 @@ import { peerKeyFromPeer } from "../telegram/peerKey"
 import { getDialogPreviewText } from "../telegram/dialogPreview"
 import { addCoReadingBookmark } from "../util/lettersRitualsStorage"
 import { getPeerInfo } from "../telegram/dialogUtils"
+import { useBatchedReplyResolve } from "../hooks/useBatchedReplyResolve"
 import { InboundClusterRow } from "./InboundClusterRow"
 import { LettersPassageMessage } from "./LettersPassageMessage"
 import { MessageTextContent } from "./MessageTextContent"
@@ -145,6 +146,8 @@ export function ChatMessageList({
   typers,
 }: Props) {
   const { t, i18n } = useTranslation()
+
+  const batchedNeedsResolveReply = useBatchedReplyResolve(refreshMessagesById)
 
   const readOutboxMaxId = useMemo(() => readOutboxMaxIdFromDialog(dialog), [dialog])
   const isBroadcastChannel = useMemo(
@@ -314,6 +317,7 @@ export function ChatMessageList({
             onLettersReactionPicker={(e, msg) => openReactionPicker(e, msg, true)}
             patchMessageReactions={patchMessageReactions}
             refreshMessagesById={refreshMessagesById}
+            onNeedsResolveReply={batchedNeedsResolveReply}
             mediaViewerCaption={typeof m.message === "string" ? m.message.trim() : ""}
             resolveRepliedMessage={resolveRepliedMessage}
             onGoToQuoted={goToQuotedMessage}
@@ -342,7 +346,7 @@ export function ChatMessageList({
             client={client}
             resolveRepliedMessage={resolveRepliedMessage}
             onGoToQuoted={goToQuotedMessage}
-            onNeedsResolve={(replyId) => { void refreshMessagesById([replyId]) }}
+            onNeedsResolve={batchedNeedsResolveReply}
           />
           <div className="msg-media-thumb">
             <MessageMediaView

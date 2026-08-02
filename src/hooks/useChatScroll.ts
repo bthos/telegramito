@@ -13,6 +13,22 @@ export function useChatScroll(opts: {
   hasMoreOlder: boolean
   loadOlder: () => Promise<void>
   convKey: string
+  /**
+   * True while opening this `convKey` is itself a jump to a specific old message
+   * (e.g. a Passages search result, day-mail, or co-reading deep link) — read once
+   * when `convKey` changes via a ref, not as a reactive dependency, so later
+   * changes to this flag (the jump resolving) don't re-fire the reset effect.
+   */
+  hasPendingJump: boolean
+  /**
+   * True from the moment a jump-to-message starts resolving until its
+   * `scrollIntoView` actually lands (see `useChatJumpNavigation`'s
+   * `pendingScrollToMessageIdRef`) — a strict superset of `hasPendingJump`'s
+   * lifetime, since landing the jump can take several frames (progressively
+   * expanding the virtualized window toward the target). Read via a ref,
+   * not as a render dependency.
+   */
+  jumpSettlingRef?: RefObject<boolean>
 }): {
   scrollFabVisible: boolean
   stickyRowIndex: number
@@ -20,15 +36,36 @@ export function useChatScroll(opts: {
   scrollToLatestMessages: () => void
   notifyPrepend: (prevTop: number, prevHeight: number) => void
 } {
-  const { scrollRef, datedList, list, loadingOlder, hasMoreOlder, loadOlder, convKey } = opts
+  const {
+    scrollRef,
+    datedList,
+    list,
+    loadingOlder,
+    hasMoreOlder,
+    loadOlder,
+    convKey,
+    hasPendingJump,
+    jumpSettlingRef,
+  } = opts
 
   const stickToEndRef = useRef(true)
+  const hasPendingJumpRef = useRef(hasPendingJump)
+  hasPendingJumpRef.current = hasPendingJump
   /** `null` after thread switch: next layout should snap once real tail is known. */
   const lastStickTailIdRef = useRef<StickTailMarker>(null)
   const pendingScrollFixRef = useRef<{
     type: "prepend"
     prevTop: number
     prevHeight: number
+    /**
+     * Whether a jump-to-message was still resolving when this prepend was
+     * queued. Captured at queue time, not re-read live at apply time: the
+     * fetch this compensation waits on can settle well after the jump's own
+     * `scrollIntoView` already landed (and cleared `jumpSettlingRef`), but
+     * `scrollHeight` by then still carries growth from the jump's concurrent
+     * loading that this compensation's baseline never accounted for.
+     */
+    queuedDuringJump: boolean
   } | null>(null)
   const olderLoadThrottleRef = useRef(0)
 
@@ -36,7 +73,12 @@ export function useChatScroll(opts: {
   const [stickyRowIndex, setStickyRowIndex] = useState(0)
 
   useEffect(() => {
-    stickToEndRef.current = true
+    // Opening this chat to jump to a specific old message: don't stick to the
+    // tail — the forced `scrollTop = scrollHeight` snap below (plus its
+    // follow-up rAF) would fire after `useChatJumpNavigation`'s own
+    // `scrollIntoView` and yank the view back to the bottom, away from the
+    // virtualized window the jump just centered on the target row.
+    stickToEndRef.current = !hasPendingJumpRef.current
     lastStickTailIdRef.current = null
     queueMicrotask(() => {
       setStickyRowIndex(0)
@@ -74,9 +116,14 @@ export function useChatScroll(opts: {
   }, [datedList, scrollRef])
 
   const notifyPrepend = useCallback((prevTop: number, prevHeight: number) => {
-    pendingScrollFixRef.current = { type: "prepend", prevTop, prevHeight }
+    pendingScrollFixRef.current = {
+      type: "prepend",
+      prevTop,
+      prevHeight,
+      queuedDuringJump: jumpSettlingRef?.current ?? false,
+    }
     stickToEndRef.current = false
-  }, [])
+  }, [jumpSettlingRef])
 
   useLayoutEffect(() => {
     const el = scrollRef.current
@@ -92,6 +139,24 @@ export function useChatScroll(opts: {
         // message) while `loadingOlder` is still true — recomputing against a
         // stale `prevHeight` on those firings snaps scrollTop back to
         // `prevTop`, which looks like the view being frozen/reset. Just wait.
+        syncStickyChatDateShortList()
+        return
+      }
+      if (p.queuedDuringJump) {
+        // This prepend was triggered while a jump-to-message was resolving
+        // for this convKey (see `notifyPrepend`) — `prevTop`/`prevHeight`
+        // were captured before (or racing) the jump's own progressive
+        // history loading, so by the time `loadOlder` settles, `scrollHeight`
+        // can carry growth from that unrelated concurrent loading on top of
+        // this tracked prepend. This holds even if the jump itself already
+        // finished landing by now (`jumpSettlingRef.current` back to false) —
+        // this specific fix's baseline was poisoned the moment it was
+        // queued. Applying the old formula against a contaminated height
+        // overcorrects scrollTop by however much extra the jump added,
+        // landing outside the virtualized window entirely (blank viewport).
+        // Discard the stale fix instead: the jump's own `scrollIntoView` is
+        // (or already was) about to own the scroll position anyway.
+        pendingScrollFixRef.current = null
         syncStickyChatDateShortList()
         return
       }
@@ -159,6 +224,31 @@ export function useChatScroll(opts: {
     const { scrollTop, scrollHeight, clientHeight } = el
     const gap = scrollHeight - scrollTop - clientHeight
     const nearEnd = gap < 48
+    // While a jump-to-message is still settling, `scrollIntoView` can land the
+    // target very close to whatever's currently loaded above it (the target is
+    // often the oldest thing in `list` right after the jump, disjoint from the
+    // recent messages loaded for this chat) — well within the "near top" zone
+    // below. Scroll events firing during this window don't reflect genuine
+    // user position and must not arm auto-behavior: `nearEnd` re-arming
+    // stick-to-bottom, or the near-top branch below re-triggering
+    // `loadOlder()`, races the jump's own pagination and the resulting
+    // `notifyPrepend` baseline gets applied against a `scrollHeight` that grew
+    // from unrelated concurrent loads by the time it settles — overcorrecting
+    // scrollTop by tens of thousands of pixels into an unmounted spacer.
+    if (jumpSettlingRef?.current) {
+      // Force (not just skip) — an even earlier scroll event, from before
+      // `jumpSettlingRef` turned true (e.g. the initial skeleton mount,
+      // where `scrollHeight` trivially equals `clientHeight` because
+      // nothing has loaded yet), can have already armed `stickToEndRef` via
+      // the branch below. Merely returning here would leave that stale
+      // `true` in place for the rest of the settling window, and the main
+      // stick-to-end effect acts on it the moment `list`'s tail changes —
+      // snapping away from the jump target toward whatever's currently the
+      // tail (see bug notes).
+      stickToEndRef.current = false
+      syncStickyChatDateShortList()
+      return
+    }
     stickToEndRef.current = nearEnd
     const canScrollMore = scrollHeight > clientHeight + 16
     setScrollFabVisible(canScrollMore && gap > 72)
@@ -175,7 +265,15 @@ export function useChatScroll(opts: {
     const prevHeight = el.scrollHeight
     notifyPrepend(prevTop, prevHeight)
     void loadOlder()
-  }, [hasMoreOlder, loadingOlder, loadOlder, syncStickyChatDateShortList, notifyPrepend, scrollRef])
+  }, [
+    hasMoreOlder,
+    jumpSettlingRef,
+    loadingOlder,
+    loadOlder,
+    syncStickyChatDateShortList,
+    notifyPrepend,
+    scrollRef,
+  ])
 
   return {
     scrollFabVisible,

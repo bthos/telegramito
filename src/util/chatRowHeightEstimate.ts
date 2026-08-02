@@ -1,5 +1,6 @@
 import type { Api } from "telegram"
 import type { ChatDatedItem } from "../ui/chatDatedItem"
+import { getMediaBoxDimensions } from "../telegram/mediaBoxDimensions"
 
 /** Fallback row height when the bubble has never been measured (viewport slice spacers). */
 export function estimateChatRowHeight(row: ChatDatedItem | undefined): number {
@@ -31,11 +32,17 @@ export function estimateChatRowHeight(row: ChatDatedItem | undefined): number {
     }
     return Math.min(880, base + 300 + n * 72)
   }
-  if (
-    media.className === "MessageMediaPhoto"
-    || media.className === "MessageMediaDocument"
-    || media.className === "MessageMediaWebPage"
-  ) {
+  if (media.className === "MessageMediaPhoto") {
+    // Photos render at their real aspect ratio (see `mediaBoxDimensions.ts`) —
+    // unlike video/gif, which are always cropped into a fixed-size thumb —
+    // so a generic flat guess here would systematically mismatch tall/wide photos.
+    const dims = getMediaBoxDimensions(m)
+    if (dims) {
+      return Math.min(680, base + dims.height + 24)
+    }
+    return Math.min(620, base + 288)
+  }
+  if (media.className === "MessageMediaDocument" || media.className === "MessageMediaWebPage") {
     return Math.min(620, base + 288)
   }
   return Math.min(560, base + 188)

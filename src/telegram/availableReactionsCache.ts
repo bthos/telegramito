@@ -8,10 +8,12 @@ type Cache = {
 }
 
 let cache: Cache | null = null
+let inFlight: Promise<Api.AvailableReaction[]> | null = null
 
 /** Drops server cache (e.g. on sign-out) so the next session refetches. */
 export function clearAvailableReactionsCache(): void {
   cache = null
+  inFlight = null
 }
 
 /** In-memory list from the last successful fetch (may be empty before first load). */
@@ -64,19 +66,35 @@ export function pickReactionDisplayDocument(
 }
 
 /**
- * Fetches global available reactions (user / default set) with `hash` cache.
+ * Fetches global available reactions (user / default set), cached for the session.
+ *
+ * `MessageReactionsView` calls this from every message row's mount effect. Rows
+ * mount in bursts (e.g. jumping to an old message expands the visible window by
+ * dozens of rows at once), so a cache hit short-circuits before the network and
+ * concurrent misses join a single in-flight request — otherwise a burst of ~70
+ * simultaneous `messages.GetAvailableReactions` calls hits Telegram's flood-wait
+ * limit on that method almost immediately, stalling the transcript.
  */
-export async function getAvailableReactionsForClient(client: TelegramClient): Promise<Api.AvailableReaction[]> {
-  const hash = cache?.hash ?? 0
-  const r = await client.invoke(new Api.messages.GetAvailableReactions({ hash }))
-  if (r.className === "messages.AvailableReactionsNotModified") {
-    return cache?.list ?? []
+export function getAvailableReactionsForClient(client: TelegramClient): Promise<Api.AvailableReaction[]> {
+  if (cache) {
+    return Promise.resolve(cache.list)
   }
-  if (r.className === "messages.AvailableReactions") {
-    cache = { hash: r.hash, list: r.reactions }
-    return r.reactions
+  if (inFlight) {
+    return inFlight
   }
-  return []
+  inFlight = (async () => {
+    try {
+      const r = await client.invoke(new Api.messages.GetAvailableReactions({ hash: 0 }))
+      if (r.className === "messages.AvailableReactions") {
+        cache = { hash: r.hash, list: r.reactions }
+        return r.reactions
+      }
+      return []
+    } finally {
+      inFlight = null
+    }
+  })()
+  return inFlight
 }
 
 const PREFETCH_REACTION_ICON_CONCURRENCY = 14

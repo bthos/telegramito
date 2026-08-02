@@ -22,6 +22,7 @@ import { VideoFullViewer } from "./VideoFullViewer"
 import { getVideoDurationSeconds, formatVideoDuration } from "../telegram/documentVideoMeta"
 import { getAudioDurationSeconds } from "../telegram/documentAudioMeta"
 import { MediaPlaceholder, resolveMediaPlaceholderType } from "./MediaPlaceholder"
+import { getMediaBoxDimensions, mediaBoxStyleVars } from "../telegram/mediaBoxDimensions"
 import { TgProgressIndeterminate } from "./TgProgressIndeterminate"
 import { VoiceMessageInline, VoiceMessageLoadingRow } from "./VoiceMessageInline"
 import { AudioTrackInline } from "./AudioTrackInline"
@@ -123,6 +124,10 @@ export function MessageMediaView({
   }, [resolved.media])
 
   const wpPreview = useWpPreview(resolved, client, noPreview)
+  const mediaBoxStyle = useMemo(
+    () => mediaBoxStyleVars(getMediaBoxDimensions(resolved)) as React.CSSProperties | undefined,
+    [resolved],
+  )
   const [s, requestLoad, cancelLoad] = useMessageMediaBlob(blobSourceMessage, client, filterGifs)
   const inlineThumb = useInlineThumb(blobSourceMessage.media)
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -308,6 +313,7 @@ export function MessageMediaView({
           footHint={te("chat.mediaTapToLoadHint")}
           sentAtLabel={viewerContext?.sentAtLabel ?? null}
           thumbDataUrl={inlineThumb?.dataUrl}
+          style={mediaBoxStyle}
         />
       )
     }
@@ -400,6 +406,7 @@ export function MessageMediaView({
           thumbDataUrl={inlineThumb?.dataUrl}
           onCancel={cancelLoad}
           cancelLabel={cancelLabel}
+          style={mediaBoxStyle}
         />
       )
     }
@@ -474,7 +481,7 @@ export function MessageMediaView({
     const caption = viewerContext?.caption ?? ""
     const captionAbove = viewerContext?.captionAbove ?? false
     return (
-      <div className="msg-media msg-media--photo" data-media-state="preview">
+      <div className="msg-media msg-media--photo" data-media-state="preview" style={mediaBoxStyle}>
         <button
           type="button"
           className="msg-img-link"

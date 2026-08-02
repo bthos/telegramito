@@ -147,7 +147,18 @@ export function useViewportMessageSlice(opts: {
     if (delta > 0) {
       const prevHk = prevHeadKeyRef.current
       if (prevLen > 0 && hk !== prevHk) {
-        setSliceStart((s) => clamp(s + delta, 0, len - 1))
+        // Prepending shifts every existing index forward by `delta` — keep
+        // pointing at the same mounted rows by shifting the window too. Also
+        // pull `sliceStart` back by an overscan buffer (clamped into the
+        // newly prepended range) so some of what was just prepended stays
+        // mounted: `useChatScroll`'s prepend-compensation repositions
+        // scrollTop using total (estimate-inclusive) `scrollHeight`, which
+        // can land a few rows short of this shifted boundary once estimated
+        // spacer heights are replaced by real measured ones. Landing in a
+        // pure spacer leaves `updateSliceBounds` with no mounted row to
+        // anchor off (it only adjusts relative to rows currently in view),
+        // permanently stranding the viewport instead of self-correcting.
+        setSliceStart((s) => clamp(s + delta - OVERSCAN_ROWS, 0, len - 1))
         setSliceEnd((e) => clamp(e + delta, 0, len - 1))
       } else if (prevLen > 0 && hk === prevHk) {
         setSliceEnd(len - 1)
@@ -275,10 +286,18 @@ export function useViewportMessageSlice(opts: {
       const i = clamp(Math.floor(idx), 0, len - 1)
       const ns = Math.max(0, i - OVERSCAN_ROWS)
       const ne = Math.min(len - 1, i + OVERSCAN_ROWS)
-      setSliceStart((s) => Math.min(s, ns))
-      setSliceEnd((e) => Math.max(e, ne))
+      // When the target lies outside the mounted window, recenter around it
+      // instead of only expanding (avoids keeping a huge stale tail mounted).
+      const outside = i < sliceStart || (sliceEnd >= 0 && i > sliceEnd)
+      if (outside) {
+        setSliceStart(ns)
+        setSliceEnd(ne)
+      } else {
+        setSliceStart((s) => Math.min(s, ns))
+        setSliceEnd((e) => Math.max(e, ne))
+      }
     },
-    [datedList.length, sliceActive],
+    [datedList.length, sliceActive, sliceStart, sliceEnd],
   )
 
   return {
