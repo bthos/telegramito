@@ -1906,9 +1906,11 @@ html[data-theme="dark"] .thread.thread--letters .compose {
 .thread.thread--letters .compose__row--letters .input-compose {
   flex: 1 1 auto;
   min-width: 0;
-  align-self: center;
+  align-self: stretch;
   box-sizing: border-box;
-  min-height: var(--letters-compose-control-height);
+  /* Room for the two-line italic placeholder ("Reply, in your own hand…") on
+     narrow widths — a rows=1 box at control height clips its second line. */
+  min-height: calc(var(--letters-compose-control-height) + 1.15rem);
   background: transparent;
   border: none;
   border-radius: 0;
@@ -3654,6 +3656,11 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   font-size: 0.7rem;
   color: var(--letters-ink-3);
   line-height: 1.3;
+  /* Keep an unbroken caption (e.g. a bare t.me URL) inside the postcard. */
+  max-width: 100%;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
