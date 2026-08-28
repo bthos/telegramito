@@ -1,9 +1,9 @@
 import type { MouseEvent, ReactNode } from "react"
 import { useEffect } from "react"
 
-import { Api } from "telegram"
+import { Api } from "teleproto"
 
-import type { TelegramClient } from "telegram"
+import type { TelegramClient } from "teleproto"
 
 import { useTranslation } from "react-i18next"
 

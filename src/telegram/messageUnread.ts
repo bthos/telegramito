@@ -1,5 +1,5 @@
-import { Api } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import { Api } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 
 function dialogRaw(d: Dialog): Api.Dialog | undefined {
   const dr = (d as unknown as { dialog?: Api.Dialog }).dialog

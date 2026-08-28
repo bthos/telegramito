@@ -12,23 +12,23 @@ describe("messageMediaPeerLabel", () => {
 
   it("labels PeerUser", () => {
     expect(
-      messageMediaPeerLabel({ className: "PeerUser", userId: BigInt(42) } as unknown as import("telegram").Api.PeerUser),
+      messageMediaPeerLabel({ className: "PeerUser", userId: BigInt(42) } as unknown as import("teleproto").Api.PeerUser),
     ).toBe("user:42")
   })
 
   it("labels PeerChannel", () => {
     expect(
-      messageMediaPeerLabel({ className: "PeerChannel", channelId: BigInt(7) } as unknown as import("telegram").Api.PeerChannel),
+      messageMediaPeerLabel({ className: "PeerChannel", channelId: BigInt(7) } as unknown as import("teleproto").Api.PeerChannel),
     ).toBe("channel:7")
   })
 
   it("labels PeerChat", () => {
     expect(
-      messageMediaPeerLabel({ className: "PeerChat", chatId: BigInt(3) } as unknown as import("telegram").Api.PeerChat),
+      messageMediaPeerLabel({ className: "PeerChat", chatId: BigInt(3) } as unknown as import("teleproto").Api.PeerChat),
     ).toBe("chat:3")
   })
 
   it("returns ? for unknown peer class", () => {
-    expect(messageMediaPeerLabel({ className: "PeerSecret" } as unknown as import("telegram").Api.TypePeer)).toBe("?")
+    expect(messageMediaPeerLabel({ className: "PeerSecret" } as unknown as import("teleproto").Api.TypePeer)).toBe("?")
   })
 })

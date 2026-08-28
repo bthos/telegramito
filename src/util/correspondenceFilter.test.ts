@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { Api } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import { Api } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import {
   dialogHasDraft,
   dialogIsArchived,

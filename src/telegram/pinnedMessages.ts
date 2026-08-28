@@ -1,8 +1,8 @@
-import { generateRandomBigInt } from "telegram/Helpers"
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
-import type { Entity } from "telegram/define"
-import { getPeerId } from "telegram/Utils"
+import { generateRandomBigInt } from "teleproto/Helpers"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
+import type { Entity } from "teleproto/define"
+import { getPeerId } from "teleproto/Utils"
 import { compareMessagesChronological } from "./messageList"
 import { repairMessageAfterGramJs } from "./messageMediaGramRepair"
 

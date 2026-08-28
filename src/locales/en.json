@@ -37,7 +37,21 @@
     "code": "Login code",
     "password": "Two-step password (if enabled)",
     "signIn": "Sign in",
-    "sending": "Connecting and requesting a login code…"
+    "sending": "Connecting and requesting a login code…",
+    "emailHelp": "Telegram needs an email to continue signing in.",
+    "email": "Email",
+    "emailContinue": "Continue",
+    "emailCodeHelp": "Enter the code Telegram sent to your email (or paste the verification token).",
+    "emailCode": "Email code",
+    "emailVerify": "Verify",
+    "captchaTitle": "Security check required",
+    "captchaBody": "Telegram asked for a security check that Telegramito cannot complete in the browser. Finish signing in with the official Telegram app or web.telegram.org on this account, then return here. Existing saved sessions are unaffected.",
+    "captchaDismiss": "Understood",
+    "captchaHint": "Captcha challenges are rare; they usually appear on new or suspicious sign-ins.",
+    "sessionDead": "This saved session is no longer valid. Sign in again with your phone number.",
+    "floodWait": "Too many attempts. Wait {{seconds}} seconds, then try again.",
+    "accountRestricted": "This account is restricted by Telegram. Try the official Telegram app for details.",
+    "emailRequired": "Telegram requires email verification to continue."
   },
   "chat": {
     "noChat": "Select a chat to read messages",

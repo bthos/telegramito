@@ -1,5 +1,5 @@
 import type { BigInteger } from "big-integer"
-import { Api } from "telegram"
+import { Api } from "teleproto"
 
 export function collectCustomEmojiDocumentIdsFromEntities(
   entities: Api.TypeMessageEntity[] | undefined

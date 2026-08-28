@@ -1,6 +1,6 @@
 /** Day-mail tab badge: count of dialogs with unread inbound today (capped). */
 
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 
 const BADGE_CAP = 14
 

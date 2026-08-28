@@ -12,15 +12,15 @@ describe("mediaNeedsBlobFetch", () => {
 
   it("is true for MessageMediaPhoto", () => {
     expect(
-      mediaNeedsBlobFetch({ className: "MessageMediaPhoto" } as import("telegram").Api.MessageMediaPhoto),
+      mediaNeedsBlobFetch({ className: "MessageMediaPhoto" } as import("teleproto").Api.MessageMediaPhoto),
     ).toBe(true)
   })
 
   it("is true for MessageMediaDocument when doc is provided", () => {
-    const doc = { className: "Document", id: BigInt(1) } as unknown as import("telegram").Api.Document
+    const doc = { className: "Document", id: BigInt(1) } as unknown as import("teleproto").Api.Document
     expect(
       mediaNeedsBlobFetch(
-        { className: "MessageMediaDocument", document: doc } as import("telegram").Api.MessageMediaDocument,
+        { className: "MessageMediaDocument", document: doc } as import("teleproto").Api.MessageMediaDocument,
         doc,
       ),
     ).toBe(true)
@@ -28,16 +28,16 @@ describe("mediaNeedsBlobFetch", () => {
 
   it("is false for MessageMediaDocument without doc", () => {
     expect(
-      mediaNeedsBlobFetch({ className: "MessageMediaDocument" } as import("telegram").Api.MessageMediaDocument, null),
+      mediaNeedsBlobFetch({ className: "MessageMediaDocument" } as import("teleproto").Api.MessageMediaDocument, null),
     ).toBe(false)
   })
 
   it("is false for non-blob media types", () => {
     expect(
-      mediaNeedsBlobFetch({ className: "MessageMediaGeo" } as import("telegram").Api.MessageMediaGeo),
+      mediaNeedsBlobFetch({ className: "MessageMediaGeo" } as import("teleproto").Api.MessageMediaGeo),
     ).toBe(false)
     expect(
-      mediaNeedsBlobFetch({ className: "MessageMediaWebPage" } as import("telegram").Api.MessageMediaWebPage),
+      mediaNeedsBlobFetch({ className: "MessageMediaWebPage" } as import("teleproto").Api.MessageMediaWebPage),
     ).toBe(false)
   })
 })

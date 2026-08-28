@@ -4,7 +4,17 @@
     "target": "es2023",
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
-    "types": ["vite/client"],
+    /**
+     * migrate-teleproto: `"node"` used to arrive incidentally via vendored
+     * GramJS's shipped `.d.ts` files, most of which carry
+     * `/// <reference types="node" />` — that pulled `@types/node`'s ambient
+     * globals (`process`, `Buffer`, `node:fs` etc.) into this whole program,
+     * which several unrelated structural tests (`designSystemRefs.test.ts`,
+     * `styles/cssHygiene.test.ts`, …) rely on for real, deliberate Node use.
+     * teleproto's `.d.ts` files carry no such directive, so this must be
+     * explicit now instead of an accidental side effect of a dependency.
+     */
+    "types": ["vite/client", "node"],
     "skipLibCheck": true,
 
     /* Bundler mode */

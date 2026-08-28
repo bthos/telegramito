@@ -4,7 +4,7 @@
  * Feature: .tlk/features/2026-08-02-media-dimension-reservation/
  */
 import { describe, expect, it } from "vitest"
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import type { ChatDatedItem } from "../ui/chatDatedItem"
 import { estimateChatRowHeight } from "./chatRowHeightEstimate"
 

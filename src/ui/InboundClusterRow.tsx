@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
-import type { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import type { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import type { MessageClusterRole } from "../telegram/messageBubbleGroup"
 import { usePeerName } from "../hooks/usePeerName"
 import { PeerAvatar } from "./PeerAvatar"

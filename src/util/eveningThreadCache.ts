@@ -1,4 +1,4 @@
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 
 /** Session-scoped messages for peers opened this session (Tier 1 evening summary). */
 const threadByPeerKey = new Map<string, Api.Message[]>()

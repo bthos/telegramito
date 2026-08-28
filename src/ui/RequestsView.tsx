@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { useParentalSettings } from "../context/ParentalContext"
 import {
   getPendingRequests,

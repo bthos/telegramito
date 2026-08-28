@@ -1,10 +1,22 @@
 /**
- * Builds GramJS from the git submodule at vendor/gramjs the same way as upstream
- * prepare_dist / npmpublish: tsc, then overlay real TL typings (api.d.ts), static
- * schema files, and package metadata into dist/, then copies dist → vendor/telegram-built.
+ * RETIRED (migrate-teleproto AC-T11) — no longer wired to any npm script.
  *
- * Runs from preinstall before dependencies resolve. Skips if submodule HEAD unchanged
- * and vendor/telegram-built/index.js exists (unless --force).
+ * Built GramJS from the git submodule at vendor/gramjs (tsc, then overlay real
+ * TL typings, static schema files, and package metadata into dist/, then copy
+ * dist → vendor/telegram-built) so `package.json`'s `"telegram": "file:./vendor/telegram-built"`
+ * had something to resolve to. teleproto now ships as a plain npm dependency
+ * (no vendor/fork packaging needed — confirmed by the AC-T1 browser spike),
+ * so this build step has nothing left to feed. Previously ran from
+ * `preinstall`; also had the accidental side effect of overwriting
+ * `.telegram-layer.expected` from GramJS's LAYER on every `npm install`,
+ * which would have silently fought `check-telegram-layer.mjs`'s own teleproto
+ * LAYER check the next time the two diverge — a correctness reason to remove
+ * the preinstall wiring now, not just a cleanup.
+ *
+ * `vendor/gramjs` (the submodule) itself stays per `deferred.md` DD-002 /
+ * spec AC-T15 ("keep one stable release after cutover") — only this build
+ * script's wiring is retired. Kept here, unwired, as a reference for however
+ * long the submodule survives.
  */
 import { execSync, spawnSync } from "node:child_process"
 import fs from "node:fs"

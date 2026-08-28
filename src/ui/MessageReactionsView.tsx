@@ -1,6 +1,6 @@
 import type { BigInteger } from "big-integer"
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import { useCallback, useEffect, useState, type MouseEvent } from "react"
 import { useTranslation } from "react-i18next"
 import {

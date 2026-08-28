@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 
 export type LettersRailDigestProps = {
   dialogs: Dialog[]

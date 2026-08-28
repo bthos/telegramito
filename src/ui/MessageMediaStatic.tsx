@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import type { ReactNode } from "react"
 import { mapsUrlFromGeoPoint } from "../telegram/messageMediaUnwrap"
 import { asTwe } from "../telegram/twe"

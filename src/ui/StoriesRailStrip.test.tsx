@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen } from "@testing-library/react"
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { StoriesRailStrip } from "./StoriesRailStrip"
 import { useStoriesFeed } from "../hooks/useStoriesFeed"
 import type { StoryPeerEntry } from "../telegram/storiesFeed"

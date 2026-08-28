@@ -1,5 +1,5 @@
-import { Api } from "telegram"
-import { getPeerId } from "telegram/Utils"
+import { Api } from "teleproto"
+import { getPeerId } from "teleproto/Utils"
 
 /** One SearchGlobal hit ready for Passages UI. */
 export type GlobalSearchHit = {

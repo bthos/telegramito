@@ -355,11 +355,17 @@ select.input {
   visibility: hidden;
   overflow: hidden;
 }
-/* Flow transcript (Telegram Web–style): defer layout of off-screen rows where supported */
+/*
+ * No content-visibility on transcript rows: the viewport slice already evicts
+ * far rows, and `content-visibility: auto` with a flat 100px intrinsic size
+ * made off-screen rows report 100px to the height cache and re-layout to their
+ * real size on approach — with `overflow-anchor: none` every such change
+ * scrolled the visible content by the delta (the "chat drifts on its own" bug).
+ * Paint containment alone is safe: it never changes geometry.
+ */
 .msg-list > .msg-gutter,
 .msg-list > .msg-date {
-  content-visibility: auto;
-  contain-intrinsic-size: 100px;
+  contain: paint;
 }
 .msg-row {
   padding: 0.2rem 0.15rem 0.4rem 0.15rem;
@@ -1630,6 +1636,22 @@ button.switch:active .switch__thumb {
 .jump-date-cal__link:not(:disabled):hover {
   color: inherit;
   background: rgba(255, 255, 255, 0.06);
+}
+/* Overlay pill above the transcript — out of flow so appearing/disappearing
+   while a history page loads never shifts the messages under it. */
+.msg-load-overlay {
+  position: absolute;
+  top: 0.45rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 7;
+  pointer-events: none;
+  font-size: 0.7rem;
+  color: var(--muted);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.6rem;
 }
 .msg-load-hint {
   list-style: none;

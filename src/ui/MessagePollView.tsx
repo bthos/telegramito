@@ -1,5 +1,5 @@
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import { useCallback, useEffect, useId, useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import { isSameOptionBytes } from "../telegram/pollOptions"
 import {

@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 
 /**
  * AC12 — wraps a story's media/id/date/peer into an `Api.Message`-shaped

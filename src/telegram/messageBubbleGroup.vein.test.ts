@@ -6,7 +6,7 @@
  * implementation can be verified without rendering the full component.
  */
 import bigInt from "big-integer"
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import { describe, expect, it } from "vitest"
 import { computeMessageClusterRoles, type MessageClusterRole } from "./messageBubbleGroup"
 

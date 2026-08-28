@@ -1,4 +1,4 @@
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { getReplyToPreviewText } from "../telegram/dialogPreview"
 
 type TChat = (k: string, o?: Record<string, string | number | undefined>) => string

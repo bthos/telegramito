@@ -3,9 +3,9 @@
  * Sparse-gap / media-placeholder algorithms: `src/telegram/messageHistoryReconcile.test.ts`.
  */
 import { renderHook, waitFor } from "@testing-library/react"
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { useChatMessages } from "./useChatMessages"
 

@@ -1,5 +1,5 @@
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import { withTransientRetry } from "./invokeWithTransientRetry"
 
 /** Mute until this Unix time (year 2038) — same pattern as common Telegram clients. */
@@ -16,7 +16,10 @@ export async function getPeerMuteUntil(
   entity: PeerEntity,
 ): Promise<number> {
   const inputPeer = await client.getInputEntity(entity as never)
-  const peer = new Api.InputNotifyPeer({ peer: inputPeer as Api.TypeInputPeer })
+  // teleproto's generated .d.ts types `GetNotifySettings.peer` as `EntityLike`,
+  // but the wire schema is still `InputNotifyPeer` (api-definitions.js), same
+  // as GramJS — a teleproto .d.ts generation bug, not a real API change.
+  const peer = new Api.InputNotifyPeer({ peer: inputPeer as Api.TypeInputPeer }) as unknown as Api.TypeEntityLike
   const s = await withTransientRetry(client, () =>
     client.invoke(new Api.account.GetNotifySettings({ peer })),
   )
@@ -36,7 +39,9 @@ export async function setPeerMuted(
   await withTransientRetry(client, () =>
     client.invoke(
       new Api.account.UpdateNotifySettings({
-        peer: new Api.InputNotifyPeer({ peer: inputPeer as Api.TypeInputPeer }),
+        // Same teleproto .d.ts generation bug as getPeerMuteUntil above —
+        // wire schema (account.UpdateNotifySettings.peer) is InputNotifyPeer.
+        peer: new Api.InputNotifyPeer({ peer: inputPeer as Api.TypeInputPeer }) as unknown as Api.TypeEntityLike,
         settings: new Api.InputPeerNotifySettings({ muteUntil }),
       }),
     ),

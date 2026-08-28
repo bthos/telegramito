@@ -1,5 +1,5 @@
-import { sleep } from "telegram/Helpers"
-import type { TelegramClient } from "telegram"
+import { sleep } from "teleproto/Helpers"
+import type { TelegramClient } from "teleproto"
 
 /**
  * Heuristic for common GramJS/transport errors during reconnect, socket close,

@@ -1,20 +1,22 @@
 # Migrating from GramJS (vendor) to teleproto
 
-Telegramito historically ran on a vendored fork of GramJS (`vendor/gramjs`, published
-as `vendor/telegram-built`). The upstream GramJS project is archived; **teleproto** is
-its maintained, GramJS-compatible successor — typed errors, auth email / reCaptcha hooks,
-and ongoing TL layer updates (currently npm `1.228.x`).
+Telegramito ran on a vendored fork of GramJS (`vendor/gramjs`, published as
+`vendor/telegram-built`) until this migration. The upstream GramJS project is
+archived; **teleproto** is its maintained, GramJS-compatible successor — typed
+errors, auth email / reCaptcha hooks, and ongoing TL layer updates. Telegramito
+now runs on the npm `teleproto` package as its sole MTProto client.
 
-This guide covers what developers need to change and what existing users will notice.
+This guide documents what changed, as shipped, for developers working in this
+codebase and for users of the app.
 
 Reference: [Migrating from GramJS — teleproto docs](https://docs.teleproto.dev/migrating-from-gramjs)
 
 ---
 
-## For users: what changes at login
+## For users: what changed at login
 
-Existing users **stay logged in** after an app update — your stored session is carried
-over automatically (see [Session continuity](#session-continuity)).
+Existing users **stayed logged in** across the app update — stored sessions
+carried over automatically (see [Session continuity](#session-continuity)).
 
 If you sign in fresh on a new device or after logging out, Telegram may now ask for:
 
@@ -32,57 +34,59 @@ code, and two-factor password flows are unchanged.
 
 ---
 
-## Developer migration
+## What shipped
 
-### 1. Swap the package
+The sections below describe the migrated codebase as it stands, not a walkthrough to
+follow — useful mainly as a reference if a similar dependency swap comes up again
+elsewhere in the project.
 
-```bash
-# Remove the vendored dep
-npm uninstall telegram
+### 1. Runtime dependency
 
-# Install teleproto (pin to the layer you validated)
-npm install teleproto@^1.228.0
-```
-
-In `package.json`, the entry changes from:
-
-```jsonc
-"telegram": "file:./vendor/telegram-built"
-```
-
-to:
-
-```jsonc
-"teleproto": "^1.228.0"
-```
-
-The `preinstall` hook (`scripts/prepare-vendor-telegram.mjs`) and the
-`rebuild:telegram` / `build:telegram` scripts are no longer needed once
-the npm package is the sole runtime source. Retire or delete them after
-the migration is stable (see [Tooling cleanup](#tooling-cleanup)).
-
----
-
-### 2. Rewrite imports
-
-Every `"telegram"` import becomes `"teleproto"`. All subpaths follow the same
-pattern — find-and-replace is safe:
+`package.json`'s dependency entry changed from the vendored file reference to the npm
+package:
 
 ```diff
--import { TelegramClient } from "telegram";
-+import { TelegramClient } from "teleproto";
-
--import { StringSession } from "telegram/sessions";
-+import { StringSession } from "teleproto/sessions";
-
--import { NewMessage } from "telegram/events";
-+import { NewMessage } from "teleproto/events";
-
--import { Api } from "telegram/tl";
-+import { Api } from "teleproto/tl";
+-"telegram": "file:./vendor/telegram-built"
++"teleproto": "^1.228.5"
 ```
 
-Common subpaths in use today:
+`teleproto` is now the only MTProto client Telegramito ships. `vendor/gramjs` (the git
+submodule) is intentionally still present — see [Tooling cleanup](#tooling-cleanup).
+
+### 2. Browser-compatibility shims
+
+Unlike the vendored GramJS fork — which shipped a `browser` field and isomorphic
+dependency choices tailored to this app — plain npm `teleproto` assumes a Node runtime
+in a few places. Three fixes cover the gap:
+
+- **`src/zlib-shim.ts`** — teleproto's `GZIPPacked` decompresses gzip-wrapped MTProto
+  responses via Node's `zlib.unzipSync`, which has no browser implementation. The shim
+  re-implements `unzipSync` on top of `pako` (the same isomorphic package GramJS's own
+  fork used for this), and is aliased over both `zlib` and `node:zlib` in
+  `vite.config.ts`'s `resolve.alias`.
+- **`src/node-localstorage-shim.ts`** — teleproto's `sessions` barrel eagerly
+  `require()`s `node-localstorage` (fs-backed, Node-only) as part of loading
+  `StoreSession`, even though Telegramito only ever constructs `StringSession`. Left
+  unshimmed, the eager require throws at app boot before any session is constructed.
+  The shim's `LocalStorage` class only throws if actually instantiated — `StoreSession`
+  stays genuinely unused dead code, so a future accidental real usage fails loudly
+  instead of silently no-op'ing. Aliased over `node-localstorage` in `vite.config.ts`.
+- **`networkSocket` wiring** — teleproto's `TelegramClient` defaults to
+  `PromisedNetSockets` (Node `net.Socket`) unconditionally; unlike GramJS, it does not
+  auto-detect browser vs. Node. `src/telegram/clientFactory.ts` exports a shared
+  `browserClientOptions = { networkSocket: PromisedWebSockets }` object that both
+  `TelegramClient` construction sites — `clientFactory.ts`'s
+  `createClientFromStringSession` and `TelegramContext.tsx`'s login flow — spread into
+  their options.
+
+A fourth fix ships as a `patch-package` patch rather than app code — see
+[Patch-package fix](#patch-package-fix) below.
+
+### 3. Import rewrite
+
+All `"telegram"` / `"telegram/<subpath>"` imports (~170 import statements, plus 23
+inline `import("telegram")` type expressions) were rewritten to their `teleproto`
+equivalents:
 
 | Old import | New import |
 |---|---|
@@ -97,37 +101,29 @@ Common subpaths in use today:
 | `telegram/define` | `teleproto/define` |
 | `telegram/client/downloads` | `teleproto/client/downloads` |
 
-After the bulk rename, run `tsc --noEmit`. Newer TL layers tighten some request and
-response types — fix what the compiler flags before running the code.
+Zero `telegram`-specifier imports remain in `src/` (the one string match left is a
+doc-comment self-reference inside the AC-T3 guard test, `noGramjsImports.test.ts`, not
+a real import).
 
----
+One knock-on fix was needed outside the import rewrite itself: `tsconfig.app.json`
+now sets `"types": ["vite/client", "node"]` explicitly. Vendored GramJS's shipped
+`.d.ts` files carried `/// <reference types="node" />`, which pulled in `@types/node`'s
+ambient globals (`process`, `Buffer`, `node:fs`, …) as a side effect for the whole
+program — several structural tests rely on those globals directly. teleproto's `.d.ts`
+files carry no such reference, so the `node` types entry is now explicit rather than
+incidental.
 
-### 3. Replace `sendReadAcknowledge` with `markAsRead`
+### 4. Read receipts — a non-event
 
-`sendReadAcknowledge` is removed in teleproto. The replacement is `markAsRead` with a
-different signature:
+teleproto renames GramJS's `sendReadAcknowledge` to `markAsRead` with a different
+signature. Neither name occurs anywhere in `src/`: Telegramito's read-receipt path
+(`markChatRead.ts`) already called `messages.ReadHistory` / `messages.ReadDiscussion`
+directly via `invoke`, so this rename required no code changes at all.
 
-```diff
--// GramJS
--await client.sendReadAcknowledge(chat, { maxId: 123 });
+### 5. Auth challenge callbacks
 
-+// teleproto — single message
-+await client.markAsRead(chat, 123);
-
-+// teleproto — mark whole chat read + clear mentions
-+await client.markAsRead(chat, undefined, { clearMentions: true });
-```
-
-Telegramito's `markChatRead.ts` already calls `messages.ReadHistory` /
-`ReadDiscussion` via `invoke` for the primary read path. Audit the codebase for any
-remaining `sendReadAcknowledge` callsites and rewrite them.
-
----
-
-### 4. Wire auth challenge callbacks
-
-`client.start` gains three optional callbacks for the challenges Telegram can now
-issue. Supply them in `clientFactory.ts` / `TelegramContext.tsx`:
+`client.start` gained three optional callbacks for challenges Telegram can issue, wired
+into `TelegramContext.tsx`'s login flow and `LoginView.tsx`'s rendering:
 
 ```typescript
 await client.start({
@@ -144,113 +140,91 @@ await client.start({
 });
 ```
 
-All three are optional — they are never invoked on flows that don't require them.
-Existing phone / SMS / 2FA login paths are unchanged.
+All three are optional and are only invoked on flows that require them. Existing
+phone / SMS / 2FA login paths are unchanged.
 
 #### reCaptcha in a static PWA (v1 decision: honest block)
 
 `reCaptchaCallback` must return a solved token. In a static browser-only PWA there is
 no trusted WebView host or server side to proxy the solve.
 
-**v1 decision (D8, closed):** reject the callback and set `loginStep →
-"captchaBlocked"`. Abort the `client.start` promise cleanly — do not hang. Show the
-user a blocking screen with copy along the lines of:
+**Shipped (D8):** `reCaptchaCallback` sets `loginStep → "captchaBlocked"` and throws a
+sentinel to abort `client.start` cleanly. Because `TelegramContext.tsx`'s catch around
+`c.start` would otherwise unconditionally overwrite `loginStep` back to `"idle"` and
+show a generic error banner (a failure mode confirmed during the code QA pass, since
+teleproto's `reCaptchaCallback` rejection path has no special handling), the sentinel is
+carved out ahead of the generic error handler so the block screen actually renders and
+sticks.
+
+`LoginView.tsx` renders the `captchaBlocked` step with the app's `login.captchaTitle` /
+`login.captchaBody` copy:
 
 > *Telegram asked for a security check that Telegramito cannot complete in the browser.
 > Finish signing in with the official Telegram app or web.telegram.org on this account,
 > then return here. Existing saved sessions are unaffected.*
 
-A single "Understood" button returns to `idle` so the user can try again after
-completing sign-in externally. No in-app captcha widget is planned for v1. Wire the
-hook and `loginStep` so a future widget can replace the block screen without reshaping
+A single "Understood" button (`login.captchaDismiss`) returns to `idle` so the user can
+try again after completing sign-in externally. No in-app captcha widget shipped in v1;
+the hook stays wired so a future widget can replace the block screen without reshaping
 the state machine.
 
----
+### 6. Typed errors
 
-### 5. Adopt typed errors
+teleproto generates a class per Telegram RPC error. Auth / connection error handling in
+`TelegramContext.tsx` uses `instanceof` checks against the actually-installed classes:
 
-teleproto generates a class per Telegram RPC error. Replace string comparisons with
-`instanceof` checks:
-
-```diff
--if (e.errorMessage === "SESSION_REVOKED") { ... }
-+if (e instanceof errors.SessionRevokedError) { ... }
+```typescript
+if (e instanceof errors.SessionRevokedError) { ... }
 ```
-
-Priority classes to handle in auth / connection paths:
 
 | Class | When |
 |---|---|
 | `errors.SessionRevokedError` | Saved session was killed by the user or Telegram |
-| `errors.AuthKeyUnregisteredError` | Auth key no longer valid — treat as revoked |
+| `errors.AuthKeyUnregisteredError` | Auth key no longer valid — treated as revoked |
 | `errors.FrozenMethodInvalidError` | Account restricted; method blocked |
 | `errors.FrozenParticipantMissingError` | Target account is frozen |
 | `errors.EmailUnconfirmedError` | Sign-in requires email verification |
 | `errors.SlowModeWaitError` | Chat has slow mode; `.seconds` gives the wait |
 | `errors.FloodWaitError` | Rate-limited; `.seconds` gives the wait |
 
-No requirement to rewrite every generic `e instanceof Error ? e.message` in the app —
-focus on paths that already surface auth / connect failures to the user.
+All seven class names are confirmed against `node_modules/teleproto/errors/index.d.ts`
+and covered by `src/context/TelegramContext.errors.test.ts`.
 
----
+### 7. Layer gate
 
-### 6. Layer gate
+`scripts/check-telegram-layer.mjs` compares `.telegram-layer.expected` (currently `228`)
+against the installed MTProto client's `LAYER` constant. It now reads
+`teleproto/tl/runtime/registry.js` first, falling back to the old vendored-`telegram`
+paths only for the duration of the cutover window (removed once `vendor/gramjs` itself
+is removed, DD-002). `src/version.ts`'s `TELEGRAM_LAYER_EXPECTED` matches.
 
-The existing `scripts/check-telegram-layer.mjs` compares `.telegram-layer.expected`
-against the installed package's `LAYER` constant. After the swap:
+### 8. Vite config
 
-- Update the check script to read `LAYER` from the `teleproto` package instead of
-  `telegram`.
-- Update `src/version.ts` `TELEGRAM_LAYER_EXPECTED` to match teleproto's shipped layer.
-- Update `.telegram-layer.expected` to the pinned teleproto layer (≥ 228 with current
-  npm).
-
----
-
-### 7. Vite config
-
-Update `vite.config.ts` to reference `teleproto` instead of `telegram`:
-
-```diff
- optimizeDeps: {
-   include: [
--    "telegram",
--    "telegram/sessions",
--    "telegram/events",
-+    "teleproto",
-+    "teleproto/sessions",
-+    "teleproto/events",
-     // add other subpaths used at import time
-   ],
- },
- resolve: {
-   dedupe: [
--    "telegram",
-+    "teleproto",
-   ],
- },
-```
+`vite.config.ts` references `teleproto` throughout — `resolve.dedupe: ["teleproto"]`
+(one physical copy, one `tlobjects` map) and an `optimizeDeps.include` list covering
+`teleproto`, `teleproto/sessions`, `teleproto/events`, `teleproto/Helpers`,
+`teleproto/Utils`, `teleproto/client/downloads`, `teleproto/tl/custom/dialog`, and
+`teleproto/extensions` (needed for `PromisedWebSockets`, see
+[Browser-compatibility shims](#2-browser-compatibility-shims) above).
 
 #### Fork patches — verify before removing
 
-The vendor fork carries several Vite / TL patches that stock teleproto may not include:
+The vendor fork carried several Vite / TL patches that stock teleproto might not
+include. Status after this migration:
 
 | Patch | What it fixed | Status |
 |---|---|---|
-| Vite shared TL object map (`globalThis`) | Duplicate `tlobjects`, constructor-not-found in dev/prod | **Must verify** on teleproto npm before removing |
-| `DialogCommunity` safe skip in `getDialogs` | App crashed on community dialogs | **Must verify** |
-| LAYER 228 `CustomMessage` / `richMessage` fields | Custom message fields not in base GramJS | **Must verify** — may now be upstream |
-| Uncommitted L228 work in `vendor/gramjs` | Any local-only patches | Audit before deleting submodule |
+| Vite shared TL object map (`globalThis`) | Duplicate `tlobjects`, constructor-not-found in dev/prod | Addressed via `resolve.dedupe: ["teleproto"]` + `optimizeDeps.include` (§8 above) |
+| `DialogCommunity` safe skip in `getDialogs` | App crashed on community dialogs | **Not independently re-verified against teleproto this pass** — no app-level special-casing was needed either way (no `DialogCommunity` reference exists in `src/`), but that alone doesn't confirm teleproto's own dialog handling is safe on this case, since the original fix was library-level, not app-level. Needs a dedicated check before this row is closed. |
+| LAYER 228 `CustomMessage` / `richMessage` fields | Custom message fields not in base GramJS | **Partially addressed, not fully verified.** `patches/teleproto+1.228.5.patch` adds a missing `invertMedia` field to teleproto's own `CustomMessage` typings (confirmed present in the raw TL schema but absent from teleproto's `.d.ts`). teleproto's package also now ships its own `richMessage.js` / `tl/custom/message.js` natively, which didn't exist in GramJS. Whether every field the fork patch covered has an equivalent in teleproto is not confirmed. |
+| Uncommitted L228 work in `vendor/gramjs` | Any local-only patches | Not audited this pass — submodule is still present (DD-002), audit before deleting it |
 
-Run a browser spike (AC-T1 in the spec) — connect, `invoke`, deserialize one `Message`
-in the Vite bundle — to confirm the above before the full import rewrite.
+### 9. Optional: download pool
 
----
-
-### 8. Optional: download pool
-
-teleproto exposes `maxConcurrentDownloads` and `downloadPool` on `TelegramClientParams`.
-Add these to `clientFactory.ts` to cap parallel media fetches in the browser:
+Not implemented this pass (tracked as AC-T12). teleproto exposes
+`maxConcurrentDownloads` and `downloadPool` on `TelegramClientParams`; neither is
+currently passed in `clientFactory.ts`. If a future pass wants to cap parallel media
+fetches in the browser:
 
 ```typescript
 const client = new TelegramClient(session, API_ID, API_HASH, {
@@ -266,7 +240,9 @@ const client = new TelegramClient(session, API_ID, API_HASH, {
 ## Session continuity
 
 teleproto's `StringSession` reads legacy 352-character GramJS / Telethon strings
-directly — no data migration needed:
+directly — no data migration was needed. Confirmed byte-for-byte in
+`src/telegram/stringSessionCompat.test.ts` against both packages' `StringSession`
+source, with a synthetic (non-real) session fixture:
 
 ```typescript
 import { StringSession } from "teleproto/sessions";
@@ -280,35 +256,60 @@ formats are read on load by both library generations, so a rollback would also w
 
 ---
 
-## Tooling cleanup (AC-T11)
+## Patch-package fix
 
-Once the npm package is the sole runtime source and the migration is stable:
+`patches/teleproto+1.228.5.patch` (applied automatically via `package.json`'s
+`postinstall: patch-package` hook) carries two focused fixes to teleproto `1.228.5`,
+both confirmed as real upstream defects rather than app-side workarounds:
 
-| Artefact | Action |
-|---|---|
-| `scripts/prepare-vendor-telegram.mjs` | Delete |
-| `scripts/rebuild:telegram` npm script | Delete from `package.json` |
-| `scripts/build:telegram` npm script | Delete from `package.json` |
-| `package.json` `preinstall` hook | Delete (ran the prepare script) |
-| `vendor/gramjs` submodule | Keep until one stable release post-cutover (OQ-T3), then remove with `git submodule deinit` |
-| `vendor/telegram-built` | Gitignored build output — gone once the submodule is removed |
+1. **`Helpers.js` `sleep()`** — teleproto called `setTimeout(...).unref()`
+   unconditionally when its internal `isUnref` flag is set. Browser `setTimeout`
+   returns a number, not a Node `Timeout`, and numbers have no `.unref()` — this threw
+   in the browser on every use. GramJS gated the same call behind `platform.isNode`;
+   the patch replaces that with a `typeof timer.unref === "function"` feature-detect.
+2. **`tl/custom/message.d.ts`** — `CustomMessage`'s declared fields omitted
+   `invertMedia`, even though the raw `Message` TL constructor still carries it and
+   teleproto's runtime field-assignment loop still sets it — a types-only omission.
+   Fixed by adding the same declaration GramJS's own typings carried.
 
-Update the contributing / setup section of the README once the submodule is gone so
-new developers don't look for a build step that no longer exists.
+See `patches/README.md` for the removal plan (drop once these land in an upstream
+teleproto release).
 
 ---
 
-## Checklist summary
+## Tooling cleanup
 
-- [ ] Browser spike passes (connect + invoke + deserialize in Vite bundle)
-- [ ] `npm uninstall telegram && npm install teleproto@^1.228.0`
-- [ ] All `from "telegram"` / `from "telegram/…"` rewritten to `teleproto` in `src/` and tests
-- [ ] `sendReadAcknowledge` callsites replaced with `markAsRead`
-- [ ] Auth challenge callbacks wired (`emailAddress`, `emailVerification`, `reCaptchaCallback`)
-- [ ] Typed error handling in auth / connect paths
-- [ ] Layer gate updated (script + `.telegram-layer.expected` + `src/version.ts`)
-- [ ] Vite `optimizeDeps` / `dedupe` updated
-- [ ] Fork patches verified or re-applied on teleproto
-- [ ] `tsc -b` and `npm run build` green
-- [ ] Existing StringSession reconnects without re-login (smoke test)
-- [ ] Tooling scripts retired (after stable)
+Done, not pending:
+
+| Artefact | What happened |
+|---|---|
+| `package.json` `preinstall` hook | Removed |
+| `rebuild:telegram` / `build:telegram` npm scripts | Removed from `package.json` |
+| `scripts/prepare-vendor-telegram.mjs` | **Unwired, not deleted.** The file is kept on disk, marked `RETIRED` in its own header comment, as a reference for as long as `vendor/gramjs` survives. It runs from no npm script or hook. |
+| `scripts/check-telegram-layer.mjs` | Updated, not removed — reads teleproto's `LAYER` first (see [Layer gate](#7-layer-gate)) |
+
+Removing the `preinstall` hook also fixed a real bug: the old hook silently overwrote
+`.telegram-layer.expected` from GramJS's `LAYER` on every `npm install`, which could
+fight `check-telegram-layer.mjs`'s teleproto-based check the next time the two layers
+diverged.
+
+`vendor/gramjs` (the submodule) and `vendor/telegram-built` (its gitignored build
+output) are **intentionally still present**. Per `deferred.md` DD-002, the submodule is
+kept for one stable release after this cutover before removal (AC-T15) — it is not yet
+due. Don't delete it as part of unrelated cleanup.
+
+---
+
+## Deferred work
+
+Tracked separately, not part of this migration's build:
+
+- **AC-T12 — download pool.** See [Optional: download pool](#9-optional-download-pool) above.
+- **AC-T13 — layer-gap reconciliation (DD-003).** Reconciling the four open L228 gap
+  feature specs (rich-messages-render, communities-dialogs, ephemeral-messages,
+  join-invite-chat-result) against teleproto's actually-shipped schema.
+- **AC-T14 — `client.api` facade (DD-001).** Mass-adopting teleproto's facade over the
+  current `invoke(new Api...)` call pattern is optional incremental follow-up.
+- **AC-T15 — remove `vendor/gramjs` (DD-002).** Gated on one stable release post-cutover.
+
+Full details and trigger conditions: `.tlk/features/2026-08-02-migrate-teleproto/deferred.md`.

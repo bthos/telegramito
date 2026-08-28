@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { MessageMediaTranslateFn } from "./messageMediaI18n"
 import { ModalChrome } from "./ModalChrome"
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 
 function MapHero() {
   return (

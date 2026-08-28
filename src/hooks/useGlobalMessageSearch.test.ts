@@ -1,10 +1,10 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import { act, renderHook } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { useGlobalMessageSearch } from "./useGlobalMessageSearch"
 
-vi.mock("telegram/Utils", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("telegram/Utils")>()
+vi.mock("teleproto/Utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("teleproto/Utils")>()
   return {
     ...actual,
     getPeerId: (peer: unknown) => {

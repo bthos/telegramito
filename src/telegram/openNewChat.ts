@@ -1,8 +1,8 @@
-import { Api } from "telegram"
-import { Dialog } from "telegram/tl/custom/dialog"
-import type { TelegramClient } from "telegram"
-import { getInputPeer, getPeerId } from "telegram/Utils"
-import type { Dialog as DialogType } from "telegram/tl/custom/dialog"
+import { Api } from "teleproto"
+import { Dialog } from "teleproto/tl/custom/dialog"
+import type { TelegramClient } from "teleproto"
+import { getInputPeer, getPeerId } from "teleproto/Utils"
+import type { Dialog as DialogType } from "teleproto/tl/custom/dialog"
 import type { NewChatRecipient } from "./newChatRecipients"
 import { withTransientRetry } from "./invokeWithTransientRetry"
 import { getPeerInfo } from "./dialogUtils"
@@ -73,7 +73,12 @@ export async function fetchDialogForEntity(
   const res = (await withTransientRetry(client, () =>
     client.invoke(
       new Api.messages.GetPeerDialogs({
-        peers: [new Api.InputDialogPeer({ peer: inputPeer })],
+        // teleproto's generated .d.ts types `peers` as `Api.TypeEntityLike[]`,
+        // but the actual MTProto wire schema (api-definitions.js: GetPeerDialogs
+        // .argsConfig.peers.type) is still `InputDialogPeer`, unchanged from
+        // GramJS — a teleproto .d.ts generation bug, not a real API change.
+        // Keep constructing the real wrapper; cast past the wrong type.
+        peers: [new Api.InputDialogPeer({ peer: inputPeer })] as unknown as Api.TypeEntityLike[],
       }),
     ),
   )) as Api.messages.PeerDialogs

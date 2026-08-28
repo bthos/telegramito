@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { TelegramClient } from "telegram"
+import type { TelegramClient } from "teleproto"
 import type { AppMode } from "../parental/types"
 import { isPeerOmittedInChildListForDeny } from "../parental/policy"
 import { getAllStories, orderStoryEntries, type StoryPeerEntry } from "../telegram/storiesFeed"

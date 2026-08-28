@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
-import type { TelegramClient } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { TelegramClient } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { useGlobalMessageSearch } from "../hooks/useGlobalMessageSearch"
 import { isPeerOmittedInChildListForDeny } from "../parental/policy"
 import type { AppMode } from "../parental/types"

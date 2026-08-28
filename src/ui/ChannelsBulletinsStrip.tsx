@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next"
-import type { TelegramClient } from "telegram"
+import type { TelegramClient } from "teleproto"
 import { formatDialogListTime } from "../util/timeFormat"
 import { PeerAvatar } from "./PeerAvatar"
 

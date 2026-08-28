@@ -5,8 +5,8 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import { useTranslation } from "react-i18next"
 import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { useSheetDragDismiss } from "../hooks/useSheetDragDismiss"

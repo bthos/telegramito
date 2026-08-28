@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import { repairMessageAfterGramJs } from "../telegram/messageMediaGramRepair"
 
 type PeerEntity = Api.User | Api.Chat | Api.Channel

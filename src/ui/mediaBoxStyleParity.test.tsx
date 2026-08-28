@@ -6,7 +6,7 @@
  * forgot the loaded branch" — the single most likely implementation mistake.
  * Feature: .tlk/features/2026-08-02-media-dimension-reservation/
  */
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { render } from "@testing-library/react"
 import { MessageMediaView } from "./MessageMediaView"

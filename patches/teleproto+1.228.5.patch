@@ -1,0 +1,45 @@
+diff --git a/node_modules/teleproto/Helpers.js b/node_modules/teleproto/Helpers.js
+index 57716c1..6d20af4 100644
+--- a/node_modules/teleproto/Helpers.js
++++ b/node_modules/teleproto/Helpers.js
+@@ -390,7 +390,16 @@ function getRandomInt(min, max) {
+  * @param isUnref make a timer unref'ed
+  * @returns {Promise}
+  */
+-const sleep = (ms, isUnref = false) => new Promise((resolve) => isUnref ? setTimeout(resolve, ms).unref() : setTimeout(resolve, ms));
++const sleep = (ms, isUnref = false) => new Promise((resolve) => {
++    const timer = setTimeout(resolve, ms);
++    // Browser `setTimeout` returns a number, not a Node `Timeout` — unlike
++    // GramJS (which gates this behind `platform.isNode`), teleproto calls
++    // `.unref()` unconditionally. Feature-detect instead of crashing.
++    // patch-package: teleproto+1.228.5.patch
++    if (isUnref && typeof timer.unref === "function") {
++        timer.unref();
++    }
++});
+ exports.sleep = sleep;
+ /**
+  * Helper to export two buffers of same length
+diff --git a/node_modules/teleproto/tl/custom/message.d.ts b/node_modules/teleproto/tl/custom/message.d.ts
+index 2687127..212b693 100644
+--- a/node_modules/teleproto/tl/custom/message.d.ts
++++ b/node_modules/teleproto/tl/custom/message.d.ts
+@@ -40,6 +40,7 @@ interface MessageBaseInterface {
+     action?: any;
+     reactions?: any;
+     noforwards?: any;
++    invertMedia?: any;
+     _entities?: Map<string, Entity>;
+ }
+ /**
+@@ -308,6 +309,10 @@ export declare class CustomMessage extends SenderGetter {
+     ttlPeriod?: number;
+     reactions?: Api.MessageReactions;
+     noforwards?: boolean;
++    /**
++     * Whether the caption is shown above the media instead of below it.
++     */
++    invertMedia?: boolean;
+     /**
+      * Rich message content: a PageBlock tree with tables,
+      * headings, lists and inline media. When its `part` flag is set, the

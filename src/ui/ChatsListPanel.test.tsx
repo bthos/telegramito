@@ -8,8 +8,8 @@
  */
 import { describe, expect, it, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
-import type { Dialog } from "telegram/tl/custom/dialog"
-import type { Api } from "telegram"
+import type { Dialog } from "teleproto/tl/custom/dialog"
+import type { Api } from "teleproto"
 import { ChatsListPanel } from "./ChatsListPanel"
 import type { ParentalSettings } from "../parental/types"
 

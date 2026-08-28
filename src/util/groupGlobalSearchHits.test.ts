@@ -1,8 +1,8 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import { describe, expect, it, vi } from "vitest"
 import { groupGlobalSearchHits, type GlobalSearchHit } from "./groupGlobalSearchHits"
 
-vi.mock("telegram/Utils", () => ({
+vi.mock("teleproto/Utils", () => ({
   getPeerId: (peer: { userId?: number; channelId?: number }) => {
     if (peer && typeof peer === "object" && "userId" in peer && peer.userId != null) {
       return String(peer.userId)

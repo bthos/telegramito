@@ -1,4 +1,4 @@
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { peerKeyFromPeer } from "../telegram/peerKey"
 
 /** One row in the dated chat transcript (separator or message). Shared by scroll helpers and ChatView. */

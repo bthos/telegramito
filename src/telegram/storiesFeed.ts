@@ -1,6 +1,6 @@
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
-import { getPeerId } from "telegram/Utils"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
+import { getPeerId } from "teleproto/Utils"
 import { withTransientRetry } from "./invokeWithTransientRetry"
 
 export type StoryPeerEntry = {

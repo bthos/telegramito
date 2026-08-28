@@ -1,6 +1,6 @@
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
-import type { Entity } from "telegram/define"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
+import type { Entity } from "teleproto/define"
 import { withTransientRetry } from "./invokeWithTransientRetry"
 
 /** Highest numeric message id in the batch (for read receipts). */

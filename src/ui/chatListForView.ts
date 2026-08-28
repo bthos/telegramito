@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import { isInboundUnreadForThread } from "../telegram/messageUnread"
 
 /** Unread-only filter applied to the raw hook list before dated rows are built. */

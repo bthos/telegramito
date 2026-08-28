@@ -1,5 +1,5 @@
-import { Api } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import { Api } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 
 export type TickState = "sent" | "delivered" | "read"
 

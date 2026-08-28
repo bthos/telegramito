@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Buffer } from "buffer"
-import type { TelegramClient } from "telegram"
-import { downloadProfilePhoto } from "telegram/client/downloads"
+import type { TelegramClient } from "teleproto"
+import { downloadProfilePhoto } from "teleproto/client/downloads"
 import { peerKeyToEntityLike } from "../telegram/peerKeyToEntityLike"
 
 const urlCache = new Map<string, string | null>()

@@ -1,4 +1,4 @@
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { getForumReplyToTopId } from "./forum"
 
 /**

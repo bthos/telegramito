@@ -1,7 +1,7 @@
 import { type ComponentType, type SVGProps, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { useDismissibleLayer } from "../hooks/useDismissibleLayer"
 import { useSheetDragDismiss } from "../hooks/useSheetDragDismiss"
 import { useTheme } from "../context/ThemeContext"

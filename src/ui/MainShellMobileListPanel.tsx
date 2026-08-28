@@ -1,6 +1,6 @@
 import type { ComponentProps, RefObject } from "react"
-import type { TelegramClient } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { TelegramClient } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import type { ParentalSettings } from "../parental/types"
 import type { CorrespondenceTab } from "../util/correspondenceFilter"
 import { ChatsListPanel } from "./ChatsListPanel"

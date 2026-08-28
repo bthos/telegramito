@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { formatVideoDuration } from "../telegram/documentVideoMeta"
 import { getAudioDurationSeconds, getAudioTrackMeta } from "../telegram/documentAudioMeta"
 import type { MediaViewerContext } from "./mediaViewerContext"

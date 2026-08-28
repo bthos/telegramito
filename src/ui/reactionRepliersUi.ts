@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 
 export function reactionKey(r: Api.TypeReaction): string {
   if (r.className === "ReactionEmpty") {

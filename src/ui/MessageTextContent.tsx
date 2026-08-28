@@ -1,6 +1,6 @@
 import type { BigInteger } from "big-integer"
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import { Fragment, useEffect, useState, type ReactNode } from "react"
 import { getMessageMediaTypeLabel } from "../telegram/dialogPreview"
 import { getCustomEmojiObjectUrl } from "../telegram/customEmojiCache"

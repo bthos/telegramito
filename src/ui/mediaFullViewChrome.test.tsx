@@ -79,7 +79,7 @@ function makeAudioDoc(voice = false) {
     id: BigInt(1),
     attributes: [{ className: "DocumentAttributeAudio", voice, duration: 42, title: "Test Song", performer: "Test Artist" }],
     mimeType: "audio/ogg",
-  } as unknown as import("telegram").Api.Document
+  } as unknown as import("teleproto").Api.Document
 }
 
 // ─── VideoFullViewer ───────────────────────────────────────────────────────────

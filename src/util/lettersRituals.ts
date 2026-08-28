@@ -1,6 +1,6 @@
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import type { NightMode } from "../parental/types"
 import {
   getPeerInfo,

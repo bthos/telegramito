@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { act, fireEvent, render, screen } from "@testing-library/react"
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { StoryViewer } from "./StoryViewer"
 import type { StoryPeerEntry } from "../telegram/storiesFeed"
 import { incrementStoryViews, readStoriesForPeer } from "../telegram/storiesFeed"

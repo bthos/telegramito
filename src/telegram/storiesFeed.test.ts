@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import bigInt from "big-integer"
 import { describe, expect, it, vi } from "vitest"
 import {

@@ -1,8 +1,8 @@
-import { generateRandomBigInt } from "telegram/Helpers"
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
-import type { Entity } from "telegram/define"
-import { getInputChannel, getPeerId } from "telegram/Utils"
+import { generateRandomBigInt } from "teleproto/Helpers"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
+import type { Entity } from "teleproto/define"
+import { getInputChannel, getPeerId } from "teleproto/Utils"
 import { compareMessagesChronological } from "./messageList"
 import { repairMessageAfterGramJs } from "./messageMediaGramRepair"
 
@@ -146,11 +146,31 @@ export async function getForumThreadMessages(
   limit: number,
   olderThanId: number = 0
 ): Promise<Api.Message[]> {
-  const inputPeer = await client.getInputEntity(entity)
   // First page: offset 0, maxDate 0. “Older” pages: same pattern as GramJS
   // _MessagesIter._updateOffset for Search (offset from last + maxDate: -1),
   // otherwise the server often returns an empty set.
   const isContinuation = olderThanId > 0
+  return getForumThreadMessagesPage(client, entity, topicId, limit, {
+    maxDate: isContinuation ? -1 : 0,
+    offsetId: isContinuation ? olderThanId : 0,
+    addOffset: 0,
+  })
+}
+
+/**
+ * One raw `messages.search` page for a forum thread with explicit offset
+ * controls. `addOffset < 0` shifts the window toward *newer* messages relative
+ * to `offsetId` — the standard MTProto trick for "context around a message"
+ * (`addOffset: -⌊limit/2⌋`) and "page newer than X" (`addOffset: -limit`).
+ */
+export async function getForumThreadMessagesPage(
+  client: TelegramClient,
+  entity: Entity,
+  topicId: number,
+  limit: number,
+  opts: { offsetId: number; addOffset: number; maxDate?: number }
+): Promise<Api.Message[]> {
+  const inputPeer = await client.getInputEntity(entity)
   const res = await client.invoke(
     new Api.messages.Search({
       peer: inputPeer,
@@ -158,9 +178,9 @@ export async function getForumThreadMessages(
       filter: new Api.InputMessagesFilterEmpty(),
       topMsgId: topicId,
       minDate: 0,
-      maxDate: isContinuation ? -1 : 0,
-      offsetId: isContinuation ? olderThanId : 0,
-      addOffset: 0,
+      maxDate: opts.maxDate ?? 0,
+      offsetId: opts.offsetId,
+      addOffset: opts.addOffset,
       limit,
       maxId: 0,
       minId: 0,

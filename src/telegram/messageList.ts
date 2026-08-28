@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import { repairMessageAfterGramJs } from "./messageMediaGramRepair"
 
 export const CHAT_PAGE_SIZE = 50
@@ -21,6 +21,15 @@ export function minMessageId(msgs: Api.Message[]): number | undefined {
     return undefined
   }
   return Math.min(...ids)
+}
+
+/** Largest message id in a batch — the "newer than" anchor for tail-direction paging. */
+export function maxMessageId(msgs: Api.Message[]): number | undefined {
+  const ids = msgs.map((m) => m.id).filter((x): x is number => x != null)
+  if (ids.length === 0) {
+    return undefined
+  }
+  return Math.max(...ids)
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 
 /**
  * Video duration from {@link Api.DocumentAttributeVideo} (seconds), if present.

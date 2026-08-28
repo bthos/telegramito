@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 
 /** Stable debug/display label for a peer in story attribution and static cards. */
 export function messageMediaPeerLabel(peer: Api.TypePeer | undefined): string {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import { getPinnedMessages, nextPinnedIndex } from "./pinnedMessages"
 
 const entity = { className: "User" } as never

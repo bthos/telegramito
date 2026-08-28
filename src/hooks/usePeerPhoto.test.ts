@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react"
 import { Buffer } from "buffer"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import type { TelegramClient } from "telegram"
+import type { TelegramClient } from "teleproto"
 
 import { _clearPeerPhotoCachesForTest, usePeerPhoto } from "./usePeerPhoto"
 
@@ -9,7 +9,7 @@ const { downloadProfilePhotoMock } = vi.hoisted(() => ({
   downloadProfilePhotoMock: vi.fn(),
 }))
 
-vi.mock("telegram/client/downloads", () => ({
+vi.mock("teleproto/client/downloads", () => ({
   downloadProfilePhoto: downloadProfilePhotoMock,
 }))
 

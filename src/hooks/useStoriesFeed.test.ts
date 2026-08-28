@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import bigInt from "big-integer"
 import { useStoriesFeed } from "./useStoriesFeed"
 

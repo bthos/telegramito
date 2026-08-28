@@ -37,7 +37,21 @@
     "code": "Código de acceso",
     "password": "Contraseña de dos pasos (si aplica)",
     "signIn": "Entrar",
-    "sending": "Conectando y pidiendo el código…"
+    "sending": "Conectando y pidiendo el código…",
+    "emailHelp": "Telegram necesita un correo electrónico para continuar el inicio de sesión.",
+    "email": "Correo electrónico",
+    "emailContinue": "Continuar",
+    "emailCodeHelp": "Introduce el código que Telegram envió a tu correo (o pega el token de verificación).",
+    "emailCode": "Código de correo",
+    "emailVerify": "Verificar",
+    "captchaTitle": "Se requiere una verificación de seguridad",
+    "captchaBody": "Telegram solicitó una verificación de seguridad que Telegramito no puede completar en el navegador. Termina de iniciar sesión con la app oficial de Telegram o web.telegram.org en esta cuenta y luego vuelve aquí. Las sesiones guardadas existentes no se ven afectadas.",
+    "captchaDismiss": "Entendido",
+    "captchaHint": "Los desafíos de captcha son poco frecuentes; suelen aparecer en inicios de sesión nuevos o sospechosos.",
+    "sessionDead": "Esta sesión guardada ya no es válida. Vuelve a iniciar sesión con tu número de teléfono.",
+    "floodWait": "Demasiados intentos. Espera {{seconds}} segundos e inténtalo de nuevo.",
+    "accountRestricted": "Esta cuenta está restringida por Telegram. Prueba la app oficial de Telegram para más detalles.",
+    "emailRequired": "Telegram requiere verificación por correo electrónico para continuar."
   },
   "chat": {
     "noChat": "Seleccione un chat",

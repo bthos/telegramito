@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import {
   useCallback,
   useEffect,
@@ -7,12 +7,13 @@ import {
   useState,
   type RefObject,
 } from "react"
-import type { Dialog } from "telegram/tl/custom/dialog"
-import type { TelegramClient } from "telegram"
+import type { Dialog } from "teleproto/tl/custom/dialog"
+import type { TelegramClient } from "teleproto"
 import { toMessageList } from "../telegram/messageList"
 import { resolveForumTopicIdFromMessage } from "../telegram/forum"
 import { withTransientRetry } from "../telegram/invokeWithTransientRetry"
 import { appLog } from "../util/appLogger"
+import { alignRowInScroller } from "../util/scrollerAlign"
 import type { ChatDatedItem } from "../ui/chatDatedItem"
 
 type ForumTopic = Api.TypeForumTopic
@@ -29,7 +30,8 @@ type JumpNavOpts = {
   topics: ForumTopic[]
   topicId: number | null
   setTopicId: (id: number) => void
-  refreshMessagesById: (ids: readonly number[]) => Promise<void>
+  /** Replaces the transcript with a context window around the target (see `useChatMessages`). */
+  loadAroundMessageId: (id: number) => Promise<boolean>
   setMessagesUnreadOnly: (value: boolean | ((prev: boolean) => boolean)) => void
   setPanelOpen: (next: boolean | ((prev: boolean) => boolean)) => void
   lettersJumpToMessageId?: number | null
@@ -60,7 +62,7 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
     topics,
     topicId,
     setTopicId,
-    refreshMessagesById,
+    loadAroundMessageId,
     setMessagesUnreadOnly,
     setPanelOpen,
     lettersJumpToMessageId = null,
@@ -72,6 +74,8 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
   const [searchMode, setSearchMode] = useState(false)
   const [highlightedMessageId, setHighlightedMessageId] = useState<number | null>(null)
   const [scrollLayoutBump, setScrollLayoutBump] = useState(0)
+  const datedListRef = useRef(datedList)
+  datedListRef.current = datedList
   const messageScrollTopBeforeSearchRef = useRef(0)
   const highlightTimerRef = useRef<number | null>(null)
   const pendingScrollToMessageIdRef = useRef<number | null>(null)
@@ -135,6 +139,26 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
       // Jump owns scroll position — do not restore the pre-search scrollTop.
       closeSearchMode({ restoreScroll: false })
       setPanelOpen(false)
+      // Arm before any await: scroll events firing while the window loads must
+      // not re-arm stick-to-bottom or race the pagination (see `useChatScroll`).
+      if (jumpSettlingRef) {
+        jumpSettlingRef.current = true
+      }
+      const alreadyLoaded = datedListRef.current.some(
+        (row) => row.kind === "msg" && row.message.id === id,
+      )
+      if (!alreadyLoaded) {
+        // Not in the transcript: load a real context window around the target
+        // so it lands with genuine neighbors instead of alone next to a hole.
+        const ok = await loadAroundMessageId(id)
+        if (!ok) {
+          if (jumpSettlingRef) {
+            jumpSettlingRef.current = false
+          }
+          appLog.warn("jumpToMessageById: could not load target context", { id })
+          return
+        }
+      }
       if (highlightTimerRef.current != null) {
         clearTimeout(highlightTimerRef.current)
       }
@@ -143,11 +167,7 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
         setHighlightedMessageId(null)
         highlightTimerRef.current = null
       }, 1500)
-      await refreshMessagesById([id])
       pendingScrollToMessageIdRef.current = id
-      if (jumpSettlingRef) {
-        jumpSettlingRef.current = true
-      }
       setScrollLayoutBump((b) => b + 1)
       clearPendingScrollGiveUpTimer()
       pendingScrollGiveUpTimerRef.current = window.setTimeout(() => {
@@ -169,7 +189,7 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
       clearPendingScrollGiveUpTimer,
       closeSearchMode,
       jumpSettlingRef,
-      refreshMessagesById,
+      loadAroundMessageId,
       setMessagesUnreadOnly,
       setPanelOpen,
     ],
@@ -317,7 +337,11 @@ export function useChatJumpNavigation(opts: JumpNavOpts) {
     }
     pendingScrollToMessageIdRef.current = null
     clearPendingScrollGiveUpTimer()
-    node.scrollIntoView({ block: "center", behavior: "instant" })
+    if (root) {
+      // Container-scoped centering: `scrollIntoView` would also walk outer
+      // scrollable ancestors (page shell), which must never move on a jump.
+      alignRowInScroller(root, node, { align: "center" })
+    }
     if (jumpSettlingRef) {
       jumpSettlingRef.current = false
     }

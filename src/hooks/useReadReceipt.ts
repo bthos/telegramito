@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react"
-import type { TelegramClient } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { TelegramClient } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { markChatReadUpTo } from "../telegram/markChatRead"
 
 export function useReadReceipt(opts: {

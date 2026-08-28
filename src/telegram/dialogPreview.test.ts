@@ -1,5 +1,5 @@
-import type { Api } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { Api } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { describe, expect, it } from "vitest"
 import {
   getDayMailRailHeadlineParts,

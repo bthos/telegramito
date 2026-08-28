@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import {
   MESSAGE_HISTORY_RECONCILE_POLICY,
   chunkIdsForGetMessages,

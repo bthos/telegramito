@@ -1,5 +1,5 @@
 import type { LiHTMLAttributes } from "react"
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import type { TFunction } from "i18next"
 import { formatSearchResultRowDate } from "../util/timeFormat"
 import { searchExcerptParts } from "../util/searchExcerptParts"

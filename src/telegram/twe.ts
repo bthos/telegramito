@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 
 /**
  * `TextWithEntities` in polls / caption fields (and plain string fallbacks in older layers).

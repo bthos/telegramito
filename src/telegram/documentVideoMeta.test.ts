@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { formatVideoDuration, getVideoDurationSeconds } from "./documentVideoMeta"
 
 describe("documentVideoMeta", () => {

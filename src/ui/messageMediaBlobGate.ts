@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import { getMessageDocument } from "../telegram/documentFile"
 
 /** True when blob fetch would run for photo/document media (not async fall-through → z). */

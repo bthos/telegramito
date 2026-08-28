@@ -4,23 +4,35 @@ import { useTelegram } from "../context/TelegramContext"
 import { AuthLayout, Button, PageCard, TextField } from "./ds"
 import { TelegramMark } from "./TelegramMark"
 
+const EMAIL_LOOKS_VALID_RE = /^[^\s@]+@[^\s@]+$/
+
+/** AC-T8 typed error keys (ux-design.md's mapping table) rendered as localized copy instead of the raw `e.message`. */
+const TYPED_ERROR_KEYS = new Set(["sessionDead", "floodWait", "accountRestricted", "emailRequired"])
+
 export function LoginView() {
   const { t } = useTranslation()
   const {
     startLogin,
     submitCode,
     submit2FA,
+    submitEmail,
+    submitEmailCode,
+    dismissCaptchaBlock,
     isConnecting,
     error,
     errorKey,
+    errorSeconds,
     loginStep,
   } = useTelegram()
   const [phone, setPhone] = useState("+")
   const [code, setCode] = useState("")
   const [fa, setFa] = useState("")
+  const [email, setEmail] = useState("")
+  const [emailCode, setEmailCode] = useState("")
 
   const canEditPhone = loginStep === "idle"
   const phoneOk = Boolean(phone && phone.length >= 5)
+  const emailOk = EMAIL_LOOKS_VALID_RE.test(email.trim())
 
   function onConnectSubmit(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault()
@@ -41,6 +53,17 @@ export function LoginView() {
       if (!fa) return
       submit2FA(fa)
       setFa("")
+      return
+    }
+    if (loginStep === "email") {
+      if (!emailOk) return
+      submitEmail(email.trim())
+      return
+    }
+    if (loginStep === "emailCode") {
+      const trimmed = emailCode.trim()
+      if (!trimmed) return
+      submitEmailCode(trimmed)
     }
   }
 
@@ -64,6 +87,34 @@ export function LoginView() {
     )
   }
 
+  if (loginStep === "captchaBlocked") {
+    return (
+      <AuthLayout>
+        <PageCard variant="auth">
+          <div className="auth-card__header">
+            <TelegramMark
+              className="auth-card__mark"
+              width={56}
+              height={56}
+              alt={t("appName")}
+              title={t("appName")}
+            />
+            <p className="auth-card__product">{t("appName")}</p>
+            <h1 className="auth-card__title">{t("login.title")}</h1>
+          </div>
+          <div className="auth-card__form" role="alert">
+            <p className="err">{t("login.captchaTitle")}</p>
+            <p>{t("login.captchaBody")}</p>
+            <Button type="button" onClick={dismissCaptchaBlock}>
+              {t("login.captchaDismiss")}
+            </Button>
+            <p className="small muted">{t("login.captchaHint")}</p>
+          </div>
+        </PageCard>
+      </AuthLayout>
+    )
+  }
+
   return (
     <AuthLayout>
       <PageCard variant="auth">
@@ -82,7 +133,10 @@ export function LoginView() {
           {error
             ? (
                 <p className="err">
-                  {t("error")}: {error}
+                  {t("error")}:{" "}
+                  {errorKey && TYPED_ERROR_KEYS.has(errorKey)
+                    ? t(`login.${errorKey}`, { seconds: errorSeconds ?? 0 })
+                    : error}
                 </p>
               )
             : null}
@@ -139,6 +193,57 @@ export function LoginView() {
                   </div>
                   <Button type="submit" disabled={isConnecting || !code.trim()}>
                     {t("login.signIn")}
+                  </Button>
+                </>
+              )
+            : null}
+          {loginStep === "email"
+            ? (
+                <>
+                  <p className="small muted">{t("login.emailHelp")}</p>
+                  <div className="form-row">
+                    <label className="auth-card__label">
+                      {t("login.email")}
+                      <TextField
+                        type="email"
+                        name="email"
+                        autoComplete="email"
+                        autoFocus
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value)
+                        }}
+                        disabled={isConnecting}
+                      />
+                    </label>
+                  </div>
+                  <Button type="submit" disabled={isConnecting || !emailOk}>
+                    {t("login.emailContinue")}
+                  </Button>
+                </>
+              )
+            : null}
+          {loginStep === "emailCode"
+            ? (
+                <>
+                  <p className="small muted">{t("login.emailCodeHelp")}</p>
+                  <div className="form-row">
+                    <label className="auth-card__label">
+                      {t("login.emailCode")}
+                      <TextField
+                        name="emailCode"
+                        autoComplete="one-time-code"
+                        autoFocus
+                        value={emailCode}
+                        onChange={(e) => {
+                          setEmailCode(e.target.value)
+                        }}
+                        disabled={isConnecting}
+                      />
+                    </label>
+                  </div>
+                  <Button type="submit" disabled={isConnecting || !emailCode.trim()}>
+                    {t("login.emailVerify")}
                   </Button>
                 </>
               )

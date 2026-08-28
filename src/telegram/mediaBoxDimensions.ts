@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import { getMessageDocument } from "./documentFile"
 import { isCustomEmojiDoc, isRoundVideoDoc, isStickerDoc } from "./documentMediaKind"
 

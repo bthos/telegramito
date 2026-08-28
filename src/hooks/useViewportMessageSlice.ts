@@ -27,6 +27,8 @@ export function useViewportMessageSlice(opts: {
   scrollRef: RefObject<HTMLDivElement | null>
   datedList: readonly ChatDatedItem[]
   convKey: string
+  /** Bumped when the transcript is replaced within one `convKey` (jump / return-to-tail) — window resets like a chat switch. */
+  transcriptEpoch: number
   loadingOlder: boolean
 }): {
   sliceActive: boolean
@@ -37,7 +39,7 @@ export function useViewportMessageSlice(opts: {
   onViewportSliceScroll: () => void
   expandToRowIndex: (idx: number) => void
 } {
-  const { scrollRef, datedList, convKey, loadingOlder } = opts
+  const { scrollRef, datedList, convKey, transcriptEpoch, loadingOlder } = opts
 
   const sliceActive = datedList.length >= SLICE_MIN_ROWS
 
@@ -51,6 +53,7 @@ export function useViewportMessageSlice(opts: {
 
   const heightByKeyRef = useRef<Map<string, number>>(new Map())
   const convKeyRef = useRef(convKey)
+  const epochRef = useRef(transcriptEpoch)
   const prevLenRef = useRef(0)
   const prevHeadKeyRef = useRef("")
 
@@ -126,11 +129,18 @@ export function useViewportMessageSlice(opts: {
 
     const hk = headRowKey(datedList)
 
-    if (convKey !== convKeyRef.current) {
+    if (convKey !== convKeyRef.current || transcriptEpoch !== epochRef.current) {
+      // Chat switch — or the same chat's transcript replaced in place by a
+      // jump / return-to-tail. Either way the old window indices point into a
+      // list that no longer exists. Height cache survives an in-chat replace
+      // (row keys are message ids and stay valid).
+      if (convKey !== convKeyRef.current) {
+        heightByKeyRef.current.clear()
+      }
       convKeyRef.current = convKey
+      epochRef.current = transcriptEpoch
       prevLenRef.current = len
       prevHeadKeyRef.current = hk
-      heightByKeyRef.current.clear()
       if (len < SLICE_MIN_ROWS) {
         setSliceStart(0)
         setSliceEnd(len - 1)
@@ -180,7 +190,7 @@ export function useViewportMessageSlice(opts: {
 
     prevLenRef.current = len
     prevHeadKeyRef.current = hk
-  }, [datedList, convKey])
+  }, [datedList, convKey, transcriptEpoch])
 
   const updateSliceBounds = useCallback(() => {
     if (!sliceActive || datedList.length === 0) {

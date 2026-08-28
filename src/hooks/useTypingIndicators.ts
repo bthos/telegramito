@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react"
 import bigInt from "big-integer"
-import { Raw } from "telegram/events"
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import { Raw } from "teleproto/events"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { telegramEntityDisplayName } from "../util/telegramEntityDisplayName"
 
 const TYPER_TIMEOUT_MS = 5_000

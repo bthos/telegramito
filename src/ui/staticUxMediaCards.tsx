@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import { useEffect, useMemo, useState } from "react"
 import { asTwe } from "../telegram/twe"
 import { APP_VERSION, TELEGRAM_LAYER_EXPECTED } from "../version"

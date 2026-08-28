@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest"
-import { Api } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
-import type { TelegramClient } from "telegram"
+import { Api } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
+import type { TelegramClient } from "teleproto"
 import { getPeerInfo } from "../telegram/dialogUtils"
 import { getDialogDraftPreviewLine, getDialogDraftText } from "./dialogDraft"
 import {

@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import { isSameOptionBytes } from "./pollOptions"
 
 export type PollOptionBytes = Parameters<typeof isSameOptionBytes>[0]

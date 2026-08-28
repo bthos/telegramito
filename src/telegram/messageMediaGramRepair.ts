@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 
 function isDocument(x: unknown): x is Api.Document {
   return typeof x === "object" && x != null && (x as { className?: string }).className === "Document"

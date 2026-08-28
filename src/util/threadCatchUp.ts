@@ -1,4 +1,4 @@
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import type { ChatDatedItem } from "../ui/chatDatedItem"
 import { isInboundUnreadForThread } from "../telegram/messageUnread"
 

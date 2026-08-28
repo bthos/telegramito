@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import type { ParentalSettings } from "../parental/types"
 import { getPeerInfo } from "../telegram/dialogUtils"
 import { ChatView } from "./ChatView"

@@ -1,4 +1,4 @@
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 
 export function getDocumentAttributeAudio(
   d: Api.Document | null,

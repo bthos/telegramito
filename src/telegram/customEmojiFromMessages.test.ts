@@ -1,6 +1,6 @@
 import bigInt from "big-integer"
 import { describe, expect, it } from "vitest"
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import {
   collectCustomEmojiDocumentIdsFromEntities,
   collectCustomEmojiDocumentIdsFromMessages,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { formatDocumentSize, getMessageDocument, safeFileDownloadName } from "./documentFile"
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 
 describe("getMessageDocument", () => {
   it("reads document from top-level field", () => {

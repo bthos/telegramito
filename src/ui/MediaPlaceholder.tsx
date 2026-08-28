@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import { useTranslation } from "react-i18next"
 import { getDocumentFileName } from "../telegram/documentFile"
 import {

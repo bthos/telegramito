@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { JumpDateCalendarIcon } from "./ChatChromeIcons"
 import { getLocalDayKey } from "../util/timeFormat"
 

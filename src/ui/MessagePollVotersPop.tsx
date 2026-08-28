@@ -5,7 +5,7 @@ import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import { getPollVotesPage, mapPollVotesList, type PollVoterRow } from "../telegram/pollVoters"
 import { formatPollVoterTimestamp, pollVoterTimestampTitle } from "../util/timeFormat"
 import { Button } from "./ds"
-import type { TelegramClient } from "telegram"
+import type { TelegramClient } from "teleproto"
 
 type T = (k: string, o?: Record<string, string | number | undefined>) => string
 

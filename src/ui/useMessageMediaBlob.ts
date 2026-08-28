@@ -1,5 +1,5 @@
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { getMessageDocument, getDocumentFileName, formatDocumentSize } from "../telegram/documentFile"
 import {
@@ -25,6 +25,45 @@ export type MediaBlobState =
   | { k: "e" }
   | { k: "f" }
 
+/**
+ * Synchronously decidable part of the async resolution effect below (kept in
+ * step with it). Without this, EVERY row — including plain text — mounted as
+ * `"w"` and rendered a ~200px media placeholder for one frame before the
+ * effect collapsed it to `"z"`: ~5000px of layout shift on a fresh transcript,
+ * which yanked the scroll position right after every jump landing.
+ */
+function initialBlobState(
+  m: Api.Message,
+  c: TelegramClient | null,
+  filterGifs: boolean,
+): MediaBlobState {
+  const media = m.media
+  const d = getMessageDocument(m)
+  if (!c) {
+    return { k: "z" }
+  }
+  if (
+    !media
+    || media.className === "MessageMediaEmpty"
+    || media.className === "MessageMediaWebPage"
+    || getMessageMediaPollFromMessage(m)
+  ) {
+    return { k: "z" }
+  }
+  if (d) {
+    if (isAnimatedDoc(d) && filterGifs) {
+      return { k: "f" }
+    }
+    if (d.mimeType?.toLowerCase().includes("gif") && filterGifs) {
+      return { k: "f" }
+    }
+  }
+  if (!mediaNeedsBlobFetch(media, d)) {
+    return { k: "z" }
+  }
+  return { k: "w" }
+}
+
 export function useMessageMediaBlob(
   m: Api.Message,
   c: TelegramClient | null,
@@ -33,7 +72,7 @@ export function useMessageMediaBlob(
   const loadRequestedRef = useRef(false)
   const fetchGenRef = useRef(0)
   const [loadNonce, setLoadNonce] = useState(0)
-  const [s, setS] = useState<MediaBlobState>({ k: "w" })
+  const [s, setS] = useState<MediaBlobState>(() => initialBlobState(m, c, filterGifs))
   const uref = useRef<string | null>(null)
   const messageRef = useRef(m)
   const boundSigRef = useRef<string>("")

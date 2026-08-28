@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { ModalChrome } from "./ModalChrome"
 
 export function StickerInline({

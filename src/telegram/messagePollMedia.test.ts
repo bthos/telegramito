@@ -1,4 +1,4 @@
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { describe, expect, it } from "vitest"
 import { getMessageMediaPollFromMessage } from "./messagePollMedia"
 

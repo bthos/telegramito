@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import {
   Fragment,
   useCallback,
@@ -9,8 +9,8 @@ import {
   type RefObject,
 } from "react"
 import { useTranslation } from "react-i18next"
-import type { Dialog } from "telegram/tl/custom/dialog"
-import type { TelegramClient } from "telegram"
+import type { Dialog } from "teleproto/tl/custom/dialog"
+import type { TelegramClient } from "teleproto"
 import type { ParentalSettings } from "../parental/types"
 import { formatMessageDateSeparator, formatMessageTime, getLocalDayKey } from "../util/timeFormat"
 import { getTickState, isBroadcastChannelEntity, readOutboxMaxIdFromDialog } from "../telegram/messageTickState"
@@ -505,11 +505,6 @@ export function ChatMessageList({
             <MessageListSkeleton />
           ) : (
             <ul className="msg-list">
-              {loadingOlder ? (
-                <li className="msg-load-hint" key="load-older" aria-live="polite">
-                  {t("loading")}
-                </li>
-              ) : null}
               {sliceActive && topSpacerPx > 0 ? (
                 <li
                   key="msg-list-spacer-top"
@@ -545,6 +540,11 @@ export function ChatMessageList({
             </ul>
           )}
         </div>
+        {loadingOlder && !isInitialLoad ? (
+          <div className="msg-load-overlay" aria-live="polite">
+            {t("loading")}
+          </div>
+        ) : null}
         <TypingIndicator typers={typers} />
         <ScrollToBottomFab
           visible={

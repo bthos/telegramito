@@ -24,7 +24,7 @@ function videoMessage() {
         attributes: [{ className: "DocumentAttributeVideo", duration: 5, w: 1280, h: 720 }],
       },
     },
-  } as unknown as import("telegram").Api.Message
+  } as unknown as import("teleproto").Api.Message
 }
 
 describe("VideoDeferredPending — style prop reaches root (AC1)", () => {

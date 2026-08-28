@@ -1,5 +1,5 @@
-import { Api } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import { Api } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { getDialogRecord } from "./correspondenceFilter"
 
 type Tr = (key: string, options?: Record<string, string | number | undefined>) => string

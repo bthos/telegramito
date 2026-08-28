@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
-import { Api } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
-import type { TelegramClient } from "telegram"
+import { Api } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
+import type { TelegramClient } from "teleproto"
 import type { ParentalSettings } from "../parental/types"
 import { useDismissibleLayer } from "../hooks/useDismissibleLayer"
 import {

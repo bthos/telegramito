@@ -1,4 +1,4 @@
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 
 /**
  * Stable id for allowlist. Uses GramJS `Dialog#id` when set.

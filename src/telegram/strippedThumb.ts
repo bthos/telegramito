@@ -1,4 +1,4 @@
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 
 /**
  * Fixed JPEG header template for Telegram's PhotoStrippedSize reconstruction.

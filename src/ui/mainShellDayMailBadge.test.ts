@@ -3,7 +3,7 @@
  * Feature: .tlk/features/2026-07-27-app-code-refactor-mainshell/
  */
 import { describe, expect, it } from "vitest"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { countDayMailBadge } from "./mainShellDayMailBadge"
 
 function dialog(unread: number, date: number | undefined): Dialog {

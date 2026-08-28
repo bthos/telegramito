@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import type { TelegramClient } from "telegram"
+import type { TelegramClient } from "teleproto"
 import type { AppMode } from "../parental/types"
 import { peerKeyFromPeer } from "../telegram/peerKey"
 import { isPeerEntryUnread, type StoryPeerEntry } from "../telegram/storiesFeed"

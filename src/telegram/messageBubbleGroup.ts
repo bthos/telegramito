@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 
 /**
  * Same split window as telegram-react (`MESSAGE_SPLIT_MAX_TIME_S`).

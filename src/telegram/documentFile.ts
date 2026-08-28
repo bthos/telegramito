@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 
 function isApiDocument(x: unknown): x is Api.Document {
   return typeof x === "object" && x !== null

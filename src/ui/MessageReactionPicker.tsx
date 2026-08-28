@@ -1,5 +1,5 @@
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useDismissiblePopover } from "../hooks/useDismissiblePopover"

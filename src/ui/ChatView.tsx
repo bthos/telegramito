@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import {
   useCallback,
   useEffect,
@@ -9,7 +9,7 @@ import {
 } from "react"
 import { createPortal, flushSync } from "react-dom"
 import { useTranslation } from "react-i18next"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { useTelegram } from "../context/TelegramContext"
 import { isPrivateChatHidden, shouldFilterGifs, shouldHideLinkPreviews } from "../parental/policy"
 import type { ParentalSettings } from "../parental/types"
@@ -60,6 +60,7 @@ import { ChatComposer } from "./ChatComposer"
 import { ChatMessageList } from "./ChatMessageList"
 import { filterListForView } from "./chatListForView"
 import { isInitialLoad as deriveIsInitialLoad } from "./chatInitialLoad"
+import { alignRowInScroller } from "../util/scrollerAlign"
 import type { ReactionTarget } from "./chatReactionAnchor"
 
 type Props = {
@@ -110,6 +111,9 @@ export function ChatView({
   const scrollRef = useRef<HTMLDivElement | null>(null)
   /** Shared between `useChatScroll` and `useChatJumpNavigation` — see `useChatScroll`'s `jumpSettlingRef` doc. */
   const jumpSettlingRef = useRef(false)
+  /** Live mirror of the jump request — `useChatMessages` reads it once per initial load to land straight on the target. */
+  const pendingOpenJumpIdRef = useRef<number | null>(lettersJumpToMessageId)
+  pendingOpenJumpIdRef.current = lettersJumpToMessageId
   const jumpDateButtonRef = useRef<HTMLButtonElement | null>(null)
   const [jumpCalOpen, setJumpCalOpen] = useState(false)
   const [freshMailDismissed, setFreshMailDismissed] = useState(false)
@@ -249,9 +253,16 @@ export function ChatView({
     list,
     hasMoreOlder,
     loadingOlder,
+    hasMoreNewer,
+    loadingNewer,
     refreshHead,
     refreshMessagesById,
     loadOlder,
+    loadNewer,
+    loadAroundMessageId,
+    returnToLiveTail,
+    transcriptEpoch,
+    auxMessagesById,
     patchMessageReactions,
     initialLoadDone,
   } = useChatMessages({
@@ -265,6 +276,7 @@ export function ChatView({
     messagesUnreadOnly,
     listForViewLengthRef,
     lastMessageTick,
+    pendingOpenJumpIdRef,
   })
 
   const isInitialLoad = deriveIsInitialLoad(list.length)
@@ -331,7 +343,9 @@ export function ChatView({
   }, [listForView])
 
   const messageByIdLoaded = useMemo(() => {
-    const map = new Map<number, Api.Message>()
+    // Aux first, transcript second — a transcript row is always fresher than a
+    // preview-cache copy of the same id.
+    const map = new Map<number, Api.Message>(auxMessagesById)
     for (const msg of list) {
       const mid = msg.id
       if (typeof mid === "number") {
@@ -339,7 +353,7 @@ export function ChatView({
       }
     }
     return map
-  }, [list])
+  }, [list, auxMessagesById])
 
   const resolveRepliedMessage = useCallback(
     (replyToMsgId: number) => messageByIdLoaded.get(replyToMsgId),
@@ -424,6 +438,11 @@ export function ChatView({
     loadingOlder,
     hasMoreOlder,
     loadOlder,
+    hasMoreNewer,
+    loadingNewer,
+    loadNewer,
+    returnToLiveTail,
+    transcriptEpoch,
     convKey,
     hasPendingJump: lettersJumpToMessageId != null && lettersJumpToMessageId > 0,
     jumpSettlingRef,
@@ -441,6 +460,7 @@ export function ChatView({
     scrollRef,
     datedList,
     convKey,
+    transcriptEpoch,
     loadingOlder,
   })
 
@@ -469,7 +489,7 @@ export function ChatView({
     topics,
     topicId,
     setTopicId,
-    refreshMessagesById,
+    loadAroundMessageId,
     setMessagesUnreadOnly,
     setPanelOpen,
     lettersJumpToMessageId,
@@ -568,7 +588,9 @@ export function ChatView({
     })
     const root = scrollRef.current
     const node = root?.querySelector(`[data-chat-row-index="${idx}"]`) as HTMLElement | null
-    node?.scrollIntoView({ block: "start", behavior: reducedMotion ? "instant" : "smooth" })
+    if (root && node) {
+      alignRowInScroller(root, node, { align: "start", smooth: !reducedMotion })
+    }
     setFreshMailDismissed(true)
   }, [datedList, expandToRowIndex, readInboxMaxId, scrollToLatestMessages])
 
@@ -756,7 +778,9 @@ export function ChatView({
           : (root?.querySelector(
               `[data-chat-day-key="${CSS.escape(dayKey)}"]`,
             ) as HTMLElement | null)
-        node?.scrollIntoView({ block: "start", behavior: "smooth" })
+        if (root && node) {
+          alignRowInScroller(root, node, { align: "start", smooth: true })
+        }
       }
       alignToDay()
     },
@@ -1285,9 +1309,9 @@ export function ChatView({
         <ChatContextPanel
           entity={
             dialog.entity as
-              | import("telegram").Api.User
-              | import("telegram").Api.Chat
-              | import("telegram").Api.Channel
+              | import("teleproto").Api.User
+              | import("teleproto").Api.Chat
+              | import("teleproto").Api.Channel
               | null
               | undefined
           }

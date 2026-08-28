@@ -1,5 +1,5 @@
-import { Api } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import { Api } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 
 /** Raw TL dialog attached to the custom Dialog wrapper (GramJS). */
 export function getDialogRecord(d: Dialog): Api.Dialog | undefined {

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { safeFileDownloadName, documentExtensionLabel } from "../telegram/documentFile"
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import type { MediaViewerContext } from "./mediaViewerContext"
 import { ModalChrome } from "./ModalChrome"
 

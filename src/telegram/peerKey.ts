@@ -1,4 +1,4 @@
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 
 /**
  * Stable identity string for a peer for React keys and blob-fetch binding.

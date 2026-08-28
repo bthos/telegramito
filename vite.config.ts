@@ -89,12 +89,11 @@ export default defineConfig({
   ],
   resolve: {
     /**
-     * One physical copy of GramJS — avoids two `tlobjects` maps (e.g. `telegram` vs `telegram/tl/...`).
-     * Do not alias `telegram` to `vendor/…`: that makes Vite treat GramJS as app source and serves raw CJS
-     * in dev (`import { StringSession }` fails). Use `dependencies.telegram` → `file:./vendor/telegram-built`
-     * (node_modules symlink) so `optimizeDeps.include: ["telegram"]` can pre-bundle with CJS interop.
+     * One physical copy of teleproto — avoids two `tlobjects` maps (e.g. `teleproto` vs `teleproto/tl/...`).
+     * Pre-bundle via `optimizeDeps.include` below so dev gets CJS/ESM interop for subpaths
+     * (`teleproto/sessions`, etc.).
      */
-    dedupe: ["telegram"],
+    dedupe: ["teleproto"],
     alias: {
       buffer: "buffer",
       // Vite/rolldown sometimes resolves `node:*` built-ins in deps; map to the same
@@ -107,22 +106,36 @@ export default defineConfig({
       "node:events": "events",
       "node:vm": "vm-browserify",
       "node:process": "process",
-      // GramJS (telegram/inspect.js) does require("util"). Vite’s Node stub
+      // teleproto (inspect.js-equivalent) does require("util"). Vite's Node stub
       // leaves `inspect` undefined → `inspect.custom` throws in bundled code.
       util: "util",
       // e.g. `socks` does `class … extends require("events")…`; empty stub →
       // "Class extends value undefined".
       events: "events",
-      // `telegram/client/os.js` re-exports Node `os`; base client calls
+      // teleproto's `client/os.js` re-exports Node `os`; base client calls
       // `os.type()` / `os.release()` for InitConnection. Empty stub →
       // "c.default.type is not a function" in the browser.
       os: "os-browserify",
-      // `telegram/CryptoFile.js` does `require("crypto")` for `randomBytes`.
+      // teleproto's `CryptoFile.js`-equivalent does `require("crypto")` for `randomBytes`.
       crypto: "crypto-browserify",
       // Used by `crypto-browserify` / chained modules when Vite stubs `stream`.
       stream: "stream-browserify",
       // `asn1.js` (via `crypto-browserify`) uses `vm` for `createContext`.
       vm: "vm-browserify",
+      // teleproto's GZIPPacked (tl/core/GZIPPacked.js) does `require("zlib")`
+      // (bare specifier) for `unzipSync` — Node-only, no browser build.
+      // Vendored GramJS used the isomorphic `pako` for the same job; this
+      // shim wraps `pako.ungzip` under the same name. See `src/zlib-shim.ts`.
+      zlib: path.resolve(projectRoot, "src/zlib-shim.ts"),
+      "node:zlib": path.resolve(projectRoot, "src/zlib-shim.ts"),
+      // teleproto's `sessions` barrel eagerly requires `StoreSession`, which
+      // (unlike GramJS's vendored fork) genuinely uses fs-backed
+      // `node-localstorage` — Node-only, and never actually constructed by
+      // this app (Telegramito only uses `StringSession`). Without this alias,
+      // Vite's own browser-externalized-module stub throws at import time
+      // (`Cannot convert a Symbol value to a string`) before the app boots.
+      // See `src/node-localstorage-shim.ts`.
+      "node-localstorage": path.resolve(projectRoot, "src/node-localstorage-shim.ts"),
     },
   },
   define: {
@@ -130,19 +143,20 @@ export default defineConfig({
   },
   optimizeDeps: {
     /**
-     * GramJS is `file:./vendor/telegram-built` — linked packages are skipped unless listed here.
-     * Pre-bundle so dev gets ESM interop for CJS subpaths (`telegram/sessions`, etc.).
-     * Keep `resolve.dedupe: ["telegram"]` so there is one physical copy / one `tlobjects` map.
+     * Pre-bundle so dev gets ESM interop for CJS subpaths (`teleproto/sessions`, etc.).
+     * Keep `resolve.dedupe: ["teleproto"]` so there is one physical copy / one `tlobjects` map.
      */
     include: [
-      "telegram",
-      "telegram/sessions",
-      /** CJS subpaths — without these, dev serves raw `/vendor/…/*.js` and named ESM imports fail. */
-      "telegram/events",
-      "telegram/Helpers",
-      "telegram/Utils",
-      "telegram/client/downloads",
-      "telegram/tl/custom/dialog",
+      "teleproto",
+      "teleproto/sessions",
+      /** CJS subpaths — without these, dev serves raw `/node_modules/…/*.js` and named ESM imports fail. */
+      "teleproto/events",
+      "teleproto/Helpers",
+      "teleproto/Utils",
+      "teleproto/client/downloads",
+      "teleproto/tl/custom/dialog",
+      /** `extensions/PromisedWebSockets` — teleproto needs this wired explicitly: no browser vs Node auto-detection (unlike GramJS's `platform.isNode`), so the app must always pass `networkSocket: PromisedWebSockets` when constructing a client (see `clientFactory.ts`). */
+      "teleproto/extensions",
       "buffer",
       "util",
       "events",

@@ -1,4 +1,4 @@
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { getPeerInfo } from "../telegram/dialogUtils"
 import { randomId } from "../util/id"
 import { addPendingRequest } from "./storage"

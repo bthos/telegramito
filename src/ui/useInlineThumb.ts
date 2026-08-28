@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { extractInlineThumb } from "../telegram/strippedThumb"
 
 export function useInlineThumb(

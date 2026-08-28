@@ -1,6 +1,6 @@
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
-import { generateRandomBigInt } from "telegram/Helpers"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
+import { generateRandomBigInt } from "teleproto/Helpers"
 import { withTransientRetry } from "./invokeWithTransientRetry"
 
 /**

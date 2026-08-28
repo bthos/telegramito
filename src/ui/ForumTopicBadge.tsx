@@ -1,6 +1,6 @@
 import type { BigInteger } from "big-integer"
-import type { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import type { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import { useEffect, useState, type CSSProperties } from "react"
 import { getCustomEmojiObjectUrl } from "../telegram/customEmojiCache"
 import { forumTopicIconSwatchColor } from "../telegram/forum"

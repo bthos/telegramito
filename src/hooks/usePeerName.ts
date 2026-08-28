@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import type { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import type { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import { telegramEntityDisplayName } from "../util/telegramEntityDisplayName"
 import { peerKeyFromPeer } from "../telegram/peerKey"
 

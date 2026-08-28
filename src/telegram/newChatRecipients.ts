@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import type { AppMode, ParentalSettings } from "../parental/types"
 import { isPrivateOmittedInChildListForDeny } from "../parental/policy"
 import { telegramEntityDisplayName } from "../util/telegramEntityDisplayName"

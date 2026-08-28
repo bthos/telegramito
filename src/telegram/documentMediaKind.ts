@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 
 export function isStickerDoc(d: Api.Document): boolean {
   return d.attributes?.some((a) => a.className === "DocumentAttributeSticker") ?? false

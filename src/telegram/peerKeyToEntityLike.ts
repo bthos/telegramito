@@ -1,6 +1,6 @@
 import bigInt from "big-integer"
-import { Api } from "telegram"
-import type { EntityLike } from "telegram/define"
+import { Api } from "teleproto"
+import type { EntityLike } from "teleproto/define"
 
 /**
  * Maps stable peer keys used in UI (dialog keys, message sender keys) to a GramJS {@link EntityLike}.

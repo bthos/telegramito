@@ -1,7 +1,7 @@
 import { useEffect, useRef, type Dispatch, type RefObject, type SetStateAction } from "react"
-import { Api } from "telegram"
-import type { TelegramClient } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import {
   BULK_GET_MESSAGES_BY_IDS_CHUNK,
   MESSAGE_HISTORY_RECONCILE_POLICY,

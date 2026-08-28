@@ -1,9 +1,17 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useCallback, useLayoutEffect, useRef, useState } from "react"
 import type { RefObject } from "react"
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import type { ChatDatedItem } from "../ui/chatDatedItem"
 
 type StickTailMarker = number | "empty" | null
+
+/**
+ * Prefetch margins: request the next history page while the user is still this
+ * many pixels away from the edge, so pagination finishes before they hit it
+ * (loads should be invisible; 200px used to mean "wait at the very top").
+ */
+const OLDER_PREFETCH_PX = 600
+const NEWER_PREFETCH_PX = 600
 
 export function useChatScroll(opts: {
   scrollRef: RefObject<HTMLDivElement | null>
@@ -12,6 +20,14 @@ export function useChatScroll(opts: {
   loadingOlder: boolean
   hasMoreOlder: boolean
   loadOlder: () => Promise<void>
+  /** True while the transcript tail is not the live tail (windowed after a jump). */
+  hasMoreNewer: boolean
+  loadingNewer: boolean
+  loadNewer: () => Promise<void>
+  /** Exits windowed mode by reloading the live tail page (see `useChatMessages`). */
+  returnToLiveTail: () => Promise<void>
+  /** Bumped when the transcript is replaced in place — reset exactly like a chat switch. */
+  transcriptEpoch: number
   convKey: string
   /**
    * True while opening this `convKey` is itself a jump to a specific old message
@@ -43,6 +59,11 @@ export function useChatScroll(opts: {
     loadingOlder,
     hasMoreOlder,
     loadOlder,
+    hasMoreNewer,
+    loadingNewer,
+    loadNewer,
+    returnToLiveTail,
+    transcriptEpoch,
     convKey,
     hasPendingJump,
     jumpSettlingRef,
@@ -51,6 +72,8 @@ export function useChatScroll(opts: {
   const stickToEndRef = useRef(true)
   const hasPendingJumpRef = useRef(hasPendingJump)
   hasPendingJumpRef.current = hasPendingJump
+  const hasMoreNewerRef = useRef(hasMoreNewer)
+  hasMoreNewerRef.current = hasMoreNewer
   /** `null` after thread switch: next layout should snap once real tail is known. */
   const lastStickTailIdRef = useRef<StickTailMarker>(null)
   const pendingScrollFixRef = useRef<{
@@ -68,23 +91,34 @@ export function useChatScroll(opts: {
     queuedDuringJump: boolean
   } | null>(null)
   const olderLoadThrottleRef = useRef(0)
+  const newerLoadThrottleRef = useRef(0)
+  const returningToTailRef = useRef(false)
 
   const [scrollFabVisible, setScrollFabVisible] = useState(false)
   const [stickyRowIndex, setStickyRowIndex] = useState(0)
 
-  useEffect(() => {
-    // Opening this chat to jump to a specific old message: don't stick to the
-    // tail — the forced `scrollTop = scrollHeight` snap below (plus its
-    // follow-up rAF) would fire after `useChatJumpNavigation`'s own
-    // `scrollIntoView` and yank the view back to the bottom, away from the
-    // virtualized window the jump just centered on the target row.
-    stickToEndRef.current = !hasPendingJumpRef.current
+  // Layout effect (not passive) and declared before the main stick/compensation
+  // effect below: on a chat switch or an in-place transcript replace
+  // (`transcriptEpoch`), the reset must be visible to the same commit's layout
+  // pass, otherwise the main effect acts once on stale stick state.
+  useLayoutEffect(() => {
+    // Opening this chat (or replacing its transcript) to jump to a specific
+    // old message: don't stick to the tail — the forced
+    // `scrollTop = scrollHeight` snap below (plus its follow-up rAF) would
+    // fire after `useChatJumpNavigation`'s own centering and yank the view
+    // back to the bottom, away from the row the jump just centered.
+    stickToEndRef.current =
+      !hasPendingJumpRef.current && !(jumpSettlingRef?.current ?? false)
     lastStickTailIdRef.current = null
+    // Any queued prepend compensation was measured against the replaced
+    // transcript's geometry — meaningless now.
+    pendingScrollFixRef.current = null
+    returningToTailRef.current = false
     queueMicrotask(() => {
       setStickyRowIndex(0)
       setScrollFabVisible(false)
     })
-  }, [convKey])
+  }, [convKey, transcriptEpoch, jumpSettlingRef])
 
   const syncStickyChatDateShortList = useCallback(() => {
     const el = scrollRef.current
@@ -201,6 +235,19 @@ export function useChatScroll(opts: {
     if (!el) {
       return
     }
+    if (hasMoreNewerRef.current) {
+      // Windowed transcript: the loaded tail is not the live tail, so snapping
+      // to scrollHeight would land on old history. Reload the live tail; the
+      // transcript-replace reset above then owns the snap-to-bottom.
+      if (!returningToTailRef.current) {
+        returningToTailRef.current = true
+        setScrollFabVisible(false)
+        void returnToLiveTail().finally(() => {
+          returningToTailRef.current = false
+        })
+      }
+      return
+    }
     stickToEndRef.current = true
     const tailMsg = list.length > 0 ? list[list.length - 1] : undefined
     lastStickTailIdRef.current =
@@ -214,7 +261,7 @@ export function useChatScroll(opts: {
       requestAnimationFrame(snap)
     })
     setScrollFabVisible(false)
-  }, [scrollRef, list])
+  }, [scrollRef, list, returnToLiveTail])
 
   const onScroll = useCallback(() => {
     const el = scrollRef.current
@@ -249,11 +296,24 @@ export function useChatScroll(opts: {
       syncStickyChatDateShortList()
       return
     }
-    stickToEndRef.current = nearEnd
+    // Never stick to a windowed tail: the loaded bottom is old history, and a
+    // `loadNewer` append below must not trigger a snap past the user.
+    stickToEndRef.current = nearEnd && !hasMoreNewerRef.current
     const canScrollMore = scrollHeight > clientHeight + 16
-    setScrollFabVisible(canScrollMore && gap > 72)
+    setScrollFabVisible(
+      hasMoreNewerRef.current || (canScrollMore && gap > 72),
+    )
     syncStickyChatDateShortList()
-    if (scrollTop > 200 || !hasMoreOlder || loadingOlder) {
+    if (hasMoreNewerRef.current && !loadingNewer && gap < NEWER_PREFETCH_PX) {
+      const now = Date.now()
+      if (now - newerLoadThrottleRef.current >= 450) {
+        newerLoadThrottleRef.current = now
+        // Appends land strictly below the current viewport — no scroll
+        // compensation is needed, unlike the prepend path.
+        void loadNewer()
+      }
+    }
+    if (scrollTop > OLDER_PREFETCH_PX || !hasMoreOlder || loadingOlder) {
       return
     }
     const now = Date.now()
@@ -270,6 +330,8 @@ export function useChatScroll(opts: {
     jumpSettlingRef,
     loadingOlder,
     loadOlder,
+    loadingNewer,
+    loadNewer,
     syncStickyChatDateShortList,
     notifyPrepend,
     scrollRef,

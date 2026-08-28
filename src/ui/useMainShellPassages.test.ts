@@ -1,5 +1,5 @@
-import type { Api, TelegramClient } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { Api, TelegramClient } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { act, renderHook } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { AppMode } from "../parental/types"

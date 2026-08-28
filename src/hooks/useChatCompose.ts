@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import {
   useCallback,
   useEffect,
@@ -8,8 +8,8 @@ import {
   useState,
 } from "react"
 import { useTranslation } from "react-i18next"
-import type { Dialog } from "telegram/tl/custom/dialog"
-import type { TelegramClient } from "telegram"
+import type { Dialog } from "teleproto/tl/custom/dialog"
+import type { TelegramClient } from "teleproto"
 import type { ParentalSettings } from "../parental/types"
 import { useDraftAttachments } from "./useDraftAttachments"
 import { useWaxSealSend } from "./useWaxSealSend"

@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react"
-import type { TelegramClient } from "telegram"
+import type { TelegramClient } from "teleproto"
 import { usePeerPhoto } from "../hooks/usePeerPhoto"
 
 function hueFromKey(id: string): [number, number, number] {

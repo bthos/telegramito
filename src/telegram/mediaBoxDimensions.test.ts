@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import type { Api } from "telegram"
+import type { Api } from "teleproto"
 import { getMediaBoxDimensions, mediaBoxStyleVars } from "./mediaBoxDimensions"
 
 function photoMessage(sizes: Array<{ w: number; h: number }>): Api.Message {

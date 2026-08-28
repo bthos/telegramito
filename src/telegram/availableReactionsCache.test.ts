@@ -1,4 +1,4 @@
-import { Api } from "telegram"
+import { Api } from "teleproto"
 import { describe, expect, it } from "vitest"
 import {
   availableEntryToTypeReaction,

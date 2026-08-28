@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from "react"
-import type { TelegramClient } from "telegram"
-import { Api } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { TelegramClient } from "teleproto"
+import { Api } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import {
   defaultForumTopicId,
   listForumTopics,

@@ -1,5 +1,5 @@
-import type { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import type { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { getPinnedMessages } from "../telegram/pinnedMessages"
 import { withTransientRetry } from "../telegram/invokeWithTransientRetry"

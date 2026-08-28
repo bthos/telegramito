@@ -35,14 +35,14 @@ function makeDoc(overrides: {
     size: BigInt(0),
     thumbs: [],
     videoThumbs: [],
-  } as unknown as import("telegram").Api.Document
+  } as unknown as import("teleproto").Api.Document
 }
 
 function makeMsg(mediaClassName?: string) {
   return {
     className: "Message",
     media: mediaClassName ? { className: mediaClassName } : null,
-  } as unknown as import("telegram").Api.Message
+  } as unknown as import("teleproto").Api.Message
 }
 
 // ---------------------------------------------------------------------------

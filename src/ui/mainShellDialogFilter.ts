@@ -1,6 +1,6 @@
 /** Search filter for MainShell dialog lists. */
 
-import type { Dialog } from "telegram/tl/custom/dialog"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import { getDialogPreviewText } from "../telegram/dialogPreview"
 import { getPeerInfo } from "../telegram/dialogUtils"
 

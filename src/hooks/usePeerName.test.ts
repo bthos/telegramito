@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi, beforeEach } from "vitest"
-import type { Api } from "telegram"
-import type { TelegramClient } from "telegram"
+import type { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 
 import { usePeerName, _clearCacheForTest } from "./usePeerName"
 

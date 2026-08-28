@@ -1,14 +1,14 @@
 import { renderHook, act } from "@testing-library/react"
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest"
-import type { TelegramClient } from "telegram"
+import type { TelegramClient } from "teleproto"
 
 // Prevent loading the full GramJS library (~400MB) in the test worker.
-vi.mock("telegram/events", () => ({
+vi.mock("teleproto/events", () => ({
   Raw: class MockRaw {
     constructor() {}
   },
 }))
-vi.mock("telegram", async () => ({
+vi.mock("teleproto", async () => ({
   Api: {
     UpdateUserTyping: class {},
     UpdateChatUserTyping: class {},
@@ -47,11 +47,11 @@ type UpdateChatUserTyping = {
 }
 
 function makeUserEntity(id: bigint, firstName = "Alice") {
-  return { className: "User", id, firstName } as unknown as import("telegram").Api.User
+  return { className: "User", id, firstName } as unknown as import("teleproto").Api.User
 }
 
 function makeChatEntity(id: bigint) {
-  return { className: "Chat", id } as unknown as import("telegram").Api.Chat
+  return { className: "Chat", id } as unknown as import("teleproto").Api.Chat
 }
 
 function makeClient(opts: { meId?: bigint; resolvedName?: string; shouldThrow?: boolean } = {}) {
@@ -275,7 +275,7 @@ describe("useTypingIndicators", () => {
     const { client, fire } = makeClient({ resolvedName: "Alice" })
     const { result, rerender } = renderHook(
       ({ entity }) => useTypingIndicators(entity, client),
-      { initialProps: { entity: entityA as import("telegram").Api.User | import("telegram").Api.Chat } },
+      { initialProps: { entity: entityA as import("teleproto").Api.User | import("teleproto").Api.Chat } },
     )
 
     act(() => {

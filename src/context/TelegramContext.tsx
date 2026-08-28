@@ -1,7 +1,7 @@
-import { NewMessage, type NewMessageEvent } from "telegram/events"
-import { StringSession } from "telegram/sessions"
-import { TelegramClient } from "telegram"
-import type { Dialog } from "telegram/tl/custom/dialog"
+import { NewMessage, type NewMessageEvent } from "teleproto/events"
+import { StringSession } from "teleproto/sessions"
+import { TelegramClient, errors } from "teleproto"
+import type { Dialog } from "teleproto/tl/custom/dialog"
 import {
   createContext,
   useCallback,
@@ -12,7 +12,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { createClientFromStringSession } from "../telegram/clientFactory"
+import { browserClientOptions, createClientFromStringSession } from "../telegram/clientFactory"
 import {
   clearAvailableReactionsCache,
   prefetchAvailableReactionsAssets,
@@ -22,7 +22,60 @@ import { getPeerInfo } from "../telegram/dialogUtils"
 import { getStringSession, setStringSession } from "../parental/storage"
 import { appLog } from "../util/appLogger"
 
-type LoginStep = "idle" | "sending" | "code" | "2fa" | "busy"
+type LoginStep =
+  | "idle"
+  | "sending"
+  | "code"
+  | "2fa"
+  | "busy"
+  | "email"
+  | "emailCode"
+  | "captchaBlocked"
+
+/**
+ * Thrown from `reCaptchaCallback` to abort `client.start` cleanly (D8: no
+ * in-app captcha widget in v1 — show `captchaBlocked` and let the user finish
+ * in official Telegram). teleproto's `sendCode` re-throws whatever
+ * `reCaptchaCallback` throws with no special handling (`client/auth.js`), so
+ * this propagates straight out of `c.start(...)` into the catch block below —
+ * which must recognize this specific error and skip the generic error-banner
+ * + revert-to-idle fallback, or the `captchaBlocked` screen never renders.
+ */
+export class TeleprotoCaptchaAbort extends Error {
+  constructor() {
+    super("Telegram requires a security check Telegramito cannot complete in the browser.")
+    this.name = "TeleprotoCaptchaAbort"
+  }
+}
+
+/**
+ * AC-T8: typed handling for the auth/connect failures this app already
+ * surfaces (session-dead / frozen / flood), per `ux-design.md`'s mapping
+ * table. Real class names grepped from the installed package
+ * (`node_modules/teleproto/errors/RPCErrorList.d.ts`) rather than trusted
+ * blind from spec — all confirmed to match spec's assumed names exactly.
+ * Not a request to type every error site in the app — only the ones that
+ * already show `e.message` for auth/session/connect failures.
+ */
+export function classifyAuthError(e: unknown): { key: string; seconds: number | null } | null {
+  if (e instanceof errors.SessionRevokedError || e instanceof errors.AuthKeyUnregisteredError) {
+    return { key: "sessionDead", seconds: null }
+  }
+  if (e instanceof errors.FloodWaitError || e instanceof errors.SlowModeWaitError) {
+    return { key: "floodWait", seconds: e.seconds }
+  }
+  if (e instanceof errors.FrozenMethodInvalidError || e instanceof errors.FrozenParticipantMissingError) {
+    return { key: "accountRestricted", seconds: null }
+  }
+  if (e instanceof errors.EmailUnconfirmedError) {
+    // Our emailAddress/emailVerification hooks are always wired into
+    // client.start (Phase 3) — if this throws anyway, the hooks weren't live
+    // for this account state, so fall back to the plain copy per
+    // ux-design.md's "else login.emailRequired".
+    return { key: "emailRequired", seconds: null }
+  }
+  return null
+}
 
 const DIALOG_PAGE = 100
 
@@ -48,6 +101,7 @@ type TelegramValue = {
   authorized: boolean
   error: string | null
   errorKey: string | null
+  errorSeconds: number | null
   dialogs: Dialog[]
   hasMoreDialogs: boolean
   dialogsLoadingMore: boolean
@@ -56,6 +110,9 @@ type TelegramValue = {
   startLogin: (phone: string) => Promise<void>
   submitCode: (code: string) => void
   submit2FA: (password: string) => void
+  submitEmail: (email: string) => void
+  submitEmailCode: (code: string) => void
+  dismissCaptchaBlock: () => void
   logOut: () => Promise<void>
   refreshDialogs: () => Promise<void>
   loadMoreDialogs: () => Promise<void>
@@ -78,6 +135,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
   const [authorized, setAuthorized] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [errorKey, setErrorKey] = useState<string | null>(null)
+  const [errorSeconds, setErrorSeconds] = useState<number | null>(null)
   const [dialogs, setDialogs] = useState<Dialog[]>([])
   const [hasMoreDialogs, setHasMoreDialogs] = useState(true)
   const [dialogsLoadingMore, setDialogsLoadingMore] = useState(false)
@@ -85,6 +143,8 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
   const [loginStep, setLoginStep] = useState<LoginStep>("idle")
   const codeRes = useRef<((v: string) => void) | null>(null)
   const twofaRes = useRef<((v: string) => void) | null>(null)
+  const emailRes = useRef<((v: string) => void) | null>(null)
+  const emailCodeRes = useRef<((v: string) => void) | null>(null)
   const loginInFlight = useRef(false)
   const msgBuilder = useRef(new NewMessage({}))
 
@@ -157,6 +217,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
     ;(async () => {
       setIsReady(false)
       setErrorKey(null)
+      setErrorSeconds(null)
       setError(null)
       const creds = getApiCredentials()
       if (!creds.ok) {
@@ -190,9 +251,12 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
             }
           } catch (e) {
             if (!cancelled) {
-              setError(
-                e instanceof Error ? e.message : String(e)
-              )
+              const classified = classifyAuthError(e)
+              if (classified) {
+                setErrorKey(classified.key)
+                setErrorSeconds(classified.seconds)
+              }
+              setError(e instanceof Error ? e.message : String(e))
             }
             await destroyClient(b.client)
           } finally {
@@ -220,6 +284,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
     async (phone: string) => {
       if (loginInFlight.current) return
       setErrorKey(null)
+      setErrorSeconds(null)
       setError(null)
       const creds = getApiCredentials()
       if (!creds.ok) {
@@ -238,6 +303,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
         const s = new StringSession("")
         const c = new TelegramClient(s, creds.apiId, creds.apiHash, {
           connectionRetries: 5,
+          ...browserClientOptions,
         })
         setClient(c)
         setLoginStep("sending")
@@ -263,6 +329,34 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
               }
             })
           },
+          emailAddress: async () => {
+            setLoginStep("email")
+            setIsConnecting(false)
+            return await new Promise<string>((resolve) => {
+              emailRes.current = (v: string) => {
+                emailRes.current = null
+                resolve(v)
+              }
+            })
+          },
+          emailVerification: async () => {
+            setLoginStep("emailCode")
+            setIsConnecting(false)
+            // D8: v1 only supports the emailed code, not Google/Apple sign-in.
+            return await new Promise<{ type: "code"; code: string }>((resolve) => {
+              emailCodeRes.current = (v: string) => {
+                emailCodeRes.current = null
+                resolve({ type: "code", code: v })
+              }
+            })
+          },
+          reCaptchaCallback: async () => {
+            setLoginStep("captchaBlocked")
+            setIsConnecting(false)
+            // D8: no in-app widget — abort `client.start` cleanly instead of
+            // resolving with a fake token (see TeleprotoCaptchaAbort above).
+            throw new TeleprotoCaptchaAbort()
+          },
           onError: async (err) => {
             setError(err.message)
             return true
@@ -278,8 +372,20 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
           })
         }
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e))
-        setLoginStep("idle")
+        if (e instanceof TeleprotoCaptchaAbort) {
+          // loginStep is already "captchaBlocked" (set inside reCaptchaCallback
+          // above) — do not overwrite it with the generic error banner or
+          // revert to "idle" (F7); the captchaBlocked screen must stick until
+          // the user dismisses it.
+        } else {
+          const classified = classifyAuthError(e)
+          if (classified) {
+            setErrorKey(classified.key)
+            setErrorSeconds(classified.seconds)
+          }
+          setError(e instanceof Error ? e.message : String(e))
+          setLoginStep("idle")
+        }
         setClient(null)
         setAuthorized(false)
       } finally {
@@ -287,6 +393,8 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
         loginInFlight.current = false
         codeRes.current = null
         twofaRes.current = null
+        emailRes.current = null
+        emailCodeRes.current = null
       }
     },
     [client, destroyClient, loadDialogsFirstPage]
@@ -306,6 +414,27 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
       setIsConnecting(true)
       twofaRes.current(password)
     }
+  }, [])
+
+  const submitEmail = useCallback((email: string) => {
+    if (emailRes.current) {
+      setLoginStep("busy")
+      setIsConnecting(true)
+      emailRes.current(email)
+    }
+  }, [])
+
+  const submitEmailCode = useCallback((code: string) => {
+    if (emailCodeRes.current) {
+      setLoginStep("busy")
+      setIsConnecting(true)
+      emailCodeRes.current(code)
+    }
+  }, [])
+
+  /** "Understood" on the captchaBlocked screen (D8) — returns to idle so the user can retry later. */
+  const dismissCaptchaBlock = useCallback(() => {
+    setLoginStep("idle")
   }, [])
 
   const logOut = useCallback(async () => {
@@ -338,6 +467,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
       authorized,
       error,
       errorKey,
+      errorSeconds,
       dialogs,
       hasMoreDialogs,
       dialogsLoadingMore,
@@ -346,6 +476,9 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
       startLogin,
       submitCode,
       submit2FA,
+      submitEmail,
+      submitEmailCode,
+      dismissCaptchaBlock,
       logOut,
       refreshDialogs,
       loadMoreDialogs,
@@ -357,6 +490,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
       isReady,
       error,
       errorKey,
+      errorSeconds,
       dialogs,
       hasMoreDialogs,
       dialogsLoadingMore,
@@ -365,6 +499,9 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
       startLogin,
       submitCode,
       submit2FA,
+      submitEmail,
+      submitEmailCode,
+      dismissCaptchaBlock,
       logOut,
       refreshDialogs,
       loadMoreDialogs,
