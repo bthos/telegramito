@@ -1924,6 +1924,42 @@ html[data-theme="dark"] .msg-debug-id {
   padding-left: 0.5rem;
   border-left: 2px solid rgba(255, 255, 255, 0.35);
 }
+/* rich-messages-render (AC-R1): inline stub for a rich-only message body.
+   Deliberately NOT the .msg-media--unsupported card — the body decoded fine. */
+.msg-rich-stub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+  min-width: 0;
+}
+.msg-rich-stub__row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
+}
+.msg-rich-stub__ico {
+  flex: 0 0 auto;
+  opacity: 0.6;
+  font-size: 0.95em;
+}
+.msg-rich-stub__label {
+  font-weight: 600;
+}
+.msg-rich-stub__excerpt {
+  color: var(--muted, #8b95a3);
+  font-size: 0.94em;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.msg-rich-stub__open {
+  align-self: flex-start;
+  margin-top: 0.15em;
+  font-size: 0.94em;
+}
 /* Spoiler: do not use currentColor for fill with color: transparent — the bar vanishes. */
 .msg-entity--spoiler {
   color: transparent;

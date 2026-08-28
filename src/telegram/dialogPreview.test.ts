@@ -1,4 +1,5 @@
 import type { Api } from "teleproto"
+import { Api as ApiRt } from "teleproto"
 import type { Dialog } from "teleproto/tl/custom/dialog"
 import { describe, expect, it } from "vitest"
 import {
@@ -175,6 +176,20 @@ describe("getMessageMediaTypeLabel", () => {
       media: { className: "MessageMediaEmpty" as const },
     } as unknown as Api.Message
     expect(getMessageMediaTypeLabel(m, t)).toBe("chat.previewEmpty")
+  })
+
+  it("rich-only message (no media, no plain text) → rich excerpt/label, not previewEmpty (AC-R3)", () => {
+    const rm = new ApiRt.RichMessage({
+      blocks: [new ApiRt.PageBlockParagraph({ text: new ApiRt.TextPlain({ text: "The article opening" }) })],
+      photos: [],
+      documents: [],
+    } as never)
+    const m = { className: "Message" as const, id: 9, richMessage: rm } as unknown as Api.Message
+    expect(getMessageMediaTypeLabel(m, t)).toBe("The article opening")
+
+    const empty = new ApiRt.RichMessage({ blocks: [], photos: [], documents: [] } as never)
+    const m2 = { className: "Message" as const, id: 10, richMessage: empty } as unknown as Api.Message
+    expect(getMessageMediaTypeLabel(m2, t)).toBe("chat.previewRichMessage")
   })
 })
 

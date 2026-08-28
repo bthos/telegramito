@@ -4,6 +4,7 @@ import type { TelegramClient } from "teleproto"
 import { Fragment, useEffect, useState, type ReactNode } from "react"
 import { getMessageMediaTypeLabel } from "../telegram/dialogPreview"
 import { getCustomEmojiObjectUrl } from "../telegram/customEmojiCache"
+import { isRichMessage, richMessageExcerpt } from "../telegram/richMessagePreview"
 
 type TFun = (k: string, o?: Record<string, string | number | undefined>) => string
 
@@ -366,6 +367,52 @@ export type MessageTextContentProps = {
   t: TFun
 }
 
+/** Canonical Telegram deep link for a channel message, or null when none is safe. */
+function richMessageOpenUrl(m: Api.Message): string | null {
+  if (m.peerId instanceof Api.PeerChannel && typeof m.id === "number") {
+    return `https://t.me/c/${String(m.peerId.channelId)}/${m.id}`
+  }
+  return null
+}
+
+/**
+ * rich-messages-render (AC-R1/R7/R8): a message with a `richMessage` body and no
+ * plain text. v1 shows a compact newsprint stub (glyph + label + optional
+ * bounded excerpt + optional Open in Telegram) — never a blank bubble, never the
+ * unsupported-media card.
+ */
+function MsgRichStub({
+  message,
+  t,
+}: {
+  message: Api.Message
+  t: TFun
+}) {
+  const excerpt = richMessageExcerpt(message.richMessage, 220, 4)
+  const openUrl = richMessageOpenUrl(message)
+  return (
+    <span className="msg-text-richtext msg-rich-stub">
+      <span className="msg-rich-stub__row">
+        <span className="msg-rich-stub__ico" aria-hidden="true">
+          ¶
+        </span>
+        <span className="msg-rich-stub__label">{t("chat.previewRichMessage")}</span>
+      </span>
+      {excerpt ? <span className="msg-rich-stub__excerpt">{excerpt}</span> : null}
+      {openUrl ? (
+        <a
+          className="msg-rich-stub__open msg-entity--link"
+          href={openUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t("chat.richMessageOpenInTelegram")}
+        </a>
+      ) : null}
+    </span>
+  )
+}
+
 export function MessageTextContent({ message, client, noPreview, t }: MessageTextContentProps) {
   if (message.media && message.media.className === "MessageMediaWebPage" && noPreview) {
     const cap = typeof message.message === "string" ? message.message.trim() : ""
@@ -385,6 +432,9 @@ export function MessageTextContent({ message, client, noPreview, t }: MessageTex
       message.media.className !== "MessageMediaWebPage"
     ) {
       return null
+    }
+    if (isRichMessage(message.richMessage)) {
+      return <MsgRichStub message={message} t={t} />
     }
     return <span className="msg-text-richtext">{getMessageMediaTypeLabel(message, t)}</span>
   }

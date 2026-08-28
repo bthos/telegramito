@@ -220,3 +220,92 @@ describe("entity survives teleproto binary (de)serialization (AC-T17)", () => {
     expect(c.querySelector("strong.msg-entity")?.textContent).toBe("bold")
   })
 })
+
+// ---------------------------------------------------------------------------
+// rich-messages-render (AC-R1 / AC-R2 / AC-R7 / AC-R8): rich-only bubble stub
+// ---------------------------------------------------------------------------
+
+const tk = ((k: string) => k) as never
+
+function richBody(...paras: string[]): Api.RichMessage {
+  return new Api.RichMessage({
+    blocks: paras.map(
+      (p) => new Api.PageBlockParagraph({ text: new Api.TextPlain({ text: p }) }),
+    ),
+    photos: [],
+    documents: [],
+  } as never)
+}
+
+describe("MessageTextContent — rich-only stub (rich-messages-render)", () => {
+  it("rich body + empty text → newsprint stub with label + excerpt, not a blank bubble (AC-R1/R8)", () => {
+    const m = new Api.Message({
+      id: 1,
+      message: "",
+      date: 1,
+      richMessage: richBody("Opening lines of the article."),
+    } as never)
+    const c = render(
+      <div>
+        <MessageTextContent message={m} client={null} noPreview={false} t={tk} />
+      </div>,
+    ).container
+    expect(c.querySelector(".msg-rich-stub")).toBeTruthy()
+    expect(c.querySelector(".msg-rich-stub__label")?.textContent).toBe("chat.previewRichMessage")
+    expect(c.querySelector(".msg-rich-stub__excerpt")?.textContent).toContain("Opening lines")
+    // glyph is decorative
+    expect(c.querySelector(".msg-rich-stub__ico")?.getAttribute("aria-hidden")).toBe("true")
+  })
+
+  it("plain text + rich body → plain text only, no stub (AC-R2)", () => {
+    const m = new Api.Message({
+      id: 2,
+      message: "just the plain part",
+      date: 2,
+      richMessage: richBody("rich part ignored in v1"),
+    } as never)
+    const c = render(
+      <div>
+        <MessageTextContent message={m} client={null} noPreview={false} t={tk} />
+      </div>,
+    ).container
+    expect(c.querySelector(".msg-rich-stub")).toBeNull()
+    expect(c.textContent).toContain("just the plain part")
+  })
+
+  it("rich-only in a channel → Open in Telegram link to the canonical message URL (AC-R7)", () => {
+    const m = new Api.Message({
+      id: 42,
+      message: "",
+      date: 3,
+      peerId: new Api.PeerChannel({ channelId: bigInt(123456) }),
+      richMessage: richBody("body"),
+    } as never)
+    const c = render(
+      <div>
+        <MessageTextContent message={m} client={null} noPreview={false} t={tk} />
+      </div>,
+    ).container
+    const open = c.querySelector(".msg-rich-stub__open") as HTMLAnchorElement
+    expect(open).toBeTruthy()
+    expect(open.getAttribute("href")).toBe("https://t.me/c/123456/42")
+    expect(open.getAttribute("rel")).toBe("noopener noreferrer")
+  })
+
+  it("rich-only in a private chat → stub with no Open link (AC-R7 safe-URL-only)", () => {
+    const m = new Api.Message({
+      id: 5,
+      message: "",
+      date: 4,
+      peerId: new Api.PeerUser({ userId: bigInt(9) }),
+      richMessage: richBody("body"),
+    } as never)
+    const c = render(
+      <div>
+        <MessageTextContent message={m} client={null} noPreview={false} t={tk} />
+      </div>,
+    ).container
+    expect(c.querySelector(".msg-rich-stub")).toBeTruthy()
+    expect(c.querySelector(".msg-rich-stub__open")).toBeNull()
+  })
+})

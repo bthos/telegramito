@@ -2,6 +2,7 @@ import { Api } from "teleproto"
 import type { Dialog } from "teleproto/tl/custom/dialog"
 import { getMessageMediaPollFromMessage } from "./messagePollMedia"
 import { resolveMessageMediaForDisplay } from "./messageMediaUnwrap"
+import { isRichMessage, richMessagePreviewLine } from "./richMessagePreview"
 
 type Tr = (key: string, options?: Record<string, string | number | undefined>) => string
 
@@ -78,6 +79,9 @@ export function getMessageMediaTypeLabel(m: Api.Message, t: Tr): string {
   if (!med || med.className === "MessageMediaEmpty") {
     if (m.document && isDoc(m.document)) {
       return getDocumentTypeLabel(m.document, t)
+    }
+    if (isRichMessage(m.richMessage)) {
+      return richMessagePreviewLine(m.richMessage, t)
     }
     return t("chat.previewEmpty")
   }

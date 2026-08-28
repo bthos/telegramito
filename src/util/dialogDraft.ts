@@ -1,6 +1,7 @@
 import { Api } from "teleproto"
 import type { Dialog } from "teleproto/tl/custom/dialog"
 import { getDialogRecord } from "./correspondenceFilter"
+import { isRichMessage, richMessagePreviewLine } from "../telegram/richMessagePreview"
 
 type Tr = (key: string, options?: Record<string, string | number | undefined>) => string
 
@@ -41,7 +42,17 @@ function truncateDraftLine(text: string, maxLen: number): string {
   return `${line.slice(0, maxLen - 1)}…`
 }
 
-/** First line of draft for list preview; falls back to attachment label when empty. */
+/** Renderable `richMessage` on a draft with no plain text, if any. */
+function getDialogDraftRich(d: Dialog): Api.RichMessage | null {
+  const dr = getDialogRecord(d)?.draft
+  if (dr?.className !== "DraftMessage") {
+    return null
+  }
+  const rm = (dr as Api.DraftMessage).richMessage
+  return isRichMessage(rm) ? rm : null
+}
+
+/** First line of draft for list preview; falls back to rich label / attachment label when empty. */
 export function getDialogDraftPreviewLine(
   d: Dialog,
   t: Tr,
@@ -51,10 +62,14 @@ export function getDialogDraftPreviewLine(
   if (text) {
     return truncateDraftLine(text, maxLen)
   }
+  const rich = getDialogDraftRich(d)
+  if (rich) {
+    return richMessagePreviewLine(rich, t, maxLen)
+  }
   return t("letters.draftsPreviewAttachment")
 }
 
-/** Italic excerpt for desk draft cards; falls back to attachment label when empty. */
+/** Italic excerpt for desk draft cards; falls back to rich label / attachment label when empty. */
 export function getDialogDraftExcerpt(
   d: Dialog,
   t: Tr,
@@ -63,6 +78,10 @@ export function getDialogDraftExcerpt(
   const text = getDialogDraftText(d)
   if (text) {
     return truncateDraftLine(text, maxLen)
+  }
+  const rich = getDialogDraftRich(d)
+  if (rich) {
+    return richMessagePreviewLine(rich, t, maxLen)
   }
   return t("letters.draftsPreviewAttachment")
 }

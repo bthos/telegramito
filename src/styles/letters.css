@@ -4050,3 +4050,23 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
     animation: none;
   }
 }
+
+/* rich-messages-render (AC-R1): newsprint treatment for the rich-only stub in
+   the Letters thread — serif label, ink scale, muted excerpt. */
+.thread.thread--letters .msg-rich-stub__label {
+  font-family: var(--letters-serif);
+  font-style: italic;
+  font-weight: 600;
+  color: var(--letters-ink);
+}
+.thread.thread--letters .msg-rich-stub__ico {
+  color: var(--letters-ink-3);
+}
+.thread.thread--letters .msg-rich-stub__excerpt {
+  font-family: var(--letters-serif);
+  color: var(--letters-ink-3);
+}
+.thread.thread--letters .msg-rich-stub__open {
+  font-family: var(--letters-ui);
+  color: var(--letters-terra);
+}

@@ -3,6 +3,7 @@ import { Api } from "teleproto"
 import type { TFunction } from "i18next"
 import { formatSearchResultRowDate } from "../util/timeFormat"
 import { searchExcerptParts } from "../util/searchExcerptParts"
+import { isRichMessage, richMessageExcerpt } from "../telegram/richMessagePreview"
 import { cn } from "../util/cn"
 
 export function plainMessagePreview(m: Api.Message, noTextLabel: string): string {
@@ -10,7 +11,15 @@ export function plainMessagePreview(m: Api.Message, noTextLabel: string): string
     return ""
   }
   const raw = typeof m.message === "string" ? m.message.trim() : ""
-  return raw.length > 0 ? raw : noTextLabel
+  if (raw.length > 0) {
+    return raw
+  }
+  if (isRichMessage(m.richMessage)) {
+    // Rich-only hit: show a bounded excerpt if cheap, else the label. The query
+    // highlight will usually miss — acceptable for v1 (never fake plain text).
+    return richMessageExcerpt(m.richMessage, 80) ?? noTextLabel
+  }
+  return noTextLabel
 }
 
 export function searchResultSenderLabel(
