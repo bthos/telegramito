@@ -9,7 +9,6 @@ lerna-debug.log*
 
 node_modules
 .env
-vendor/telegram-built
 !.env.example
 dist
 dist-ssr

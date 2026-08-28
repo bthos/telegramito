@@ -123,8 +123,8 @@ For any of these actions, use the **official Telegram app**.
 
 ---
 
-*Covers `TelegramContext` dialog state, `dialogUtils.ts`, and
-`vendor/gramjs/gramjs/client/dialogs.ts`. OQ-C1 closed as (b)-first hybrid;
+*Covers `TelegramContext` dialog state, `dialogUtils.ts`, and teleproto's
+`client/dialogs.js` (`node_modules/teleproto`). OQ-C1 closed as (b)-first hybrid;
 OQ-C2 closed as main-list accordion; OQ-C3 closed as dormant-until-delivered.
 If community row appearance, the open-behavior, or the profile hint changes,
 update this page to match.*

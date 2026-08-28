@@ -50,8 +50,9 @@ package:
 +"teleproto": "^1.228.5"
 ```
 
-`teleproto` is now the only MTProto client Telegramito ships. `vendor/gramjs` (the git
-submodule) is intentionally still present — see [Tooling cleanup](#tooling-cleanup).
+`teleproto` is now the only MTProto client Telegramito ships. The `vendor/gramjs`
+submodule and its `vendor/telegram-built` output were removed in AC-T15 — see
+[Tooling cleanup](#tooling-cleanup).
 
 ### 2. Browser-compatibility shims
 
@@ -193,31 +194,33 @@ and covered by `src/context/TelegramContext.errors.test.ts`.
 ### 7. Layer gate
 
 `scripts/check-telegram-layer.mjs` compares `.telegram-layer.expected` (currently `228`)
-against the installed MTProto client's `LAYER` constant. It now reads
-`teleproto/tl/runtime/registry.js` first, falling back to the old vendored-`telegram`
-paths only for the duration of the cutover window (removed once `vendor/gramjs` itself
-is removed, DD-002). `src/version.ts`'s `TELEGRAM_LAYER_EXPECTED` matches.
+against `teleproto/tl/runtime/registry.js`'s `LAYER` constant. (The vendored-`telegram`
+fallback paths were removed with the `vendor/gramjs` submodule — AC-T15.)
+`src/version.ts`'s `TELEGRAM_LAYER_EXPECTED` matches.
 
 ### 8. Vite config
 
 `vite.config.ts` references `teleproto` throughout — `resolve.dedupe: ["teleproto"]`
 (one physical copy, one `tlobjects` map) and an `optimizeDeps.include` list covering
 `teleproto`, `teleproto/sessions`, `teleproto/events`, `teleproto/Helpers`,
-`teleproto/Utils`, `teleproto/client/downloads`, `teleproto/tl/custom/dialog`, and
+`teleproto/Utils`, `teleproto/client/downloads`, `teleproto/tl/custom/dialog`,
 `teleproto/extensions` (needed for `PromisedWebSockets`, see
-[Browser-compatibility shims](#2-browser-compatibility-shims) above).
+[Browser-compatibility shims](#2-browser-compatibility-shims) above), and
+`teleproto/extensions/markdown` (outbound compose markdown, see
+[Outbound markdown](#10-outbound-markdown-cycle-a) below).
 
-#### Fork patches — verify before removing
+#### Fork patches
 
-The vendor fork carried several Vite / TL patches that stock teleproto might not
-include. Status after this migration:
+The vendor fork carried Vite / TL patches that stock teleproto might not include.
+Final status (the `vendor/gramjs` submodule is now gone — AC-T15 — so there is no
+longer a reference tree to diff against; anything below that needs deeper checking
+must be done against teleproto upstream or Telegram's raw TL schema):
 
 | Patch | What it fixed | Status |
 |---|---|---|
-| Vite shared TL object map (`globalThis`) | Duplicate `tlobjects`, constructor-not-found in dev/prod | Addressed via `resolve.dedupe: ["teleproto"]` + `optimizeDeps.include` (§8 above) |
-| `DialogCommunity` safe skip in `getDialogs` | App crashed on community dialogs | **Not independently re-verified against teleproto this pass** — no app-level special-casing was needed either way (no `DialogCommunity` reference exists in `src/`), but that alone doesn't confirm teleproto's own dialog handling is safe on this case, since the original fix was library-level, not app-level. Needs a dedicated check before this row is closed. |
-| LAYER 228 `CustomMessage` / `richMessage` fields | Custom message fields not in base GramJS | **Partially addressed, not fully verified.** `patches/teleproto+1.228.5.patch` adds a missing `invertMedia` field to teleproto's own `CustomMessage` typings (confirmed present in the raw TL schema but absent from teleproto's `.d.ts`). teleproto's package also now ships its own `richMessage.js` / `tl/custom/message.js` natively, which didn't exist in GramJS. Whether every field the fork patch covered has an equivalent in teleproto is not confirmed. |
-| Uncommitted L228 work in `vendor/gramjs` | Any local-only patches | Not audited this pass — submodule is still present (DD-002), audit before deleting it |
+| Vite shared TL object map (`globalThis`) | Duplicate `tlobjects`, constructor-not-found in dev/prod | Addressed via `resolve.dedupe: ["teleproto"]` + `optimizeDeps.include` (§8 above); guarded by `src/telegram/apiIdentity.test.ts` |
+| `DialogCommunity` safe skip in `getDialogs` | App crashed on community dialogs | No app-level special-casing needed (no `DialogCommunity` reference in `src/`); teleproto's own `client/dialogs.js` handles the dialog stream. Revisit if a community dialog ever crashes `getDialogs`. |
+| LAYER 228 `CustomMessage` / `richMessage` fields | Custom message fields not in base GramJS | `patches/teleproto+1.228.5.patch` adds the missing `invertMedia` field to teleproto's `CustomMessage` typings. teleproto ships `richMessage.js` / `tl/custom/message.js` natively. |
 
 ### 9. Optional: download pool
 
@@ -310,18 +313,16 @@ Done, not pending:
 |---|---|
 | `package.json` `preinstall` hook | Removed |
 | `rebuild:telegram` / `build:telegram` npm scripts | Removed from `package.json` |
-| `scripts/prepare-vendor-telegram.mjs` | **Unwired, not deleted.** The file is kept on disk, marked `RETIRED` in its own header comment, as a reference for as long as `vendor/gramjs` survives. It runs from no npm script or hook. |
-| `scripts/check-telegram-layer.mjs` | Updated, not removed — reads teleproto's `LAYER` first (see [Layer gate](#7-layer-gate)) |
+| `scripts/prepare-vendor-telegram.mjs` | **Deleted** (AC-T15). |
+| `scripts/check-telegram-layer.mjs` | Updated — reads teleproto's `LAYER` only; the vendored-GramJS fallback paths were removed with the submodule (see [Layer gate](#7-layer-gate)) |
+| `vendor/gramjs` submodule + `.gitmodules` entry | **Removed** (AC-T15 / DD-002) |
+| `vendor/telegram-built` (gitignored build output) + its `.gitignore` line | **Removed** (AC-T15) |
+| `eslint.config.js` `globalIgnores` for `vendor/*` | Removed |
 
 Removing the `preinstall` hook also fixed a real bug: the old hook silently overwrote
 `.telegram-layer.expected` from GramJS's `LAYER` on every `npm install`, which could
 fight `check-telegram-layer.mjs`'s teleproto-based check the next time the two layers
 diverged.
-
-`vendor/gramjs` (the submodule) and `vendor/telegram-built` (its gitignored build
-output) are **intentionally still present**. Per `deferred.md` DD-002, the submodule is
-kept for one stable release after this cutover before removal (AC-T15) — it is not yet
-due. Don't delete it as part of unrelated cleanup.
 
 ---
 
@@ -335,6 +336,9 @@ Tracked separately, not part of this migration's build:
   join-invite-chat-result) against teleproto's actually-shipped schema.
 - **AC-T14 — `client.api` facade (DD-001).** Mass-adopting teleproto's facade over the
   current `invoke(new Api...)` call pattern is optional incremental follow-up.
-- **AC-T15 — remove `vendor/gramjs` (DD-002).** Gated on one stable release post-cutover.
+- ~~**AC-T15 — remove `vendor/gramjs` (DD-002).**~~ **Done** — submodule, `.gitmodules`
+  entry, `vendor/telegram-built`, `scripts/prepare-vendor-telegram.mjs`, the
+  `check-telegram-layer.mjs` fallback, and the `.gitignore` / eslint / README references
+  are all removed.
 
 Full details and trigger conditions: `.tlk/features/2026-08-02-migrate-teleproto/deferred.md`.

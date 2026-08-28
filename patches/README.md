@@ -15,7 +15,8 @@ this directory should map to one focused patch.
 ## `teleproto+1.228.5.patch` (migrate-teleproto)
 
 Two focused fixes to teleproto `1.228.5` (npm), both confirmed as real upstream defects (not
-app-side workarounds) by diffing against vendored GramJS's equivalent, previously-working code:
+app-side workarounds) — originally verified by diffing against the (now-removed) vendored GramJS
+build, which handled both cases correctly:
 
 1. **`Helpers.js` `sleep()`** — teleproto calls `setTimeout(...).unref()` unconditionally when
    `isUnref` is true. GramJS gates the same call behind `platform.isNode` (browser `setTimeout`
@@ -26,9 +27,8 @@ app-side workarounds) by diffing against vendored GramJS's equivalent, previousl
    though the raw `Message` TL constructor still carries it (confirmed via
    `tl/generated/api-definitions.js`'s `argsConfig`) and teleproto's generic per-field
    constructor loop (`tl/runtime/createApi.js`) still assigns it at runtime — a `.d.ts`-only
-   omission. Added the same `invertMedia?: boolean` declaration GramJS's own
-   `tl/custom/message.d.ts` already carries, in both the `MessageBaseInterface` and
-   `CustomMessage` class sections.
+   omission. Added an `invertMedia?: boolean` declaration in both the `MessageBaseInterface` and
+   `CustomMessage` class sections (matching what GramJS's typings carried).
 
 **Removal plan:** drop this patch (and re-run `npx patch-package teleproto` to regenerate empty)
 once these are fixed in an upstream teleproto release — check `CHANGELOG`/diff `Helpers.js` and
@@ -36,4 +36,4 @@ once these are fixed in an upstream teleproto release — check `CHANGELOG`/diff
 
 ## Structural media repair (telegramito)
 
-After GramJS deserializes messages, **`src/telegram/messageMediaGramRepair.ts`** (`repairMessageAfterGramJs`) normalizes a few wire shapes into concrete `MessageMedia` the UI already understands (e.g. `document` + `MessageMediaEmpty` → `MessageMediaDocument`). It runs from **`toMessageList`** and forum / recent-media fetch paths. Extend there when a new TL quirk is **safe to infer** without raw buffers; keep binary fixes in the submodule.
+After teleproto deserializes messages, **`src/telegram/messageMediaGramRepair.ts`** (`repairMessageAfterGramJs` — historical name) normalizes a few wire shapes into concrete `MessageMedia` the UI already understands (e.g. `document` + `MessageMediaEmpty` → `MessageMediaDocument`). It runs from **`toMessageList`** and forum / recent-media fetch paths. Extend there when a new TL quirk is **safe to infer** without raw buffers; a true binary-decode bug belongs in a `patch-package` patch against teleproto, not here.

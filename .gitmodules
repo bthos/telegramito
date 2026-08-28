@@ -1,6 +1,3 @@
-[submodule "vendor/gramjs"]
-	path = vendor/gramjs
-	url = https://github.com/bthos/gramjs.git
 [submodule "talaka"]
 	path = talaka
 	url = https://github.com/bthos/talaka

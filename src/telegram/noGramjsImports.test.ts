@@ -13,9 +13,8 @@ import { fileURLToPath } from "node:url"
  * so a file under `scripts/` (as the original tech-plan draft named it) would
  * never be collected and this AC would silently go unguarded.
  *
- * Scope: `src/` only. `vendor/gramjs/**` (the submodule being retired, not
- * migrated) legitimately still says `"telegram"` internally and is out of
- * scope (G3 / tech-plan §11).
+ * Scope: `src/` only. (The `vendor/gramjs` submodule was removed in AC-T15 /
+ * DD-002 — there is no longer any vendored code to exclude.)
  */
 
 const TELEGRAM_SPECIFIER_RE =

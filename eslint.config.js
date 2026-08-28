@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'vendor/gramjs', 'vendor/telegram-built']),
+  globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

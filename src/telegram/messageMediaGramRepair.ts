@@ -5,13 +5,15 @@ function isDocument(x: unknown): x is Api.Document {
 }
 
 /**
- * GramJS / TL upgrades sometimes leave {@link Api.Message} shapes that are valid on the wire
- * but awkward for UI: e.g. `document` populated while `media` is empty, or `MessageMediaPoll`
- * without a `results` object. This layer **materializes** the same structure official clients infer
- * so {@link MessageMediaView}, placeholders, and poll widgets see concrete {@link Api.MessageMedia}.
+ * The MTProto client (teleproto) / TL upgrades sometimes leave {@link Api.Message} shapes that are
+ * valid on the wire but awkward for UI: e.g. `document` populated while `media` is empty, or
+ * `MessageMediaPoll` without a `results` object. This layer **materializes** the same structure
+ * official clients infer so {@link MessageMediaView}, placeholders, and poll widgets see concrete
+ * {@link Api.MessageMedia}.
  *
- * Keep this file **pure** (no network). Prefer fixing `vendor/gramjs` + `rebuild:telegram` for true
- * binary decode bugs; use this for safe structural repairs after deserialize.
+ * Keep this file **pure** (no network). It handles safe *structural* repairs after deserialize; a
+ * true binary-decode bug belongs upstream in teleproto (see `patches/` for the patch-package flow),
+ * not here. (The "Gram" in the name is historical — GramJS was replaced by teleproto in AC-T15.)
  */
 export function repairMessageAfterGramJs(m: Api.Message): Api.Message {
   if (m.className !== "Message") {

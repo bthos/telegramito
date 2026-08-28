@@ -1,11 +1,9 @@
 /**
  * Ensures MTProto LAYER in the installed `teleproto` package matches `.telegram-layer.expected`.
  *
- * migrate-teleproto (D5): teleproto is now the runtime MTProto client; LAYER lives at
- * `teleproto/tl/runtime/registry.js` (`exports.LAYER = <n>`), not GramJS's
- * `AllTLObjects.js`. The old vendored-`telegram` paths are kept as a fallback only
- * for the duration of the cutover window (AC-T15 / DD-002 removes the submodule
- * later) — remove them once `vendor/gramjs` is deleted.
+ * migrate-teleproto (D5): teleproto is the runtime MTProto client; LAYER lives at
+ * `teleproto/tl/runtime/registry.js` (`exports.LAYER = <n>`). The vendored-GramJS
+ * fallback paths were removed with the `vendor/gramjs` submodule (AC-T15 / DD-002).
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -37,14 +35,10 @@ if (!Number.isFinite(expected)) {
   process.exit(1)
 }
 
-const teleprotoRegistry = path.join(root, "node_modules", "teleproto", "tl", "runtime", "registry.js")
-const nm = path.join(root, "node_modules", "telegram", "tl", "AllTLObjects.js")
-const vb = path.join(root, "vendor", "telegram-built", "tl", "AllTLObjects.js")
-const actualPath = fs.existsSync(teleprotoRegistry) ? teleprotoRegistry : fs.existsSync(nm) ? nm : vb
+const actualPath = path.join(root, "node_modules", "teleproto", "tl", "runtime", "registry.js")
 if (!fs.existsSync(actualPath)) {
   console.error(
-    "check-telegram-layer: no MTProto client installed (no teleproto/tl/runtime/registry.js " +
-      "and no AllTLObjects.js).\n  npm install",
+    "check-telegram-layer: teleproto not installed (no teleproto/tl/runtime/registry.js).\n  npm install",
   )
   process.exit(1)
 }
