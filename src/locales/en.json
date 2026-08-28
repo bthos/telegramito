@@ -412,7 +412,28 @@
       "error": "Couldn't open chat. Try again.",
       "createError": "Couldn't create group. Try again.",
       "hintSingle": "Pick one person for a private letter.",
-      "hintGroup": "Pick two or more to start a group letter."
+      "hintGroup": "Pick two or more to start a group letter.",
+      "joinInviteLink": "Have an invite link? Join invite…"
+    },
+    "joinInvite": {
+      "title": "Join invite",
+      "hint": "Paste a t.me/+ link, joinchat hash, or @publicchannel.",
+      "inputAria": "Invite link or channel username",
+      "lookUp": "Look up",
+      "join": "Join",
+      "joining": "Joining…",
+      "lookingUp": "Looking up…",
+      "tryAgain": "Try again",
+      "members": "{{count}} members",
+      "webviewTitle": "Extra step required",
+      "webviewBody": "This chat needs a confirmation before you can join. Finish it in Telegram, then return here.",
+      "openTelegram": "Open in Telegram",
+      "openBrowser": "Open in browser",
+      "openTelegramDescribed": "Opens the Telegram app to finish joining",
+      "openBrowserDescribed": "Opens the confirmation page in your browser",
+      "errorGeneric": "Couldn’t join. Try again.",
+      "errorInvalid": "That invite doesn’t look valid, or it has expired.",
+      "alreadyMember": "You’re already in this chat."
     },
     "mobileTabBarAria": "Letters navigation",
     "mobileTab": {

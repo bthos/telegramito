@@ -26,6 +26,7 @@ import { LettersDayMailSlideOver } from "./LettersDayMailSlideOver"
 import { LettersCirclesSlideOver } from "./LettersCirclesSlideOver"
 import { LettersDeskSheet } from "./LettersDeskSheet"
 import { LettersNewChatSheet } from "./LettersNewChatSheet"
+import { LettersJoinInviteSheet } from "./LettersJoinInviteSheet"
 import { LettersMobileTabBar } from "./LettersMobileTabBar"
 import { MainShellDesktopChatsLayout } from "./MainShellDesktopChatsLayout"
 import { MainShellMastheadSection } from "./MainShellMastheadSection"
@@ -74,6 +75,7 @@ export function MainShell() {
   const [pendingRequestCount, setPendingRequestCount] = useState(0)
   const [circlesSlideOpen, setCirclesSlideOpen] = useState(false)
   const [newChatOpen, setNewChatOpen] = useState(false)
+  const [joinInviteOpen, setJoinInviteOpen] = useState(false)
   const mobilePanelRef = useRef<HTMLDivElement>(null)
 
   const mobileCompact = useMaxWidth(BP.mobileCompactMax)
@@ -222,6 +224,16 @@ export function MainShell() {
   useHardwareBackLayer(newChatOpen, () => {
     setNewChatOpen(false)
   })
+
+  useHardwareBackLayer(joinInviteOpen, () => {
+    setJoinInviteOpen(false)
+  })
+
+  const handleJoinedViaInvite = () => {
+    setJoinInviteOpen(false)
+    setCorrespondenceTab("letters")
+    void refreshDialogs()
+  }
 
   useHardwareBackLayer(mobileStack && selected != null, clearSelected)
 
@@ -508,6 +520,19 @@ export function MainShell() {
         settings={settings}
         deniedPeerIds={deniedPeerIds}
         onOpenChat={handleNewChatOpened}
+        onOpenJoinInvite={() => {
+          setJoinInviteOpen(true)
+        }}
+      />
+
+      <LettersJoinInviteSheet
+        open={joinInviteOpen}
+        onClose={() => {
+          setJoinInviteOpen(false)
+        }}
+        client={client}
+        refreshDialogs={refreshDialogs}
+        onJoined={handleJoinedViaInvite}
       />
 
       <PinDialog

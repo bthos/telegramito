@@ -24,6 +24,8 @@ type Props = {
   settings: ParentalSettings
   deniedPeerIds: ReadonlySet<string>
   onOpenChat: (dialog: Dialog) => void
+  /** Open the "Join invite" sheet instead (invite links / public usernames). */
+  onOpenJoinInvite?: () => void
 }
 
 export function LettersNewChatSheet({
@@ -35,6 +37,7 @@ export function LettersNewChatSheet({
   settings,
   deniedPeerIds,
   onOpenChat,
+  onOpenJoinInvite,
 }: Props) {
   const { t } = useTranslation()
   const panelRef = useDismissibleLayer(open, onClose)
@@ -210,6 +213,19 @@ export function LettersNewChatSheet({
             ? t("letters.newChat.hintGroup")
             : t("letters.newChat.hintSingle")}
         </p>
+
+        {onOpenJoinInvite ? (
+          <button
+            type="button"
+            className="letters-new-chat-sheet__join-link"
+            onClick={() => {
+              onClose()
+              onOpenJoinInvite()
+            }}
+          >
+            {t("letters.newChat.joinInviteLink")}
+          </button>
+        ) : null}
 
         {selected.length > 0 ? (
           <div className="letters-new-chat-sheet__chips" aria-label={t("letters.newChat.recipientsLabel")}>

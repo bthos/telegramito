@@ -412,7 +412,28 @@
       "error": "No se pudo abrir el chat. Inténtelo de nuevo.",
       "createError": "No se pudo crear el grupo. Inténtelo de nuevo.",
       "hintSingle": "Elija una persona para una carta privada.",
-      "hintGroup": "Elija dos o más para iniciar una carta grupal."
+      "hintGroup": "Elija dos o más para iniciar una carta grupal.",
+      "joinInviteLink": "¿Tiene un enlace de invitación? Unirse…"
+    },
+    "joinInvite": {
+      "title": "Unirse con invitación",
+      "hint": "Pega un enlace t.me/+, un hash joinchat o @canalpublico.",
+      "inputAria": "Enlace de invitación o nombre de usuario del canal",
+      "lookUp": "Buscar",
+      "join": "Unirse",
+      "joining": "Uniéndose…",
+      "lookingUp": "Buscando…",
+      "tryAgain": "Reintentar",
+      "members": "{{count}} miembros",
+      "webviewTitle": "Se requiere un paso adicional",
+      "webviewBody": "Este chat necesita una confirmación antes de que puedas unirte. Complétala en Telegram y vuelve aquí.",
+      "openTelegram": "Abrir en Telegram",
+      "openBrowser": "Abrir en el navegador",
+      "openTelegramDescribed": "Abre la app de Telegram para terminar de unirte",
+      "openBrowserDescribed": "Abre la página de confirmación en tu navegador",
+      "errorGeneric": "No se pudo unir. Inténtalo de nuevo.",
+      "errorInvalid": "Esa invitación no parece válida o ha caducado.",
+      "alreadyMember": "Ya estás en este chat."
     },
     "mobileTabBarAria": "Navegación de Cartas",
     "mobileTab": {

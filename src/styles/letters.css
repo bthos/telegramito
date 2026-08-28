@@ -4032,6 +4032,58 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   font-size: 0.82rem;
 }
 
+/* join-invite-chat-result — Join invite sheet (reuses .letters-new-chat-sheet chrome) */
+.letters-new-chat-sheet__join-link {
+  align-self: flex-start;
+  margin: -0.15rem 0 0.25rem;
+  padding: 0;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--letters-terra);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+.letters-join-invite-sheet__body {
+  min-height: 2.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.letters-join-invite-sheet__webview-title {
+  margin: 0.25rem 0 0.15rem;
+  font-family: var(--letters-serif);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--letters-ink);
+}
+.letters-join-invite-sheet__foot {
+  flex-wrap: wrap;
+}
+/* anchor styled as a DS button — keep it inline-flex and non-underlined */
+.letters-join-invite-sheet__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.letters-join-invite-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0;
+}
+.letters-join-invite-preview__title {
+  font-family: var(--letters-serif);
+  font-weight: 600;
+  color: var(--letters-ink);
+}
+.letters-join-invite-preview__about {
+  overflow-wrap: anywhere;
+}
+
 @media (min-width: 701px) {
   .letters-new-chat-backdrop {
     align-items: center;
