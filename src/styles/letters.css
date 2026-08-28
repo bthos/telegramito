@@ -4122,3 +4122,99 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   font-family: var(--letters-ui);
   color: var(--letters-terra);
 }
+
+/* communities-dialogs (AC-C2 / AC-C3) — Communities accordion, stub row, sheet */
+.community-accordion__count {
+  margin-left: auto;
+  margin-right: 0.4rem;
+  font-family: var(--letters-ui);
+  font-size: 0.72rem;
+  color: var(--letters-ink-3);
+}
+.community-accordion__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.community-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.5rem 0.55rem;
+  background: none;
+  border: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.community-row:hover {
+  background: color-mix(in srgb, var(--letters-terra) 8%, transparent);
+}
+.community-row__glyph {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--letters-ink-3) 16%, var(--letters-paper));
+  color: var(--letters-ink-2);
+  font-size: 1rem;
+}
+.community-row__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.community-row__title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--letters-serif);
+  font-weight: 600;
+  color: var(--letters-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.community-row__mute {
+  font-size: 0.8em;
+}
+.community-row__sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.community-row__badge {
+  flex: 0 0 auto;
+  align-self: center;
+  font-family: var(--letters-ui);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--letters-ink-3);
+  border: 1px solid color-mix(in srgb, var(--letters-terra) 40%, var(--letters-lines));
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+}
+.community-sheet__kicker {
+  font-family: var(--letters-ui);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--letters-ink-3);
+}
+.community-sheet__title {
+  margin: 0.1rem 0 0.35rem;
+  font-family: var(--letters-serif);
+  font-size: 1.15rem;
+  color: var(--letters-ink);
+  overflow-wrap: anywhere;
+}

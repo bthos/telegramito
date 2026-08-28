@@ -14,6 +14,8 @@ import {
 import { ChevronDownIcon } from "./ChatChromeIcons"
 import { ChannelsBulletinTiles, type ChannelStripPeer } from "./ChannelsBulletinsStrip"
 import { ChatList } from "./ChatList"
+import { CommunitiesAccordion } from "./CommunitiesAccordion"
+import type { CommunityStub } from "../telegram/communityDialogs"
 import { SearchResultRow, searchResultSenderLabel } from "./SearchResultRow"
 import { TextField } from "./ds"
 import type { CorrespondenceTab } from "../util/correspondenceFilter"
@@ -71,6 +73,8 @@ type Props = {
   passagesJumpError?: { peerKey: string; messageId: number } | null
   /** Circles dialogs before the search filter — picks between the AC6 empty-state copies. */
   unfilteredCirclesDialogs?: Dialog[]
+  /** communities-dialogs: Layer 228 `DialogCommunity` stubs (empty ⇒ no accordion). */
+  communityStubs?: CommunityStub[]
 }
 
 const NO_PASSAGE_HITS: GlobalSearchHit[] = []
@@ -133,6 +137,7 @@ export function ChatsListPanel({
   onPassagesSeeAll,
   passagesJumpError = null,
   unfilteredCirclesDialogs,
+  communityStubs,
 }: Props) {
   const { t, i18n } = useTranslation()
   const corrUid = useId()
@@ -418,6 +423,7 @@ export function ChatsListPanel({
     <>
       {lettersMode ? (
         <div className="letters-sidebar-accordions">
+          <CommunitiesAccordion communities={communityStubs ?? []} />
           {showPassagesSection ? (
             <>
               <button

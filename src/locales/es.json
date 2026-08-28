@@ -435,6 +435,19 @@
       "errorInvalid": "Esa invitación no parece válida o ha caducado.",
       "alreadyMember": "Ya estás en este chat."
     },
+    "communities": {
+      "sectionLabel": "Comunidades",
+      "badge": "Comunidad",
+      "rowAria": "{{title}} — comunidad, abre los detalles",
+      "muted": "Silenciada",
+      "sub": "Espacios compartidos — abre para ver detalles",
+      "subForbidden": "El acceso puede estar restringido",
+      "sheetAria": "{{title}} — detalles de la comunidad",
+      "unavailableTitle": "Comunidad no disponible",
+      "body": "Las comunidades aún no son totalmente compatibles con Telegramito. Explora y gestiona esta comunidad en Telegram.",
+      "bodyForbidden": "Puede que no tengas acceso a esta comunidad. Abre Telegram para ver los detalles.",
+      "openTelegram": "Abrir en Telegram"
+    },
     "mobileTabBarAria": "Navegación de Cartas",
     "mobileTab": {
       "letters": "Cartas",

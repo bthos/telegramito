@@ -27,6 +27,7 @@ import { LettersCirclesSlideOver } from "./LettersCirclesSlideOver"
 import { LettersDeskSheet } from "./LettersDeskSheet"
 import { LettersNewChatSheet } from "./LettersNewChatSheet"
 import { LettersJoinInviteSheet } from "./LettersJoinInviteSheet"
+import { useCommunityDialogs } from "../hooks/useCommunityDialogs"
 import { LettersMobileTabBar } from "./LettersMobileTabBar"
 import { MainShellDesktopChatsLayout } from "./MainShellDesktopChatsLayout"
 import { MainShellMastheadSection } from "./MainShellMastheadSection"
@@ -76,6 +77,7 @@ export function MainShell() {
   const [circlesSlideOpen, setCirclesSlideOpen] = useState(false)
   const [newChatOpen, setNewChatOpen] = useState(false)
   const [joinInviteOpen, setJoinInviteOpen] = useState(false)
+  const { communities: communityStubs } = useCommunityDialogs(client)
   const mobilePanelRef = useRef<HTMLDivElement>(null)
 
   const mobileCompact = useMaxWidth(BP.mobileCompactMax)
@@ -338,6 +340,7 @@ export function MainShell() {
     bulletinChannelPeers: bulletinPeers,
     onSelectBulletinPeer: handleBulletinSelect,
     correspondenceTab,
+    communityStubs,
     ...passagesPanelProps,
   }
 

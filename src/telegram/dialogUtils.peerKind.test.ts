@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { Api } from "teleproto"
+import bigInt from "big-integer"
 import type { Dialog } from "teleproto/tl/custom/dialog"
 import {
   isBroadcastChannelDialog,
@@ -114,5 +115,17 @@ describe("dialogUtils peer buckets (Letters sidebar)", () => {
     expect(isLettersSidebarChannelListDialog(bc)).toBe(false)
     expect(isLettersSidebarGroupDialog(discussion)).toBe(false)
     expect(isLettersSidebarChannelListDialog(discussion)).toBe(true)
+  })
+
+  it("a Community entity is never bucketed as private / broadcast / group / channel (AC-C4)", () => {
+    const community = dlg(false, new Api.Community({
+      id: bigInt(1),
+      title: "Hub",
+      photo: new Api.ChatPhotoEmpty(),
+    } as never) as unknown as Dialog["entity"])
+    expect(isPrivateUserDialog(community)).toBe(false)
+    expect(isBroadcastChannelDialog(community)).toBe(false)
+    expect(isLettersSidebarGroupDialog(community)).toBe(false)
+    expect(isLettersSidebarChannelListDialog(community)).toBe(false)
   })
 })

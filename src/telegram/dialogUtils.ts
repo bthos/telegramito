@@ -8,6 +8,16 @@ export function isPrivateUserDialog(d: Dialog): boolean {
   return d.isUser === true
 }
 
+/**
+ * communities-dialogs (AC-C4): a Layer 228 `Community` / `CommunityForbidden`
+ * entity — kept out of every User/Chat/Channel bucket so the catch-all "it's a
+ * group" fallbacks below never claim it.
+ */
+export function isCommunityEntity(e: Dialog["entity"]): boolean {
+  const cn = (e as { className?: string } | null | undefined)?.className
+  return cn === "Community" || cn === "CommunityForbidden"
+}
+
 /** Broadcast channel row (shown in bulletin tiles, not the circles ChatList). */
 export function isBroadcastChannelDialog(d: Dialog): boolean {
   return isBroadcastChannelEntity(d.entity)
@@ -15,7 +25,11 @@ export function isBroadcastChannelDialog(d: Dialog): boolean {
 
 /** Letters sidebar "circles" bucket: everything split into the Groups / Channels accordions. */
 export function isLettersCirclesDialog(d: Dialog): boolean {
-  return !isPrivateUserDialog(d) && !isBroadcastChannelDialog(d)
+  return (
+    !isPrivateUserDialog(d) &&
+    !isBroadcastChannelDialog(d) &&
+    !isCommunityEntity(d.entity)
+  )
 }
 
 /**
@@ -42,6 +56,9 @@ export function isLettersSidebarGroupDialog(d: Dialog): boolean {
   const e = d.entity
   if (e == null) {
     return true
+  }
+  if (isCommunityEntity(e)) {
+    return false
   }
   if (e.className === "Chat") {
     return true

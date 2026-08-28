@@ -435,6 +435,19 @@
       "errorInvalid": "That invite doesn’t look valid, or it has expired.",
       "alreadyMember": "You’re already in this chat."
     },
+    "communities": {
+      "sectionLabel": "Communities",
+      "badge": "Community",
+      "rowAria": "{{title}} — community, opens details",
+      "muted": "Muted",
+      "sub": "Shared spaces — open for details",
+      "subForbidden": "Access may be restricted",
+      "sheetAria": "{{title}} — community details",
+      "unavailableTitle": "Unavailable community",
+      "body": "Communities aren’t fully supported in Telegramito yet. Browse and manage this community in Telegram.",
+      "bodyForbidden": "You may not have access to this community. Open Telegram for details.",
+      "openTelegram": "Open in Telegram"
+    },
     "mobileTabBarAria": "Letters navigation",
     "mobileTab": {
       "letters": "Letters",
