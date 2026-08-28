@@ -46,6 +46,9 @@ import { ForumTopicBadge } from "./ForumTopicBadge"
 import { Button } from "./ds"
 import { PinnedMessageBanner } from "./PinnedMessageBanner"
 import { usePinnedMessages } from "../hooks/usePinnedMessages"
+import { EphemeralNoticeRibbon } from "./EphemeralNoticeRibbon"
+import { useEphemeralNotice } from "../hooks/useEphemeralNotice"
+import { peerKeyFromEntity } from "../telegram/peerKey"
 import { nextPinnedIndex } from "../telegram/pinnedMessages"
 import type { ChatDatedItem } from "./chatDatedItem"
 import { ChatInfoIcon, SearchInChatIcon } from "./ChatChromeIcons"
@@ -122,6 +125,8 @@ export function ChatView({
   const [messageActionError, setMessageActionError] = useState<string | null>(null)
 
   const { key, name } = getPeerInfo(dialog)
+  const { show: showEphemeralNotice, dismiss: dismissEphemeralNotice } =
+    useEphemeralNotice(peerKeyFromEntity(dialog.entity))
 
   const isForum = useMemo(
     () => isForumWithSubchats(dialog.entity ?? undefined),
@@ -1251,6 +1256,9 @@ export function ChatView({
           onDismiss={() => setPinnedBannerDismissed(true)}
           t={t}
         />
+      ) : null}
+      {showEphemeralNotice ? (
+        <EphemeralNoticeRibbon onDismiss={dismissEphemeralNotice} />
       ) : null}
       <ChatMessageList
         scrollRef={scrollRef}

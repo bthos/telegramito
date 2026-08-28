@@ -362,6 +362,8 @@
     "attachUploadProgressAria": "Progreso de subida {{pct}} por ciento",
     "attachBlockedChild": "Los archivos adjuntos están desactivados para este perfil.",
     "messagePlaceholderLetters": "Responda, con su puño y letra…",
+    "ephemeralNotice": "Los mensajes que desaparecen en este chat no se muestran aquí: abre Telegram para verlos.",
+    "ephemeralNoticeDismiss": "Descartar",
     "readTranscript": "leer transcripción ›",
     "composePhoto": "Foto",
     "composeVoice": "Voz",
@@ -565,6 +567,7 @@
     "parent": "Adulto",
     "childHint": "Aplica filtros más estrictos. Cambiar ajustes puede requerir PIN.",
     "deskHint": "Niño/a aplica filtros más estrictos; adulto desbloquea todos los controles.",
+    "ephemeralLimitation": "Los mensajes efímeros / de invitado no se muestran en Telegramito: usa Telegram oficial para esas conversaciones.",
     "headerToggle": "Modo (niño/a o adulto)"
   },
   "pin": {

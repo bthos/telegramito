@@ -17,3 +17,15 @@ export function peerKeyFromPeer(peerId: Api.TypePeer | undefined): string {
   }
   return ""
 }
+
+/** Same identity scheme as {@link peerKeyFromPeer}, from a resolved entity. */
+export function peerKeyFromEntity(
+  entity: { className?: string; id?: unknown } | null | undefined,
+): string {
+  if (entity?.id == null) return ""
+  const id = String(entity.id)
+  if (entity.className === "User") return `u:${id}`
+  if (entity.className === "Channel") return `c:${id}`
+  if (entity.className === "Chat" || entity.className === "ChatForbidden") return `h:${id}`
+  return ""
+}

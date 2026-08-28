@@ -362,6 +362,8 @@
     "attachUploadProgressAria": "Upload progress {{pct}} percent",
     "attachBlockedChild": "File attachments are disabled for this profile.",
     "messagePlaceholderLetters": "Reply, in your own hand…",
+    "ephemeralNotice": "Disappearing messages in this chat aren’t shown here — open Telegram for those.",
+    "ephemeralNoticeDismiss": "Dismiss",
     "readTranscript": "read transcript ›",
     "composePhoto": "Photo",
     "composeVoice": "Voice",
@@ -565,6 +567,7 @@
     "parent": "Parent",
     "childHint": "Applies stricter local filters. Settings changes require a PIN if set.",
     "deskHint": "Child applies stricter local filters; parent unlocks full controls.",
+    "ephemeralLimitation": "Disappearing / guest messages aren’t shown in Telegramito — use official Telegram for those threads.",
     "headerToggle": "User mode (child or parent)"
   },
   "pin": {

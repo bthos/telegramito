@@ -1,4 +1,4 @@
-import { NewMessage, type NewMessageEvent } from "teleproto/events"
+import { NewMessage, Raw, type NewMessageEvent } from "teleproto/events"
 import { StringSession } from "teleproto/sessions"
 import { TelegramClient, errors } from "teleproto"
 import type { Dialog } from "teleproto/tl/custom/dialog"
@@ -21,6 +21,7 @@ import { getApiCredentials } from "../telegram/credentials"
 import { getPeerInfo } from "../telegram/dialogUtils"
 import { getStringSession, setStringSession } from "../parental/storage"
 import { appLog } from "../util/appLogger"
+import { getEphemeralUpdatePeerKey } from "../telegram/ephemeralUpdate"
 
 type LoginStep =
   | "idle"
@@ -94,6 +95,35 @@ function attachNewMessageListener(
   )
 }
 
+/**
+ * ephemeral-messages (AC-E1 / AC-E6): a raw update handler that only reacts to
+ * the three Layer 228 ephemeral update constructors — logs the ignored traffic
+ * and records the peer so the chat can show an honest ribbon. Wrapped so a
+ * detection error can never break the classic update pipeline (AC-E3). Every
+ * non-ephemeral update (the overwhelming majority) hits one `instanceof` and
+ * returns.
+ */
+function attachEphemeralListener(
+  client: TelegramClient,
+  builder: Raw,
+  onEphemeralForPeer: (peerKey: string) => void
+): void {
+  client.addEventHandler((update: unknown) => {
+    try {
+      const peerKey = getEphemeralUpdatePeerKey(update)
+      if (peerKey == null) {
+        return
+      }
+      appLog.warn("ephemeral update ignored (not shown in Telegramito)", {
+        type: (update as { className?: string })?.className,
+      })
+      onEphemeralForPeer(peerKey)
+    } catch {
+      /* never let ephemeral detection disturb the update stream */
+    }
+  }, builder)
+}
+
 type TelegramValue = {
   client: TelegramClient | null
   isConnecting: boolean
@@ -106,6 +136,10 @@ type TelegramValue = {
   hasMoreDialogs: boolean
   dialogsLoadingMore: boolean
   lastMessageTick: number
+  /** ephemeral-messages: peer keys that have received ephemeral traffic this session. */
+  ephemeralPeerKeys: ReadonlySet<string>
+  /** Bumps when a new ephemeral update lands, so consumers re-render. */
+  ephemeralTick: number
   loginStep: LoginStep
   startLogin: (phone: string) => Promise<void>
   submitCode: (code: string) => void
@@ -140,6 +174,8 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
   const [hasMoreDialogs, setHasMoreDialogs] = useState(true)
   const [dialogsLoadingMore, setDialogsLoadingMore] = useState(false)
   const [lastMessageTick, setLastMessageTick] = useState(0)
+  const ephemeralPeersRef = useRef<Set<string>>(new Set())
+  const [ephemeralTick, setEphemeralTick] = useState(0)
   const [loginStep, setLoginStep] = useState<LoginStep>("idle")
   const codeRes = useRef<((v: string) => void) | null>(null)
   const twofaRes = useRef<((v: string) => void) | null>(null)
@@ -147,6 +183,12 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
   const emailCodeRes = useRef<((v: string) => void) | null>(null)
   const loginInFlight = useRef(false)
   const msgBuilder = useRef(new NewMessage({}))
+  const rawBuilder = useRef(new Raw({}))
+
+  const handleEphemeralForPeer = useCallback((peerKey: string) => {
+    ephemeralPeersRef.current.add(peerKey)
+    setEphemeralTick(Date.now())
+  }, [])
 
   const loadDialogsFirstPage = useCallback(async (c: TelegramClient) => {
     const list = await c.getDialogs({ limit: DIALOG_PAGE })
@@ -246,6 +288,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
               attachNewMessageListener(b.client, msgBuilder.current, () => {
                 setLastMessageTick(Date.now())
               })
+              attachEphemeralListener(b.client, rawBuilder.current, handleEphemeralForPeer)
             } else {
               await destroyClient(b.client)
             }
@@ -370,6 +413,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
           attachNewMessageListener(c, msgBuilder.current, () => {
             setLastMessageTick(Date.now())
           })
+          attachEphemeralListener(c, rawBuilder.current, handleEphemeralForPeer)
         }
       } catch (e) {
         if (e instanceof TeleprotoCaptchaAbort) {
@@ -472,6 +516,8 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
       hasMoreDialogs,
       dialogsLoadingMore,
       lastMessageTick,
+      ephemeralPeerKeys: ephemeralPeersRef.current,
+      ephemeralTick,
       loginStep,
       startLogin,
       submitCode,
@@ -495,6 +541,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
       hasMoreDialogs,
       dialogsLoadingMore,
       lastMessageTick,
+      ephemeralTick,
       loginStep,
       startLogin,
       submitCode,

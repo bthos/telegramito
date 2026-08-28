@@ -283,6 +283,9 @@ export function LettersDeskSheet({
                   </div>
                 </div>
                 <p className="letters-desk-sheet__row-hint">{t("mode.deskHint")}</p>
+                <p className="letters-desk-sheet__row-hint muted small">
+                  {t("mode.ephemeralLimitation")}
+                </p>
 
                 {showParentRows ? (
                   <div className="letters-desk-sheet__bookmarks">

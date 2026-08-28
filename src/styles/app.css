@@ -3449,6 +3449,44 @@ html[data-theme="light"] .msg-bubble--out .msg-time {
   border: 1px solid rgba(120, 180, 255, 0.22);
   margin-bottom: 0.4rem;
 }
+/* ephemeral-messages (AC-E2 / D7): non-blocking notice below the pinned banner. */
+.ephemeral-ribbon {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.4rem;
+  color: var(--muted, #8b95a3);
+  background: color-mix(in srgb, var(--muted, #8b95a3) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--muted, #8b95a3) 22%, transparent);
+  margin-bottom: 0.4rem;
+}
+.ephemeral-ribbon__text {
+  min-width: 0;
+}
+.ephemeral-ribbon__dismiss {
+  flex: 0 0 auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 0.25rem;
+}
+.ephemeral-ribbon__dismiss:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
 .pinned-banner__body {
   display: flex;
   flex-direction: row;

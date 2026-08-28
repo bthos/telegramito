@@ -362,6 +362,8 @@
     "attachUploadProgressAria": "Прагрэс загрузкі {{pct}} працэнтаў",
     "attachBlockedChild": "Далучэнне файлаў адключана для гэтага профілю.",
     "messagePlaceholderLetters": "Адкажыце сваёй рукой…",
+    "ephemeralNotice": "Знікаючыя паведамленні ў гэтым чаце тут не паказваюцца — адкрыйце Telegram.",
+    "ephemeralNoticeDismiss": "Схаваць",
     "readTranscript": "чытаць транскрыпт ›",
     "composePhoto": "Фота",
     "composeVoice": "Голас",
@@ -565,6 +567,7 @@
     "parent": "Радзіцель",
     "childHint": "Строгія лакальныя фільтры. Калі задана PIN, змяненне наладаў патрабуе яго ўводу.",
     "deskHint": "Дзіця — строгія фільтры; радзіцель — поўны доступ.",
+    "ephemeralLimitation": "Знікаючыя / госцявыя паведамленні не паказваюцца ў Telegramito — карыстайцеся афіцыйным Telegram.",
     "headerToggle": "Пераключальнік рэжыму: дзіця ці радзіцель"
   },
   "pin": {
