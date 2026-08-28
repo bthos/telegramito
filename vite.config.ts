@@ -157,6 +157,8 @@ export default defineConfig({
       "teleproto/tl/custom/dialog",
       /** `extensions/PromisedWebSockets` — teleproto needs this wired explicitly: no browser vs Node auto-detection (unlike GramJS's `platform.isNode`), so the app must always pass `networkSocket: PromisedWebSockets` when constructing a client (see `clientFactory.ts`). */
       "teleproto/extensions",
+      /** `extensions/markdown` — CJS subpath, not re-exported from `extensions`; used by `src/telegram/composeMarkdown.ts` to parse outbound compose markdown into `formattingEntities`. */
+      "teleproto/extensions/markdown",
       "buffer",
       "util",
       "events",

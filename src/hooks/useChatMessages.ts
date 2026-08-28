@@ -747,6 +747,7 @@ export function useChatMessages(opts: {
     list,
     setList,
     loadedConvKeyRef,
+    transcriptEpochRef,
     historyReconcileAttemptedRef,
     mediaPlaceholderRefetchAttemptsRef,
   })

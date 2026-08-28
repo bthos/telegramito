@@ -16,6 +16,7 @@ import { useWaxSealSend } from "./useWaxSealSend"
 import { getReplyToPreviewText } from "../telegram/dialogPreview"
 import { getDialogDraftText } from "../util/dialogDraft"
 import { sendInForumThread } from "../telegram/forum"
+import { parseComposeMarkdown } from "../telegram/composeMarkdown"
 import { appLog } from "../util/appLogger"
 import { canCompose as deriveCanCompose, canSendNow as deriveCanSendNow } from "../ui/chatComposeGate"
 
@@ -153,9 +154,13 @@ export function useChatCompose(opts: UseChatComposeOpts) {
     setIsUploading(true)
     setMessageActionError(null)
     try {
+      // A retry carries no caption text today; parse anyway so the markdown
+      // wiring is uniform if a caption is ever threaded through here.
+      const md = parseComposeMarkdown("")
       await client.sendFile(dialog.entity, {
         file: att.file,
-        caption: "",
+        caption: md ? md.message : "",
+        ...(md ? { formattingEntities: md.entities } : {}),
         ...(isForum && topicId != null ? { topMsgId: topicId } : {}),
       })
       removeAttachment(id)
@@ -191,6 +196,7 @@ export function useChatCompose(opts: UseChatComposeOpts) {
       }
 
       const captionText = text
+      const captionMd = parseComposeMarkdown(captionText)
       const rId = replyingTo?.className === "Message" ? replyingTo.id : undefined
       const validReply = typeof rId === "number" && rId > 0 ? rId : undefined
 
@@ -207,7 +213,8 @@ export function useChatCompose(opts: UseChatComposeOpts) {
           try {
             await client.sendFile(dialog.entity, {
               file: att.file,
-              caption: first ? captionText : "",
+              caption: first ? (captionMd ? captionMd.message : captionText) : "",
+              ...(first && captionMd ? { formattingEntities: captionMd.entities } : {}),
               replyTo: first ? validReply : undefined,
               ...(isForum && topicId != null ? { topMsgId: topicId } : {}),
             })
@@ -249,13 +256,15 @@ export function useChatCompose(opts: UseChatComposeOpts) {
         return
       }
       const rId = replyingTo?.className === "Message" ? replyingTo.id : undefined
+      const md = parseComposeMarkdown(text)
       try {
         await sendInForumThread(
           client,
           dialog.entity as NonNullable<Dialog["entity"]>,
-          text,
+          md ? md.message : text,
           topicId,
           typeof rId === "number" && rId > 0 ? rId : undefined,
+          md?.entities,
         )
         clearComposeField()
         setReplyingTo(null)
@@ -270,9 +279,11 @@ export function useChatCompose(opts: UseChatComposeOpts) {
       return
     }
     const rId = replyingTo?.className === "Message" ? replyingTo.id : undefined
+    const md = parseComposeMarkdown(text)
     try {
       await client.sendMessage(dialog.entity, {
-        message: text,
+        message: md ? md.message : text,
+        ...(md ? { formattingEntities: md.entities } : {}),
         ...(typeof rId === "number" && rId > 0 ? { replyTo: rId } : {}),
       })
       clearComposeField()

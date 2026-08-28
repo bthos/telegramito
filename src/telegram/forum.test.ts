@@ -1,11 +1,13 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { Api } from "teleproto"
+import type { TelegramClient } from "teleproto"
 import {
   defaultForumTopicId,
   formatTopicUnreadSuffix,
   forumTopicIconSwatchColor,
   isForumWithSubchats,
   resolveForumTopicIdFromMessage,
+  sendInForumThread,
   sumTopicUnreadCounts,
 } from "./forum"
 
@@ -122,6 +124,49 @@ describe("forumTopicIconSwatchColor", () => {
   })
   it("uses neutral gray when color is effectively zero", () => {
     expect(forumTopicIconSwatchColor(0)).toBe("#9aa7b8")
+  })
+})
+
+describe("sendInForumThread — formattingEntities passthrough (AC-T18)", () => {
+  function mockClient() {
+    const invoke = vi.fn(
+      (_req: unknown): Promise<Api.TypeUpdates> => Promise.resolve({} as Api.TypeUpdates),
+    )
+    const client = {
+      getInputEntity: vi.fn(async () => ({ className: "InputPeerChannel" })),
+      invoke,
+    } as unknown as TelegramClient
+    return { client, invoke }
+  }
+
+  const channel = { className: "Channel" } as unknown as Parameters<typeof sendInForumThread>[1]
+
+  it("threads formattingEntities into messages.SendMessage.entities", async () => {
+    const { client, invoke } = mockClient()
+    const entities = [new Api.MessageEntityBold({ offset: 0, length: 4 })]
+    await sendInForumThread(client, channel, "bold", 7, undefined, entities)
+
+    expect(invoke).toHaveBeenCalledTimes(1)
+    const arg = invoke.mock.calls[0][0] as Api.messages.SendMessage
+    expect(arg).toBeInstanceOf(Api.messages.SendMessage)
+    expect(arg.message).toBe("bold")
+    expect(arg.entities).toEqual(entities)
+    expect((arg.replyTo as Api.InputReplyToMessage).topMsgId).toBe(7)
+  })
+
+  it("omits entities when none are passed (plain send unchanged)", async () => {
+    const { client, invoke } = mockClient()
+    await sendInForumThread(client, channel, "plain", 7)
+    const arg = invoke.mock.calls[0][0] as Api.messages.SendMessage
+    expect(arg.message).toBe("plain")
+    expect(arg.entities).toBeUndefined()
+  })
+
+  it("omits entities when an empty array is passed", async () => {
+    const { client, invoke } = mockClient()
+    await sendInForumThread(client, channel, "plain", 7, undefined, [])
+    const arg = invoke.mock.calls[0][0] as Api.messages.SendMessage
+    expect(arg.entities).toBeUndefined()
   })
 })
 

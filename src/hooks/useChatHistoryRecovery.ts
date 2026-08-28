@@ -28,6 +28,16 @@ type RecoveryOpts = {
   list: Api.Message[]
   setList: Dispatch<SetStateAction<Api.Message[]>>
   loadedConvKeyRef: RefObject<string | null>
+  /**
+   * Transcript-generation counter from `useChatMessages`. Bumped on every
+   * in-place transcript replace (jump / return-to-live-tail / initial load).
+   * An in-flight recovery fetch whose `transcriptEpochRef.current` moved while
+   * it was awaiting belongs to a transcript that no longer exists — its result
+   * is discarded rather than spliced into the new window (mirrors the guard in
+   * `useChatMessages` `loadOlder` / `loadNewer`). Closes Bagnik code-QA
+   * finding #1 on commit `cd3d1f3` (AC-T19).
+   */
+  transcriptEpochRef: RefObject<number>
   historyReconcileAttemptedRef: RefObject<Set<string>>
   mediaPlaceholderRefetchAttemptsRef: RefObject<Map<number, number>>
 }
@@ -48,6 +58,7 @@ export function useChatHistoryRecovery(opts: RecoveryOpts): void {
     list,
     setList,
     loadedConvKeyRef,
+    transcriptEpochRef,
     historyReconcileAttemptedRef,
     mediaPlaceholderRefetchAttemptsRef,
   } = opts
@@ -91,6 +102,7 @@ export function useChatHistoryRecovery(opts: RecoveryOpts): void {
         historyReconcileAttemptKey(MESSAGE_HISTORY_RECONCILE_POLICY, g.lo, g.hi),
       )
     }
+    const epochAtStart = transcriptEpochRef.current
     void (async () => {
       try {
         const mergedById = new Map<number, Api.Message>()
@@ -112,7 +124,13 @@ export function useChatHistoryRecovery(opts: RecoveryOpts): void {
         if (allowed.length === 0) {
           return
         }
-        if (loadedConvKeyRef.current !== convKey) {
+        if (
+          loadedConvKeyRef.current !== convKey
+          || transcriptEpochRef.current !== epochAtStart
+        ) {
+          // Conversation switched, or the transcript was replaced (jump /
+          // return-to-tail) while this reconcile was in flight — its rows
+          // belong to a window that no longer exists.
           return
         }
         setList((prev) => uniqueMessagesSort([...allowed, ...prev]))
@@ -135,6 +153,7 @@ export function useChatHistoryRecovery(opts: RecoveryOpts): void {
     appMode,
     setList,
     loadedConvKeyRef,
+    transcriptEpochRef,
     historyReconcileAttemptedRef,
   ])
 
@@ -173,6 +192,7 @@ export function useChatHistoryRecovery(opts: RecoveryOpts): void {
     }
 
     mediaPlaceholderRefetchInFlightRef.current = true
+    const epochAtStart = transcriptEpochRef.current
     void (async () => {
       try {
         const results = await Promise.all(
@@ -205,7 +225,12 @@ export function useChatHistoryRecovery(opts: RecoveryOpts): void {
         if (collected.size === 0) {
           return
         }
-        if (loadedConvKeyRef.current !== convKey) {
+        if (
+          loadedConvKeyRef.current !== convKey
+          || transcriptEpochRef.current !== epochAtStart
+        ) {
+          // Transcript replaced (jump / return-to-tail) or conversation switched
+          // while the refetch was in flight — do not insert into the new window.
           return
         }
         setList((prev) => {
@@ -235,6 +260,7 @@ export function useChatHistoryRecovery(opts: RecoveryOpts): void {
     appMode,
     setList,
     loadedConvKeyRef,
+    transcriptEpochRef,
     mediaPlaceholderRefetchAttemptsRef,
   ])
 }

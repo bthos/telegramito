@@ -235,6 +235,31 @@ const client = new TelegramClient(session, API_ID, API_HASH, {
 });
 ```
 
+### 10. Outbound markdown (Cycle A)
+
+The compose box parses a small, teleproto-native markdown dialect on send.
+`src/telegram/composeMarkdown.ts` wraps teleproto's built-in `MarkdownParser`
+(`teleproto/extensions/markdown`); `src/hooks/useChatCompose.ts` calls it on all
+three send paths — direct chat (`client.sendMessage`), forum thread
+(`sendInForumThread` → `messages.SendMessage.entities`) and media caption
+(`client.sendFile`) — passing `formattingEntities` when it returns a result.
+
+**Supported delimiters:** `**bold**`, `__italic__`, `~~strike~~`, `` `code` ``.
+(`` ```pre``` `` round-trips but teleproto's `md` parser matches the leading
+single backtick first, so a fenced block degrades to inline `code`.)
+
+**Lossless-only rule.** `parseComposeMarkdown` returns a parsed result **only**
+when `MarkdownParser.unparse(parsed) === input` — i.e. re-inserting the
+delimiters reproduces exactly what the user typed. teleproto's parser silently
+drops an unmatched delimiter (`"a**b"` → `"ab"`); the guard rejects those cases
+and the caller sends the **raw text verbatim**. No user character is ever lost;
+the cost is that ambiguous input simply isn't formatted.
+
+**Not supported in this mode** (no delimiter in teleproto's `md` set):
+`[text](url)` links, `||spoiler||`, `@mention` resolution. Received messages
+still render all of these — see `src/ui/MessageTextContent.tsx`. Adding them to
+*outbound* composing is a separate composer feature, not part of the migration.
+
 ---
 
 ## Session continuity

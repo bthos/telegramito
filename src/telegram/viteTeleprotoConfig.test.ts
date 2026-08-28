@@ -24,6 +24,7 @@ describe("vite.config.ts teleproto wiring (AC-T2)", () => {
       "teleproto/client/downloads",
       "teleproto/tl/custom/dialog",
       "teleproto/extensions",
+      "teleproto/extensions/markdown",
     ]) {
       expect(include).toContain(expected)
     }

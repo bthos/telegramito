@@ -225,13 +225,19 @@ export async function getForumThreadMessagesPage(
 /**
  * New message inside a forum topic. Uses `InputReplyToMessage` with
  * `topMsgId` = topic id, and `replyToMsgId` of the message being answered when set.
+ *
+ * @param formattingEntities  Optional `messages.SendMessage.entities` — outbound
+ *   markdown formatting parsed from the compose box (see `composeMarkdown.ts`).
+ *   When provided, `text` must already have its delimiters stripped and the
+ *   entity offsets must be relative to that stripped text.
  */
 export async function sendInForumThread(
   client: TelegramClient,
   entity: Entity,
   text: string,
   topicId: number,
-  replyToMessageId?: number
+  replyToMessageId?: number,
+  formattingEntities?: Api.TypeMessageEntity[]
 ): Promise<Api.TypeUpdates> {
   const peer = await client.getInputEntity(entity)
   const rid =
@@ -247,6 +253,9 @@ export async function sendInForumThread(
         replyToMsgId: rid,
         topMsgId: topicId,
       }),
+      ...(formattingEntities && formattingEntities.length > 0
+        ? { entities: formattingEntities }
+        : {}),
     })
   )
 }
