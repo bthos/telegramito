@@ -3577,6 +3577,9 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* Backstop: nothing a child renders (caption, name) may escape the paper
+     card sideways. overflow-y stays visible so the pin above the card shows. */
+  overflow-x: clip;
   gap: 6px;
   box-shadow: 0 4px 9px rgba(28, 24, 21, 0.24), 0 1px 0 rgba(255, 255, 255, 0.5) inset;
   font: inherit;
@@ -3656,9 +3659,12 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   font-size: 0.7rem;
   color: var(--letters-ink-3);
   line-height: 1.3;
-  /* Keep an unbroken caption (e.g. a bare t.me URL) inside the postcard. */
-  max-width: 100%;
+  /* Keep an unbroken caption (e.g. a bare t.me URL) inside the postcard. A
+     definite width (not just max-width) is what actually constrains a
+     -webkit-box flex child — max-width: 100% let it grow to its content. */
+  width: 100%;
   min-width: 0;
+  box-sizing: border-box;
   word-break: break-word;
   overflow-wrap: anywhere;
   overflow: hidden;

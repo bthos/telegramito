@@ -215,7 +215,14 @@ export function StoryViewer({ client, entries, startIndex, onMarkPeerRead, onClo
         </div>
       </div>
       <div className="letters-story-viewer__media">
-        <MessageMediaView message={mediaMessage} client={client} noPreview={false} filterGifs={false} t={t} />
+        <MessageMediaView
+          message={mediaMessage}
+          client={client}
+          noPreview={false}
+          filterGifs={false}
+          t={t}
+          autoLoad
+        />
         <button
           type="button"
           className="letters-story-viewer__tapzone letters-story-viewer__tapzone--prev"

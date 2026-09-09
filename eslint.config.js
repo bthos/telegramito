@@ -26,6 +26,13 @@ export default defineConfig([
       'react-hooks/refs': 'warn',
       'react-hooks/preserve-manual-memoization': 'warn',
       'react-hooks/purity': 'warn',
+      // `_`-prefix is the codebase's "intentionally unused" marker (signature-matching
+      // callback args, test stubs). tseslint's recommended preset doesn't honor it by default.
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      }],
     },
   },
   {

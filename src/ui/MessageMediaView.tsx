@@ -65,7 +65,7 @@ function messageWithReplacedMedia(
 }
 
 export function MessageMediaView({
-  message, client, noPreview, filterGifs, t, pollVoter, viewerContext,
+  message, client, noPreview, filterGifs, t, pollVoter, viewerContext, autoLoad = false,
 }: {
   message: Api.Message
   client: TelegramClient | null
@@ -74,6 +74,12 @@ export function MessageMediaView({
   t: MessageMediaTranslateFn
   pollVoter?: { entity: unknown; onVoted: () => void }
   viewerContext?: MediaViewerContext | null
+  /**
+   * Fetch the blob immediately instead of waiting for a "tap to load" tap.
+   * For eager full-screen surfaces (the Story Viewer) whose entire media area
+   * is nav tap-zones, so the pending shell's own button is unreachable.
+   */
+  autoLoad?: boolean
 }) {
   const { t: te } = useTranslation()
   const senderFromId = message.className === "Message" ? message.fromId : undefined
@@ -143,6 +149,13 @@ export function MessageMediaView({
       setVideoFullOpen(false)
     })
   }, [message.id, imagePreviewUrl, videoPreviewUrl])
+
+  // Eager surfaces (Story Viewer) skip the tap-to-load step — see `autoLoad`.
+  useEffect(() => {
+    if (autoLoad && s.k === "w") {
+      requestLoad()
+    }
+  }, [autoLoad, s.k, requestLoad])
 
   if (renderPaidAsBundle && paidBundleSlots) {
     return (
