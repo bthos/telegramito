@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Telegramito · Redesigns</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,700;9..144,900&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #f0eee9;
+    font-family: 'Manrope', system-ui, sans-serif; color: #1a1612; }
+  /* The design canvas takes the whole viewport. */
+  #root, #root > * { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="thread-data.jsx"></script>
+<script type="text/babel" src="letters.jsx"></script>
+<script type="text/babel" src="mobile.jsx"></script>
+<script type="text/babel">
+const { useState } = React;
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection
+        id="mobile-kids"
+        title="Telegramito Mobile — детский клиент"
+        subtitle="Компактная шапка 52px + нижняя навигация (Письма · Почта дня · Кружки · Стол). Все механики реализуемы через MTProto: «в пути…» = typing-статусы, «Отложенные» и «утренней почтой» = scheduled messages, «Запечатано» = отложенная отправка с undo, чек-листы = messageMediaToDo, «обсудить за ужином» и лента «вы остановились здесь» — локально (IndexedDB), вечерний выпуск — развитие уже готового night mode."
+      >
+        <DCArtboard id="mob-letters" label="A · Письма" width={390} height={844}><MobLetters /></DCArtboard>
+        <DCArtboard id="mob-daymail" label="B · Почта дня" width={390} height={844}><MobDayMail /></DCArtboard>
+        <DCArtboard id="mob-thread" label="C · Письмо + запечатывание" width={390} height={844}><MobThread /></DCArtboard>
+        <DCArtboard id="mob-desk" label="D · Стол" width={390} height={844}><MobDesk /></DCArtboard>
+        <DCArtboard id="mob-evening" label="E · Вечерний выпуск" width={390} height={844}><MobEvening /></DCArtboard>
+      </DCSection>
+      <DCSection
+        id="mobile-circles-stories"
+        title="Telegramito Mobile — Кружки (Stories)"
+        subtitle="Кружки редизайн: было — отфильтрованный список групп/каналов (AC-M15, «TBD с продуктом»); стало — настоящие Telegram-обновления через stories.getAllStories: лента колец (прочитано/непрочитано) + полноэкранный просмотр. Только просмотр в v1 — публикация своих кружков вне рамок."
+      >
+        <DCArtboard id="mob-circles" label="F · Кружки — лента (успех)" width={390} height={844}><MobCircles /></DCArtboard>
+        <DCArtboard id="mob-circles-loading" label="F1 · Кружки — загрузка" width={390} height={844}><MobCirclesEmpty variant="loading" /></DCArtboard>
+        <DCArtboard id="mob-circles-empty" label="F2 · Кружки — пусто" width={390} height={844}><MobCirclesEmpty variant="empty" /></DCArtboard>
+        <DCArtboard id="mob-circles-locked" label="F3 · Кружки — ночная блокировка" width={390} height={844}><MobCirclesEmpty variant="locked" /></DCArtboard>
+        <DCArtboard id="mob-circles-error" label="F4 · Кружки — ошибка загрузки" width={390} height={844}><MobCirclesEmpty variant="error" /></DCArtboard>
+        <DCArtboard id="mob-story-photo" label="G · Кружок — просмотр фото" width={390} height={844}><MobStoryViewer variant="photo" /></DCArtboard>
+        <DCArtboard id="mob-story-video" label="G1 · Кружок — просмотр видео" width={390} height={844}><MobStoryViewer variant="video" /></DCArtboard>
+        <DCArtboard id="mob-story-loading" label="G2 · Кружок — загрузка медиа" width={390} height={844}><MobStoryViewer variant="loading" /></DCArtboard>
+        <DCArtboard id="mob-story-error" label="G3 · Кружок — ошибка медиа" width={390} height={844}><MobStoryViewer variant="error" /></DCArtboard>
+      </DCSection>
+      <DCSection
+        id="letters-v2"
+        title="Telegramito — Letters v2"
+        subtitle="Newsprint gray, ink-black, terracotta accent. Inline thread DNA + calendar in the letter's head. Channels carry a frequency; people-chats carry a name. Active threads show an &laquo;in the post…&raquo; indicator."
+      >
+        <DCArtboard id="letters" label="Letters v2" width={1440} height={900}><LettersVariant /></DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

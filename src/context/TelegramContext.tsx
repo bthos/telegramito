@@ -141,6 +141,8 @@ type TelegramValue = {
   /** Bumps when a new ephemeral update lands, so consumers re-render. */
   ephemeralTick: number
   loginStep: LoginStep
+  /** True when Telegram delivered the login code to an already-logged-in Telegram app (no SMS is sent in that case). */
+  codeViaApp: boolean
   startLogin: (phone: string) => Promise<void>
   submitCode: (code: string) => void
   submit2FA: (password: string) => void
@@ -177,6 +179,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
   const ephemeralPeersRef = useRef<Set<string>>(new Set())
   const [ephemeralTick, setEphemeralTick] = useState(0)
   const [loginStep, setLoginStep] = useState<LoginStep>("idle")
+  const [codeViaApp, setCodeViaApp] = useState(false)
   const codeRes = useRef<((v: string) => void) | null>(null)
   const twofaRes = useRef<((v: string) => void) | null>(null)
   const emailRes = useRef<((v: string) => void) | null>(null)
@@ -352,7 +355,8 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
         setLoginStep("sending")
         await c.start({
           phoneNumber: phone,
-          phoneCode: async () => {
+          phoneCode: async (isCodeViaApp?: boolean) => {
+            setCodeViaApp(Boolean(isCodeViaApp))
             setLoginStep("code")
             setIsConnecting(false)
             return await new Promise<string>((resolve) => {
@@ -519,6 +523,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
       ephemeralPeerKeys: ephemeralPeersRef.current,
       ephemeralTick,
       loginStep,
+      codeViaApp,
       startLogin,
       submitCode,
       submit2FA,
@@ -543,6 +548,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
       lastMessageTick,
       ephemeralTick,
       loginStep,
+      codeViaApp,
       startLogin,
       submitCode,
       submit2FA,

@@ -35,6 +35,8 @@
     "phoneHelp": "Include country code, e.g. +34123456789",
     "sendCode": "Send code",
     "code": "Login code",
+    "codeViaApp": "We sent the code to your Telegram app (a message from “Telegram” on another device where you're logged in). It is not sent by SMS.",
+    "codeViaSms": "We sent the code by SMS. If it doesn't arrive, check any Telegram app where you're logged in.",
     "password": "Two-step password (if enabled)",
     "signIn": "Sign in",
     "sending": "Connecting and requesting a login code…",

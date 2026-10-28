@@ -35,6 +35,8 @@
     "phoneHelp": "Incluya el prefijo, p. ej. +34123456789",
     "sendCode": "Enviar código",
     "code": "Código de acceso",
+    "codeViaApp": "Hemos enviado el código a tu app de Telegram (un mensaje de «Telegram» en otro dispositivo donde tengas la sesión iniciada). No se envía por SMS.",
+    "codeViaSms": "Hemos enviado el código por SMS. Si no llega, revisa cualquier app de Telegram donde tengas la sesión iniciada.",
     "password": "Contraseña de dos pasos (si aplica)",
     "signIn": "Entrar",
     "sending": "Conectando y pidiendo el código…",

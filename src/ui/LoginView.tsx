@@ -23,6 +23,7 @@ export function LoginView() {
     errorKey,
     errorSeconds,
     loginStep,
+    codeViaApp,
   } = useTelegram()
   const [phone, setPhone] = useState("+")
   const [code, setCode] = useState("")
@@ -176,6 +177,9 @@ export function LoginView() {
           {loginStep === "code"
             ? (
                 <>
+                  <p className="small muted" role="status">
+                    {t(codeViaApp ? "login.codeViaApp" : "login.codeViaSms")}
+                  </p>
                   <div className="form-row">
                     <label className="auth-card__label">
                       {t("login.code")}

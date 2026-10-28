@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Telegramito · Ревью дизайн-системы и мобильной версии</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500;700&display=swap" />
+<style>
+  :root {
+    --paper: #f3f0e9;
+    --panel: #faf8f3;
+    --ink: #1c1815;
+    --ink-2: #45403a;
+    --ink-3: #7d766c;
+    --lines: rgba(28, 24, 21, 0.16);
+    --hairline: rgba(28, 24, 21, 0.09);
+    --terra: #c25a35;
+    --terra-soft: rgba(194, 90, 53, 0.1);
+    --ok: #4d7c4a;
+    /* dark phone theme (как в скриншоте) */
+    --d-paper: #16120e;
+    --d-panel: #1f1a15;
+    --d-panel-2: #262019;
+    --d-ink: #ece7dd;
+    --d-ink-2: #c4bcb0;
+    --d-ink-3: #948c80;
+    --d-lines: rgba(236, 231, 221, 0.14);
+    --d-hairline: rgba(236, 231, 221, 0.08);
+    --d-terra: #d3714a;
+    --serif: "Spectral", Georgia, serif;
+    --ui: "Manrope", system-ui, sans-serif;
+    --mono: "JetBrains Mono", monospace;
+  }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); }
+  a { color: var(--terra); }
+  a:hover { color: #a04426; }
+  .doc { max-width: 1240px; margin: 0 auto; padding: 56px 40px 120px; }
+
+  /* —— документные стили —— */
+  .kicker { font-family: var(--ui); font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 10px; }
+  h1 { font-family: var(--serif); font-weight: 300; font-size: 44px; line-height: 1.12; margin: 0 0 12px; letter-spacing: -0.01em; }
+  .lede { font-size: 19px; line-height: 1.55; color: var(--ink-2); max-width: 62ch; margin: 0 0 8px; }
+  .dateline { font-style: italic; color: var(--ink-3); font-size: 14px; margin: 0 0 40px; }
+  h2 { font-family: var(--serif); font-weight: 400; font-size: 28px; margin: 72px 0 6px; letter-spacing: -0.005em; }
+  h2 .no { color: var(--terra); font-style: italic; font-weight: 300; margin-right: 10px; }
+  .h2sub { font-style: italic; color: var(--ink-3); font-size: 15px; margin: 0 0 24px; }
+  h3 { font-family: var(--ui); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin: 32px 0 10px; }
+  p { line-height: 1.6; font-size: 16px; max-width: 72ch; }
+  code { font-family: var(--mono); font-size: 0.82em; background: rgba(28,24,21,0.06); padding: 1px 5px; border-radius: 3px; }
+  .rule { border: none; border-top: 1px solid var(--lines); margin: 56px 0 0; }
+
+  /* findings */
+  .finding { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 20px; padding: 20px 0; border-bottom: 1px solid var(--hairline); }
+  .finding:last-child { border-bottom: none; }
+  .sev { font-family: var(--ui); font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; padding: 4px 0; text-align: center; height: fit-content; border: 1px solid; border-radius: 2px; }
+  .sev--p0 { color: #a03418; border-color: #a03418; background: rgba(194,90,53,0.08); }
+  .sev--p1 { color: #8a6420; border-color: #b98a35; background: rgba(185,138,53,0.08); }
+  .sev--p2 { color: var(--ink-3); border-color: var(--lines); }
+  .sev--good { color: var(--ok); border-color: var(--ok); background: rgba(77,124,74,0.07); }
+  .finding b.t { font-family: var(--ui); font-size: 15px; font-weight: 700; display: block; margin-bottom: 4px; }
+  .finding p { margin: 0 0 6px; font-size: 15px; }
+  .finding .src { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+
+  /* idea cards */
+  .ideas { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 24px 0; }
+  .idea { border: 1px solid var(--lines); background: var(--panel); padding: 20px 22px; box-shadow: 3px 3px 0 rgba(28,24,21,0.08); }
+  .idea b { font-family: var(--ui); font-size: 15px; display: block; margin-bottom: 8px; }
+  .idea p { font-size: 14.5px; margin: 0; line-height: 1.55; }
+  .idea .tag { font-family: var(--ui); font-size: 9px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--terra); display: block; margin-bottom: 8px; }
+
+  /* —— мокапы —— */
+  .mockrow { display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; margin: 32px 0 8px; }
+  .mock { flex: 0 0 auto; }
+  .mock figcaption { max-width: 375px; margin-top: 16px; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+  .mock figcaption b { font-family: var(--ui); font-size: 13px; display: block; margin-bottom: 4px; color: var(--ink); }
+  .phone { width: 375px; height: 720px; background: var(--d-paper); border-radius: 28px; border: 1px solid rgba(28,24,21,0.35); box-shadow: 0 18px 50px rgba(28,24,21,0.28); overflow: hidden; position: relative; display: flex; flex-direction: column; color: var(--d-ink); font-family: var(--serif); }
+  .phone * { box-sizing: border-box; }
+
+  /* аннотации */
+  .pin { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--terra); color: #fff; font-family: var(--ui); font-size: 11px; font-weight: 800; flex: 0 0 auto; }
+  .pin--abs { position: absolute; z-index: 30; box-shadow: 0 0 0 3px rgba(194,90,53,0.25); }
+  .legend { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .legend li { display: flex; gap: 10px; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); align-items: baseline; }
+  .legend li .pin { transform: translateY(3px); }
+
+  /* —— общие элементы телефона —— */
+  .m-status { height: 30px; flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-family: var(--ui); font-size: 11px; font-weight: 700; color: var(--d-ink-3); letter-spacing: 0.04em; }
+  .m-top { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 14px; border-bottom: 1px solid var(--d-hairline); background: var(--d-panel); font-family: var(--ui); }
+  .m-word { font-size: 10px; font-weight: 800; letter-spacing: 0.24em; color: var(--d-ink); }
+  .m-date { font-family: var(--serif); font-style: italic; font-size: 12px; color: var(--d-ink-3); }
+  .m-iconbtn { width: 40px; height: 40px; border-radius: 10px; border: none; background: transparent; color: var(--d-ink-3); display: inline-flex; align-items: center; justify-content: center; font-size: 17px; flex: 0 0 auto; }
+  .m-body { flex: 1 1 auto; min-height: 0; overflow: hidden; position: relative; }
+  .m-tabbar { flex: 0 0 auto; display: flex; align-items: stretch; border-top: 1px solid var(--d-lines); background: var(--d-panel); padding-bottom: 10px; }
+  .m-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 0 4px; font-family: var(--ui); font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--d-ink-3); border: none; background: none; position: relative; }
+  .m-tab.on { color: var(--d-terra); }
+  .m-tab.on::before { content: ""; position: absolute; top: -1px; left: 25%; right: 25%; height: 2px; background: var(--d-terra); }
+  .m-tab .glyph { font-size: 18px; line-height: 1; font-family: var(--serif); }
+  .m-tab .bdg { position: absolute; top: 4px; right: calc(50% - 26px); font-size: 8.5px; font-weight: 800; background: var(--d-terra); color: #fff; padding: 1px 5px; letter-spacing: 0.04em; }
+
+  .m-fab { position: absolute; right: 16px; bottom: 16px; z-index: 20; height: 48px; padding: 0 18px; display: inline-flex; align-items: center; gap: 8px; background: var(--d-ink); color: var(--d-paper); border: none; border-radius: 2px; font-family: var(--ui); font-size: 11px; font-weight: 800; letter-spacing: 0.16em; box-shadow: 4px 4px 0 rgba(0,0,0,0.4); }
+
+  /* paper: ровная тёплая бумага, без линеек (не пересекается с текстом) */
+  .ruled { background:
+    radial-gradient(130% 46% at 50% -8%, rgba(211,113,74,0.06), transparent 62%),
+    var(--d-paper); }
+
+  /* список писем */
+  .m-seg { display: flex; gap: 6px; padding: 12px 14px 10px; font-family: var(--ui); }
+  .m-chip { border: 1px solid var(--d-lines); border-radius: 999px; background: transparent; color: var(--d-ink-2); font-family: var(--ui); font-size: 11px; font-weight: 600; padding: 6px 13px; }
+  .m-chip.on { background: rgba(211,113,74,0.18); border-color: rgba(211,113,74,0.5); color: var(--d-ink); }
+  .m-row { display: flex; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--d-hairline); align-items: flex-start; }
+  .m-ava { width: 40px; height: 40px; border-radius: 6px; flex: 0 0 auto; background: var(--d-panel-2); display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-size: 16px; color: var(--d-ink-2); border: 1px solid var(--d-lines); }
+  .m-rmain { flex: 1; min-width: 0; }
+  .m-rname { font-family: var(--serif); font-size: 15px; font-weight: 500; color: var(--d-ink); display: flex; justify-content: space-between; gap: 8px; }
+  .m-rname .tm { font-family: var(--ui); font-size: 10px; font-weight: 500; color: var(--d-ink-3); letter-spacing: 0.05em; flex: 0 0 auto; }
+  .m-rprev { font-size: 13px; color: var(--d-ink-3); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+  .m-unrd { font-family: var(--ui); font-size: 9.5px; font-weight: 800; background: var(--d-ink); color: var(--d-paper); padding: 2px 6px; margin-left: 6px; }
+
+  /* Дневная почта */
+  .dm-head { padding: 18px 18px 6px; }
+  .dm-h { font-family: var(--ui); font-size: 10px; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: var(--d-ink-2); margin: 0; }
+  .dm-sub { font-family: var(--serif); font-style: italic; font-size: 13px; color: var(--d-ink-3); margin: 4px 0 0; }
+  .dm-list { list-style: none; margin: 10px 0 0; padding: 0 18px 90px 30px; position: relative; }
+  .dm-list::before { content: ""; position: absolute; left: 22px; top: 8px; bottom: 60px; width: 1px; background: var(--d-lines); }
+  .dm-item { position: relative; padding: 10px 0 12px; border-bottom: 1px solid var(--d-hairline); }
+  .dm-item::before { content: ""; position: absolute; left: -12.5px; top: 15px; width: 8px; height: 8px; border: 1.5px solid var(--d-ink-3); background: var(--d-paper); }
+  .dm-item.seen::before { background: var(--d-terra); border-color: var(--d-terra); }
+  .dm-time { font-family: var(--ui); font-size: 10px; color: var(--d-ink-3); letter-spacing: 0.06em; }
+  .dm-line { font-family: var(--serif); font-size: 14.5px; line-height: 1.42; color: var(--d-ink); margin: 3px 0 0; }
+  .dm-line b { font-weight: 700; }
+  .dm-src { font-family: var(--serif); font-style: italic; font-size: 11px; color: var(--d-ink-3); margin-top: 3px; }
+
+  /* тред */
+  .t-head { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; height: 52px; padding: 0 8px; background: var(--d-panel); border-bottom: 1px solid var(--d-hairline); font-family: var(--ui); }
+  .t-title { flex: 1; min-width: 0; }
+  .t-title .nm { font-family: var(--serif); font-size: 16px; font-weight: 500; color: var(--d-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t-title .st { font-family: var(--ui); font-size: 10px; color: var(--d-ink-3); letter-spacing: 0.06em; }
+  .t-scroll { position: absolute; inset: 0; overflow: hidden; padding: 14px 16px 120px; }
+  .t-datechip { text-align: center; margin: 4px 0 10px; }
+  .t-datechip span { font-family: var(--serif); font-style: italic; font-size: 11.5px; color: var(--d-ink-3); background: var(--d-panel); border: 1px solid var(--d-hairline); border-radius: 999px; padding: 3px 12px; }
+  .t-msg { margin: 0 0 16px; }
+  .t-who { font-family: var(--serif); font-style: italic; font-size: 12px; color: var(--d-ink-3); margin-bottom: 3px; }
+  .t-who.me { color: var(--d-terra); }
+  .t-prose { font-family: var(--serif); font-size: 15px; line-height: 1.6; color: var(--d-ink); max-width: 60ch; }
+  .t-catchup { display: flex; align-items: center; gap: 10px; margin: 14px 0; font-family: var(--ui); font-size: 9.5px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--d-terra); }
+  .t-catchup::before, .t-catchup::after { content: ""; flex: 1; height: 1px; background: rgba(211,113,74,0.45); }
+  .t-compose { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 15; background: var(--d-panel); border: 1px solid var(--d-ink-2); box-shadow: 4px 4px 0 rgba(0,0,0,0.35); display: flex; align-items: center; gap: 4px; padding: 8px 10px; }
+  .t-compose .ph { flex: 1; font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--d-ink-3); }
+  .t-cbtn { width: 38px; height: 38px; border: none; background: transparent; color: var(--d-ink-3); font-size: 17px; border-radius: 8px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; }
+  .t-send { width: 42px; height: 38px; border: none; background: var(--d-ink); color: var(--d-paper); border-radius: 2px; font-size: 15px; flex: 0 0 auto; }
+  .t-newmail { position: absolute; right: 14px; bottom: 72px; z-index: 14; display: inline-flex; align-items: center; gap: 7px; background: var(--d-panel); border: 1px solid rgba(211,113,74,0.55); color: var(--d-terra); border-radius: 999px; padding: 7px 14px; font-family: var(--ui); font-size: 10.5px; font-weight: 800; letter-spacing: 0.1em; box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
+
+  /* лист-шит (sheet) */
+  .sheet-dim { position: absolute; inset: 0; background: rgba(0,0,0,0.45); z-index: 24; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--d-panel); border-top: 1px solid var(--d-lines); border-radius: 16px 16px 0 0; padding: 10px 18px 26px; font-family: var(--ui); }
+  .sheet .grip { width: 36px; height: 4px; border-radius: 2px; background: var(--d-lines); margin: 2px auto 14px; }
+  .sheet .s-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--d-hairline); font-size: 14px; color: var(--d-ink); }
+  .sheet .s-row .lab { display: flex; align-items: center; gap: 12px; }
+  .sheet .s-row .lab .ic { width: 22px; text-align: center; color: var(--d-ink-3); }
+  .sheet .s-val { font-size: 12px; color: var(--d-ink-3); }
+  .sheet .s-seg { display: flex; border: 1px solid var(--d-lines); border-radius: 999px; overflow: hidden; }
+  .sheet .s-seg span { padding: 5px 12px; font-size: 11px; font-weight: 700; color: var(--d-ink-3); }
+  .sheet .s-seg span.on { background: rgba(211,113,74,0.2); color: var(--d-ink); }
+
+  table.bp { border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; margin: 16px 0; }
+  table.bp td, table.bp th { border: 1px solid var(--lines); padding: 7px 14px; text-align: left; }
+  table.bp th { font-family: var(--ui); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+
+  @media (max-width: 900px) { .doc { padding: 32px 20px 80px; } h1 { font-size: 32px; } .finding { grid-template-columns: 1fr; gap: 6px; } .sev { width: 72px; } }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <p class="kicker">Telegramito · Design &amp; UX review</p>
+  <h1>Ревью дизайн-системы<br />и мобильной версии</h1>
+  <p class="lede">Разбор по коду <code>bthos/telegramito@main</code>: что сломано на мобильных, что крепко сделано, и три смелых предложения, которые превращают метафору «переписки письмами» из декорации в навигационную модель.</p>
+  <p class="dateline">Пятница, десятое июля — по материалам src/ui, src/styles, src/layout</p>
+
+  <!-- ═══════════ 1. Диагноз ═══════════ -->
+  <h2><span class="no">I.</span>Мобильная шапка: диагноз</h2>
+  <p class="h2sub">Почему masthead занимает полэкрана — это не баг вёрстки, а отсутствие мобильной модели навигации.</p>
+
+  <p><code>LettersMasthead</code> безусловно рендерит <b>14 контролов</b>: бренд + дата, 3 пилюли shell-навигации (Chats / Settings / Requests), 3 пилюли корреспонденции (Letters / Drafts / Returned), поиск, WRITE, переключатель ребёнок/родитель (2), переключатель темы (3) и выход. Контейнер <code>.letters-masthead</code> — <code>flex-wrap: wrap</code>, и во всём <code>letters.css</code> нет ни одного <code>@media</code>-правила, которое бы что-то из этого скрывало или сворачивало на узких экранах. На 384px всё это заворачивается в 5 строк ≈ 200px, а при открытом чате под ним появляется <em>вторая</em> шапка <code>.thread-header--mobile</code> — итого ~250px хрома над контентом.</p>
+
+  <div class="finding">
+    <span class="sev sev--p0">P0</span>
+    <div>
+      <b class="t">Шапка не имеет мобильного состояния</b>
+      <p>Все 14 контролов видимы всегда. Теория: частота использования контрола должна определять его место. Тема и выход — действия «раз в месяц», им не место в постоянном хроме; режим ребёнок/родитель — «раз в сессию»; Drafts/Returned — вторичные фильтры. На экране постоянно нужны только: список, поиск, «написать» и дневная почта.</p>
+      <span class="src">src/ui/LettersMasthead.tsx · letters.css:161–360 (нет @media)</span>
+    </div>
+  </div>
+  <div class="finding">
+    <span class="sev sev--p0">P0</span>
+    <div>
+      <b class="t">Двойная шапка при открытом чате</b>
+      <p>В узком режиме <code>MainShell</code> рендерит masthead <em>и</em> <code>.thread-header--mobile</code>. Пилюли Letters/Drafts/Returned и поиск при этом бесполезны — они управляют списком, которого не видно. Открытое письмо должно вытеснять masthead целиком: одна шапка 52px (назад · имя · инфо).</p>
+      <span class="src">src/ui/MainShell.tsx:narrow branch · chats-narrow</span>
+    </div>
+  </div>
+  <div class="finding">
+    <span class="sev sev--p0">P0</span>
+    <div>
+      <b class="t">«Дневная почта» недостижима ниже 1280px</b>
+      <p><code>DayMailRail</code> монтируется только в третьей колонке грида при <code>lettersThreeColMin: 1280</code>. В узкой ветке <code>MainShell</code> точки входа нет вообще — фича, ради которой пользователь открывает приложение утром, не существует на телефоне и на большинстве ноутбуков.</p>
+      <span class="src">src/layout/breakpoints.ts · MainShell.tsx (lettersThreeCol ? …aside… : null)</span>
+    </div>
+  </div>
+  <div class="finding">
+    <span class="sev sev--p0">P0</span>
+    <div>
+      <b class="t">Touch-таргеты ниже нормы</b>
+      <p><code>.letters-nav-pill</code>: padding 0.28rem при шрифте 11px ⇒ высота ~25px; кнопки темы — три крошечных таргета подряд. Норма — 44px (Apple HIG) / 48dp (Material). На скриншоте это видно: попасть пальцем в «Drafts» трудно.</p>
+      <span class="src">letters.css:.letters-nav-pill · .app-mode-toggle__btn</span>
+    </div>
+  </div>
+  <div class="finding">
+    <span class="sev sev--p1">P1</span>
+    <div>
+      <b class="t">Бейдж «1704» конфликтует с FAB и бесполезен как число</b>
+      <p>На скриншоте счётчик непрочитанных наезжает на кнопку прокрутки. Число 1704 не является информацией — это чувство вины. Лучше: «999+», а внутри треда — лента «Вы остановились здесь · 30 июня» (см. мокап C).</p>
+      <span class="src">message-scroll__fab-badge</span>
+    </div>
+  </div>
+  <div class="finding">
+    <span class="sev sev--p1">P1</span>
+    <div>
+      <b class="t">Два поля поиска, одно состояние</b>
+      <p><code>search</code> передаётся и в masthead, и в <code>ChatsListPanel</code> — на узких экранах пользователь видит два инпута, редактирующих одну строку. Поиску достаточно одного места: иконка в компактной шапке, разворачивающаяся в полноширинную строку.</p>
+      <span class="src">MainShell.tsx: search → LettersMasthead + ChatsListPanel</span>
+    </div>
+  </div>
+
+  <!-- ═══════════ 2. Мокапы ═══════════ -->
+  <h2><span class="no">II.</span>Предлагаемая мобильная модель</h2>
+  <p class="h2sub">Три экрана: компактная шапка + нижняя навигация, «Дневная почта» как первая полоса газеты, письмо с одной шапкой и лентой «вы остановились здесь».</p>
+
+  <div class="mockrow">
+
+    <!-- ——— Мокап A: список писем ——— -->
+    <figure class="mock" style="margin:0">
+      <div class="phone">
+        <span class="pin pin--abs" style="top:44px; left:150px">1</span>
+        <span class="pin pin--abs" style="top:100px; right:10px">2</span>
+        <span class="pin pin--abs" style="bottom:120px; right:118px">3</span>
+        <span class="pin pin--abs" style="bottom:56px; left:150px">4</span>
+        <div class="m-status"><span>9:41</span><span>LTE · 87%</span></div>
+        <div class="m-top">
+          <div style="flex:1; min-width:0">
+            <div class="m-word">TELEGRAMITO</div>
+            <div class="m-date">Пятница, десятое июля</div>
+          </div>
+          <button class="m-iconbtn" aria-label="Поиск">⌕</button>
+          <button class="m-iconbtn" aria-label="Стол" style="font-size:15px">☰</button>
+        </div>
+        <div class="m-body ruled">
+          <div class="m-seg">
+            <button class="m-chip on">Письма</button>
+            <button class="m-chip">Черновики</button>
+            <button class="m-chip">Возвраты</button>
+          </div>
+          <div class="m-row">
+            <div class="m-ava">Ес</div>
+            <div class="m-rmain">
+              <div class="m-rname"><span>ESP60KTAX <span class="m-unrd">999+</span></span><span class="tm">14:02</span></div>
+              <div class="m-rprev">…получаете положительный ответ, который и будет вашей…</div>
+            </div>
+          </div>
+          <div class="m-row">
+            <div class="m-ava">М</div>
+            <div class="m-rmain">
+              <div class="m-rname"><span>Мама <span class="m-unrd">2</span></span><span class="tm">13:47</span></div>
+              <div class="m-rprev">Фотография · «посмотри, что выросло»</div>
+            </div>
+          </div>
+          <div class="m-row">
+            <div class="m-ava">КЧ</div>
+            <div class="m-rmain">
+              <div class="m-rname"><span>Книжный четверг</span><span class="tm">11:20</span></div>
+              <div class="m-rprev">Аня: тогда встречаемся у входа в семь</div>
+            </div>
+          </div>
+          <div class="m-row">
+            <div class="m-ava">Д</div>
+            <div class="m-rmain">
+              <div class="m-rname"><span>Дима</span><span class="tm">вчера</span></div>
+              <div class="m-rprev">Голосовое письмо · 1:42</div>
+            </div>
+          </div>
+          <button class="m-fab">Написать ✎</button>
+        </div>
+        <div class="m-tabbar">
+          <button class="m-tab on"><span class="glyph">✉</span>Письма</button>
+          <button class="m-tab"><span class="glyph">☙</span>Почта дня<span class="bdg">14</span></button>
+          <button class="m-tab"><span class="glyph">◫</span>Кружки́</button>
+          <button class="m-tab"><span class="glyph">❦</span>Стол</button>
+        </div>
+      </div>
+      <figcaption>
+        <b>A · Список писем</b>
+        <ul class="legend">
+          <li><span class="pin">1</span>Шапка — одна строка 52px: марка + дата (дата остаётся! это душа приложения) + поиск + «Стол». При скролле вниз шапка уезжает, при скролле вверх возвращается.</li>
+          <li><span class="pin">2</span>Поиск — иконка; по тапу разворачивается в полноширинную строку. Одно поле вместо двух.</li>
+          <li><span class="pin">3</span>WRITE — FAB «Написать ✎» в зоне большого пальца, вместо кнопки в шапке.</li>
+          <li><span class="pin">4</span>Нижняя навигация: Письма · Почта дня · Кружки (группы+каналы) · Стол. Таргеты ≥48px, счётчик на «Почте дня».</li>
+        </ul>
+      </figcaption>
+    </figure>
+
+    <!-- ——— Мокап B: почта дня ——— -->
+    <figure class="mock" style="margin:0">
+      <div class="phone">
+        <span class="pin pin--abs" style="top:96px; left:230px">5</span>
+        <span class="pin pin--abs" style="top:300px; left:8px">6</span>
+        <div class="m-status"><span>9:41</span><span>LTE · 87%</span></div>
+        <div class="m-top">
+          <div style="flex:1; min-width:0">
+            <div class="m-word">TELEGRAMITO</div>
+            <div class="m-date">Пятница, десятое июля</div>
+          </div>
+          <button class="m-iconbtn" aria-label="Поиск">⌕</button>
+          <button class="m-iconbtn" aria-label="Стол" style="font-size:15px">☰</button>
+        </div>
+        <div class="m-body">
+          <div class="dm-head">
+            <p class="dm-h">Почта дня</p>
+            <p class="dm-sub">Что пришло, пока вас не было — свежее сверху.</p>
+          </div>
+          <ul class="dm-list">
+            <li class="dm-item seen">
+              <div class="dm-time">14:02</div>
+              <p class="dm-line"><b>ESP60KTAX</b> отвечает про декларацию: «…получаете положительный ответ, который и будет вашей бронебойной бумажкой»</p>
+              <p class="dm-src">Переписка · ESP60KTAX</p>
+            </li>
+            <li class="dm-item">
+              <div class="dm-time">13:47</div>
+              <p class="dm-line"><b>Мама</b> прислала фотографию: «посмотри, что выросло»</p>
+              <p class="dm-src">Переписка · Мама</p>
+            </li>
+            <li class="dm-item">
+              <div class="dm-time">11:20</div>
+              <p class="dm-line"><b>Аня</b> пишет в кружке: «тогда встречаемся у входа в семь»</p>
+              <p class="dm-src">Кружок · Книжный четверг</p>
+            </li>
+            <li class="dm-item">
+              <div class="dm-time">09:05</div>
+              <p class="dm-line"><b>Ведомости дня</b> публикуют выпуск о летних маршрутах</p>
+              <p class="dm-src">Бюллетень · Ведомости дня</p>
+            </li>
+            <li class="dm-item">
+              <div class="dm-time">вчера</div>
+              <p class="dm-line"><b>Дима</b> оставил голосовое письмо на 1:42</p>
+              <p class="dm-src">Переписка · Дима</p>
+            </li>
+          </ul>
+        </div>
+        <div class="m-tabbar">
+          <button class="m-tab"><span class="glyph">✉</span>Письма</button>
+          <button class="m-tab on"><span class="glyph">☙</span>Почта дня</button>
+          <button class="m-tab"><span class="glyph">◫</span>Кружки́</button>
+          <button class="m-tab"><span class="glyph">❦</span>Стол</button>
+        </div>
+      </div>
+      <figcaption>
+        <b>B · «Почта дня» — первая полоса</b>
+        <ul class="legend">
+          <li><span class="pin">5</span>Существующий <code>DayMailRail</code> становится полноценной мобильной вкладкой — точкой входа «что нового», как первая полоса утренней газеты. Тап по заголовку открывает письмо на этом сообщении (<code>focusMessageId</code> уже реализован).</li>
+          <li><span class="pin">6</span>Таймлайн с маркерами «дочитано досюда» переносится как есть — терракотовый квадрат = самая свежая просмотренная строка.</li>
+        </ul>
+      </figcaption>
+    </figure>
+
+    <!-- ——— Мокап C: письмо ——— -->
+    <figure class="mock" style="margin:0">
+      <div class="phone">
+        <span class="pin pin--abs" style="top:44px; left:180px">7</span>
+        <span class="pin pin--abs" style="top:206px; left:290px">8</span>
+        <span class="pin pin--abs" style="bottom:130px; right:8px">9</span>
+        <div class="m-status"><span>9:41</span><span>LTE · 87%</span></div>
+        <div class="t-head">
+          <button class="m-iconbtn" aria-label="Назад">‹</button>
+          <div class="t-title">
+            <div class="nm">ESP60KTAX</div>
+            <div class="st">кружок · 214 участников</div>
+          </div>
+          <button class="m-iconbtn" aria-label="Календарь">▦</button>
+          <button class="m-iconbtn" aria-label="Сведения">ⓘ</button>
+        </div>
+        <div class="m-body ruled">
+          <div class="t-scroll">
+            <div class="t-datechip"><span>30 июня</span></div>
+            <div class="t-msg">
+              <div class="t-who">Консультант</div>
+              <p class="t-prose">Если упрощённо, то вы триггерите ограниченную проверку через включение в декларацию дополнительных данных по факту этого дохода.</p>
+            </div>
+            <div class="t-catchup">Вы остановились здесь · 30 июня</div>
+            <div class="t-msg">
+              <div class="t-who">Консультант</div>
+              <p class="t-prose">Предоставляете налоговой подтверждающие документы, получаете положительный ответ — который и будет вашей бронебойной бумажкой.</p>
+            </div>
+            <div class="t-msg">
+              <div class="t-who me">Вы</div>
+              <p class="t-prose">Понял, спасибо. Соберу документы к понедельнику.</p>
+            </div>
+          </div>
+          <button class="t-newmail">▾ свежая почта · 999+</button>
+          <div class="t-compose">
+            <span class="ph">Ответить своей рукой…</span>
+            <button class="t-cbtn" aria-label="Эмодзи">☺</button>
+            <button class="t-cbtn" aria-label="Вложение">✚</button>
+            <button class="t-send" aria-label="Отправить">→</button>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <b>C · Открытое письмо</b>
+        <ul class="legend">
+          <li><span class="pin">7</span>Одна шапка вместо двух: назад · имя · календарь (jump-to-date) · сведения. Masthead полностью вытеснен. Возврат — кнопкой или свайпом от края.</li>
+          <li><span class="pin">8</span>«Вы остановились здесь» — лента вместо числа 1704: пришли — и сразу видите, откуда читать. Число прячется в пилюлю «свежая почта».</li>
+          <li><span class="pin">9</span>Пилюля «свежая почта · 999+» заменяет пару FAB+бейдж и не наезжает сама на себя; композер прижат к safe-area.</li>
+        </ul>
+      </figcaption>
+    </figure>
+
+    <!-- ——— Мокап D: стол ——— -->
+    <figure class="mock" style="margin:0">
+      <div class="phone">
+        <span class="pin pin--abs" style="top:330px; left:8px">10</span>
+        <div class="m-status"><span>9:41</span><span>LTE · 87%</span></div>
+        <div class="m-top">
+          <div style="flex:1; min-width:0">
+            <div class="m-word">TELEGRAMITO</div>
+            <div class="m-date">Пятница, десятое июля</div>
+          </div>
+        </div>
+        <div class="m-body ruled">
+          <div class="m-seg" style="opacity:.35">
+            <button class="m-chip on">Письма</button>
+            <button class="m-chip">Черновики</button>
+          </div>
+          <div class="m-row" style="opacity:.35">
+            <div class="m-ava">Ес</div>
+            <div class="m-rmain">
+              <div class="m-rname"><span>ESP60KTAX</span><span class="tm">14:02</span></div>
+              <div class="m-rprev">…получаете положительный ответ…</div>
+            </div>
+          </div>
+          <div class="sheet-dim"></div>
+          <div class="sheet">
+            <div class="grip"></div>
+            <div class="s-row"><span class="lab"><span class="ic">☾</span>Тема</span>
+              <span class="s-seg"><span>Светлая</span><span class="on">Системная</span><span>Тёмная</span></span>
+            </div>
+            <div class="s-row"><span class="lab"><span class="ic">❦</span>Режим</span>
+              <span class="s-seg"><span class="on">Ребёнок</span><span>Родитель · PIN</span></span>
+            </div>
+            <div class="s-row"><span class="lab"><span class="ic">✎</span>Запросы доступа</span><span class="s-val">2 новых ›</span></div>
+            <div class="s-row"><span class="lab"><span class="ic">⚙</span>Настройки</span><span class="s-val">›</span></div>
+            <div class="s-row" style="border-bottom:none"><span class="lab" style="color:var(--d-terra)"><span class="ic">⎋</span>Выйти</span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <b>D · «Стол» — редкие действия</b>
+        <ul class="legend">
+          <li><span class="pin">10</span>Тема, режим ребёнок/родитель, запросы, настройки и выход переезжают из шапки в нижний лист «Стол». Частота использования наконец соответствует месту: 9 контролов шапки → один пункт навигации.</li>
+        </ul>
+      </figcaption>
+    </figure>
+  </div>
+
+  <!-- ═══════════ 3. Свежие идеи ═══════════ -->
+  <h2><span class="no">III.</span>Смелые идеи</h2>
+  <p class="h2sub">Метафора писем у вас уже есть — доведём её до функциональности, а не только до типографики.</p>
+
+  <div class="ideas">
+    <div class="idea">
+      <span class="tag">Навигация · есть в мокапах</span>
+      <b>«Почта дня» — домашний экран утра</b>
+      <p>Сделать вкладку «Почта дня» экраном по умолчанию при первом открытии за день (а «Письма» — при повторных). Приложение начинает день как газета: сначала обзор, потом переписка. Данные и компонент уже есть.</p>
+    </div>
+    <div class="idea">
+      <span class="tag">Ритм · развитие night mode</span>
+      <b>Вечерний выпуск</b>
+      <p>У вас уже есть night-hours lock. Шаг дальше: за час до «ночи» «Почта дня» превращается в «Вечерний выпуск» — итог дня (кто писал, что осталось без ответа) и мягкое «почта закрывается в 21:00». Ограничение превращается из запрета в ритуал.</p>
+    </div>
+    <div class="idea">
+      <span class="tag">Анти-тревожность</span>
+      <b>Лента «вы остановились здесь» вместо счётчиков</b>
+      <p>Числа вроде 1704 создают долг. Лента в треде + формулировка «свежая почта» вместо «unread» меняют тон: письма не «непрочитаны», они «ждут». Для детского режима это принципиально.</p>
+    </div>
+    <div class="idea">
+      <span class="tag">Жест · письменная метафора</span>
+      <b>Отправка «запечатыванием»</b>
+      <p>Долгое нажатие на «→» — конверт «запечатывается» (микроанимация сургуча) и уходит с задержкой 5 секунд с возможностью «распечатать». Undo-send, рассказанный языком приложения.</p>
+    </div>
+    <div class="idea">
+      <span class="tag">Черновики</span>
+      <b>Черновик как незаконченное письмо на столе</b>
+      <p>Вкладка Drafts сейчас — просто фильтр. Показывайте черновики как «листы на столе»: начатый текст крупно, адресат мелко, «продолжить письмо». Возврат к черновику — главный сценарий этой вкладки, а не список чатов.</p>
+    </div>
+    <div class="idea">
+      <span class="tag">Родительский режим</span>
+      <b>Совместное чтение</b>
+      <p>В режиме родителя — не только allowlist, но и «прочитать вместе»: пометить письмо закладкой «обсудить за ужином». Превращает контроль в участие — сильное отличие от любых мессенджеров.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════ 4. Дизайн-система ═══════════ -->
+  <h2><span class="no">IV.</span>Дизайн-система: что подкрутить</h2>
+  <p class="h2sub">Хорошая новость: фундамент крепкий. Плохая: три слоя имён токенов и 150KB CSS со специфичными войнами.</p>
+
+  <div class="finding">
+    <span class="sev sev--good">Хорошо</span>
+    <div>
+      <b class="t">Что сделано на уровне</b>
+      <p>Единый источник брейкпоинтов (<code>breakpoints.ts</code>) с документированными парами min/max; <code>focus-visible</code> и aria-атрибуты почти везде; <code>prefers-reduced-motion</code> глобально; safe-area insets в композере; светлая/тёмная темы через <code>data-theme</code>; тесты на хуки и утилиты. Это уровень зрелых кодовых баз.</p>
+    </div>
+  </div>
+  <div class="finding">
+    <span class="sev sev--p1">P1</span>
+    <div>
+      <b class="t">Три слоя имён токенов</b>
+      <p><code>--ds-color-primary</code> → <code>--acc</code> → <code>--tg-blue</code>: одна сущность, три имени (плюс слой <code>--letters-*</code>). Каждый новый компонент вынужден выбирать диалект. Рекомендация: заморозить <code>--ds-*</code> как канон, алиасы пометить deprecated и выпиливать по файлу за раз.</p>
+      <span class="src">tokens.css: «UX-analysis semantic aliases» + «Short aliases»</span>
+    </div>
+  </div>
+  <div class="finding">
+    <span class="sev sev--p1">P1</span>
+    <div>
+      <b class="t">Специфичность как архитектура</b>
+      <p>Селекторы вида <code>.app-root--letters-chats .thread.thread--letters .letters-passage__reactions button.msg-reaction</code> + <code>!important</code> — признак того, что Letters-тема «перекрашивает» базовые компоненты снаружи. Надёжнее — CSS-переменные как контракт: базовый компонент читает <code>var(--reaction-bg)</code>, тема лишь переопределяет переменные. Специфичность падает до 0-1-0.</p>
+      <span class="src">letters.css: ~30 правил с !important</span>
+    </div>
+  </div>
+  <div class="finding">
+    <span class="sev sev--p2">P2</span>
+    <div>
+      <b class="t">Дублирование px в @media — кандидат на container queries</b>
+      <p>Комментарий в <code>breakpoints.ts</code> честно признаёт: литералы в CSS надо синхронизировать руками. Панели (список, тред, rail) — идеальные кандидаты на <code>@container</code>: компонент адаптируется к своей колонке, а не к окну, и число глобальных брейкпоинтов сокращается с шести до двух-трёх.</p>
+      <span class="src">breakpoints.ts · app.css/letters.css @media literals</span>
+    </div>
+  </div>
+  <div class="finding">
+    <span class="sev sev--p2">P2</span>
+    <div>
+      <b class="t">Шесть брейкпоинтов — много для трёх раскладок</b>
+      <p>Фактических раскладок три: стопка (список⇄тред), две колонки, три колонки. Предлагаемая сетка: &lt;700 — стопка + нижняя навигация; 700–1279 — две колонки, «Почта дня» кнопкой в шапке (выезжающая панель); ≥1280 — как сейчас.</p>
+      <table class="bp">
+        <tr><th>Диапазон</th><th>Раскладка</th><th>Почта дня</th></tr>
+        <tr><td>&lt; 700px</td><td>стопка + tab bar</td><td>вкладка</td></tr>
+        <tr><td>700–1279px</td><td>список + тред</td><td>кнопка ☙ → панель</td></tr>
+        <tr><td>≥ 1280px</td><td>три колонки</td><td>колонка (как сейчас)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════ 5. План ═══════════ -->
+  <h2><span class="no">V.</span>Порядок работ</h2>
+  <p class="h2sub">От снятия боли к новой модели.</p>
+  <div class="finding">
+    <span class="sev sev--p0">Шаг 1</span>
+    <div><p><b>Быстрое обезболивание (CSS + 1 компонент).</b> Медиа-запрос ≤700px: masthead сворачивается до строки «марка+дата · поиск · ☰», всё остальное — в лист «Стол». При открытом чате masthead скрывается. Бейдж FAB — «999+» и перенос пилюли выше композера.</p></div>
+  </div>
+  <div class="finding">
+    <span class="sev sev--p0">Шаг 2</span>
+    <div><p><b>«Почта дня» на мобильном.</b> Нижняя навигация (Письма · Почта дня · Кружки · Стол) в узкой ветке <code>MainShell</code>; <code>DayMailRail</code> монтируется как вкладка — компонент уже готов, нужен только роутинг.</p></div>
+  </div>
+  <div class="finding">
+    <span class="sev sev--p1">Шаг 3</span>
+    <div><p><b>Лента «вы остановились здесь»</b> в треде + пилюля «свежая почта». Затем — вечерний выпуск и черновики-на-столе.</p></div>
+  </div>
+  <div class="finding">
+    <span class="sev sev--p2">Шаг 4</span>
+    <div><p><b>Гигиена дизайн-системы:</b> канонизация <code>--ds-*</code>, контрактные переменные вместо специфичных перекрасок, container queries для панелей.</p></div>
+  </div>
+
+  <hr class="rule" />
+  <p style="font-style:italic; color:var(--ink-3); font-size:14px; margin-top:20px">Мокапы A–D — направление, не пиксель-спека: размеры и копирайт согласованы с текущими токенами Letters (Spectral/Manrope, terra-акцент, линованная бумага). Могу собрать любой из экранов как интерактивный прототип или как шаблон в этой дизайн-системе.</p>
+
+</div>
+</body>
+</html>

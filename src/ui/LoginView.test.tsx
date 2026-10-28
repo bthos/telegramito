@@ -58,6 +58,8 @@ async function miniI18n() {
             phoneHelp: "Include country code, e.g. +34123456789",
             sendCode: "Send code",
             code: "Login code",
+            codeViaApp: "Code sent to your Telegram app, not by SMS.",
+            codeViaSms: "Code sent by SMS.",
             password: "Two-step password (if enabled)",
             signIn: "Sign in",
             sending: "Connecting…",
@@ -203,6 +205,24 @@ describe("LoginView", () => {
       await renderLoginView()
 
       expect(screen.getByText("something odd happened", { exact: false })).toBeTruthy()
+    })
+  })
+
+  describe("code step delivery hint", () => {
+    it("tells the user the code went to their Telegram app when delivered in-app", async () => {
+      telegramValue = baseValue({ loginStep: "code", codeViaApp: true })
+      await renderLoginView()
+
+      expect(screen.getByText("Code sent to your Telegram app, not by SMS.")).toBeTruthy()
+      expect(screen.queryByText("Code sent by SMS.")).toBeNull()
+    })
+
+    it("tells the user the code went by SMS otherwise", async () => {
+      telegramValue = baseValue({ loginStep: "code", codeViaApp: false })
+      await renderLoginView()
+
+      expect(screen.getByText("Code sent by SMS.")).toBeTruthy()
+      expect(screen.queryByText("Code sent to your Telegram app, not by SMS.")).toBeNull()
     })
   })
 })
