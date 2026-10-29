@@ -262,9 +262,10 @@ export function MainShell() {
     () => ({
       dialogs: childListDialogs,
       selectedKey: selected ? getPeerInfo(selected).key : null,
+      correspondenceTab,
       onSelect: handleJumpToDialogMessage,
     }),
-    [childListDialogs, selected, handleJumpToDialogMessage],
+    [childListDialogs, selected, correspondenceTab, handleJumpToDialogMessage],
   )
   const lettersRailSelectedKey = selected ? getPeerInfo(selected).key : null
   const dayMailBadgeCount = useMemo(() => countDayMailBadge(dialogs), [dialogs])
@@ -461,7 +462,7 @@ export function MainShell() {
 
       {mobileTabBarVisible ? (
         <LettersMobileTabBar
-          active={mobileTab}
+          active={deskSheetOpen ? "desk" : mobileTab}
           onSelect={handleMobileTabSelect}
           dayMailBadge={dayMailBadgeCount}
         />
@@ -496,6 +497,7 @@ export function MainShell() {
         }}
         dialogs={childListDialogs}
         selectedKey={lettersRailSelectedKey}
+        correspondenceTab={correspondenceTab}
         onSelect={handleJumpToDialogMessage}
         client={client}
       />

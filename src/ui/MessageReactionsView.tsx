@@ -40,9 +40,11 @@ function CustomReactionEmoji({ documentId, client }: { documentId: BigInteger; c
 function ReactionEmojiFromTelegramSet({
   client,
   entry,
+  emoticon,
 }: {
   client: TelegramClient
   entry: Api.AvailableReaction | undefined
+  emoticon: string
 }) {
   const [url, setUrl] = useState<string | null>(null)
   useEffect(() => {
@@ -68,7 +70,11 @@ function ReactionEmojiFromTelegramSet({
   if (url) {
     return <img className="msg-reaction-emoji--custom" src={url} alt="" width={18} height={18} decoding="async" />
   }
-  return <span className="msg-reaction-emoji--ph" aria-hidden />
+  return (
+    <span className="msg-reaction-emoji--uni" aria-hidden>
+      {emoticon}
+    </span>
+  )
 }
 
 function reactionButtonLabel(
@@ -203,9 +209,11 @@ export function MessageReactionsView({
           const entry = availableByReaction?.get(e.emoticon)
           const el =
             client ? (
-              <ReactionEmojiFromTelegramSet client={client} entry={entry} />
+              <ReactionEmojiFromTelegramSet client={client} entry={entry} emoticon={e.emoticon} />
             ) : (
-              <span className="msg-reaction-emoji--ph" aria-hidden />
+              <span className="msg-reaction-emoji--uni" aria-hidden>
+                {e.emoticon}
+              </span>
             )
           if (interactive) {
             return (

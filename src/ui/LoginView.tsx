@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useTelegram } from "../context/TelegramContext"
+import { normalizePhone } from "../util/normalizePhone"
 import { AuthLayout, Button, PageCard, TextField } from "./ds"
 import { TelegramMark } from "./TelegramMark"
 
@@ -32,7 +33,8 @@ export function LoginView() {
   const [emailCode, setEmailCode] = useState("")
 
   const canEditPhone = loginStep === "idle"
-  const phoneOk = Boolean(phone && phone.length >= 5)
+  const normalizedPhone = normalizePhone(phone)
+  const phoneOk = normalizedPhone !== null
   const emailOk = EMAIL_LOOKS_VALID_RE.test(email.trim())
 
   function onConnectSubmit(ev: FormEvent<HTMLFormElement>) {
@@ -40,8 +42,8 @@ export function LoginView() {
     if (isConnecting) return
 
     if (loginStep === "idle") {
-      if (!phoneOk) return
-      void startLogin(phone.trim())
+      if (!normalizedPhone) return
+      void startLogin(normalizedPhone)
       return
     }
     if (loginStep === "code") {

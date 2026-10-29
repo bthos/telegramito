@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next"
 import { formatUnreadBadge } from "../util/formatUnreadBadge"
+import { ShellCirclesIcon, ShellDayMailIcon, ShellDeskIcon, ShellLettersIcon } from "./ShellIcons"
 
 export type MobileShellTab = "letters" | "dayMail" | "circles" | "desk"
 
@@ -10,6 +11,13 @@ type Props = {
 }
 
 const TAB_ORDER: MobileShellTab[] = ["letters", "dayMail", "circles", "desk"]
+
+const TAB_ICON = {
+  letters: ShellLettersIcon,
+  dayMail: ShellDayMailIcon,
+  circles: ShellCirclesIcon,
+  desk: ShellDeskIcon,
+} as const satisfies Record<MobileShellTab, typeof ShellLettersIcon>
 
 export function LettersMobileTabBar({ active, onSelect, dayMailBadge = 0 }: Props) {
   const { t } = useTranslation()
@@ -23,6 +31,7 @@ export function LettersMobileTabBar({ active, onSelect, dayMailBadge = 0 }: Prop
     >
       {TAB_ORDER.map((tab) => {
         const selected = active === tab
+        const Icon = TAB_ICON[tab]
         const showBadge = tab === "dayMail" && badgeText.length > 0 && !selected
         return (
           <button
@@ -38,7 +47,7 @@ export function LettersMobileTabBar({ active, onSelect, dayMailBadge = 0 }: Prop
             }}
           >
             <span className="letters-mobile-tab__glyph" aria-hidden>
-              {t(`letters.mobileTabGlyph.${tab}`)}
+              <Icon />
             </span>
             <span className="letters-mobile-tab__label">{t(`letters.mobileTab.${tab}`)}</span>
             {showBadge ? (

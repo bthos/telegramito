@@ -14,9 +14,9 @@ this directory should map to one focused patch.
 
 ## `teleproto+1.228.5.patch` (migrate-teleproto)
 
-Two focused fixes to teleproto `1.228.5` (npm), both confirmed as real upstream defects (not
-app-side workarounds) — originally verified by diffing against the (now-removed) vendored GramJS
-build, which handled both cases correctly:
+Three focused fixes to teleproto `1.228.5` (npm), all confirmed as real upstream defects (not
+app-side workarounds) — the first two originally verified by diffing against the (now-removed)
+vendored GramJS build, which handled both cases correctly:
 
 1. **`Helpers.js` `sleep()`** — teleproto calls `setTimeout(...).unref()` unconditionally when
    `isUnref` is true. GramJS gates the same call behind `platform.isNode` (browser `setTimeout`
@@ -29,6 +29,14 @@ build, which handled both cases correctly:
    constructor loop (`tl/runtime/createApi.js`) still assigns it at runtime — a `.d.ts`-only
    omission. Added an `invertMedia?: boolean` declaration in both the `MessageBaseInterface` and
    `CustomMessage` class sections (matching what GramJS's typings carried).
+3. **`client/downloads.js` `closeWriter()` / `returnWriterValue()`** — both do
+   `writer instanceof fs.WriteStream`. In browser builds `fs` is Vite's empty externalized stub, so
+   `fs.WriteStream` is `undefined` and `instanceof` throws `TypeError: Right-hand side of
+   'instanceof' is not an object`. `closeWriter` runs at the end of every download, so **every**
+   `client.downloadMedia` / `downloadFile` rejected after the bytes arrived (stickers, photos, avatars,
+   files all stuck in the error state). Fixed by guarding with `typeof fs.WriteStream === "function"`.
+   After changing this patch, restart Vite with `--force` — the optimizer pre-bundles
+   `teleproto/client/downloads` and keeps serving the stale copy otherwise.
 
 **Removal plan:** drop this patch (and re-run `npx patch-package teleproto` to regenerate empty)
 once these are fixed in an upstream teleproto release — check `CHANGELOG`/diff `Helpers.js` and

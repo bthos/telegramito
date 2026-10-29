@@ -6,7 +6,8 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // Vendored kit scaffolding (talaka submodule + its installed copies), not app code.
+  globalIgnores(['dist', 'talaka', '.tlk', '.claude']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

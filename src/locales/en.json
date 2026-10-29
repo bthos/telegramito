@@ -459,12 +459,6 @@
       "circles": "Circles",
       "desk": "Desk"
     },
-    "mobileTabGlyph": {
-      "letters": "✉",
-      "dayMail": "☙",
-      "circles": "◎",
-      "desk": "❦"
-    },
     "deskSheetAria": "Desk — settings and account",
     "deskSheetTitle": "Desk",
     "deskUnfinishedTitle": "On the desk · unfinished letters",
@@ -476,6 +470,8 @@
     "dayMailTitle": "The day’s mail",
     "dayMailSubtitle": "What arrived while you were away.",
     "dayMailEmpty": "Nothing new in your absence.",
+    "dayMailScopeDrafts": "Only from letters with unfinished drafts.",
+    "dayMailScopeReturned": "Only from returned (archived) letters.",
     "dayMailOpenChatAria": "Open chat: {{name}}",
     "dayMailOpenMessageAria": "Open message in chat: {{name}}",
     "dayMailSaid": "said that",
@@ -520,6 +516,8 @@
     "draftsEmptySub": "Drafts you start will rest here like sheets on the desk.",
     "returnedEmptyTitle": "Nothing returned",
     "returnedEmptySub": "Archived letters will show up here.",
+    "tabNoPrivateTitle": "No private letters here",
+    "tabNoPrivateSub": "Groups and channels below have some.",
     "draftsPreviewAttachment": "Attachment draft",
     "continueLetter": "Continue letter",
     "continueLetterShort": "Continue ↗",
@@ -575,6 +573,8 @@
   "pin": {
     "title": "Parent PIN",
     "enter": "Enter PIN",
+    "new": "New PIN",
+    "confirm": "Repeat new PIN",
     "set": "Set new PIN (min 4 characters)",
     "change": "Change PIN",
     "remove": "Remove PIN",
@@ -586,7 +586,7 @@
   },
   "parental": {
     "childModeGroup": "Child mode",
-    "appliesInChildView": "These options only apply in Child mode. Switch mode in the header.",
+    "appliesInChildView": "These options only apply in Child mode. Switch mode in the Desk menu.",
     "pinProtectHint": "Required to change settings while a child is using the app, if a PIN is set.",
     "blockUnknownPrivate": "Block unknown one-to-one chats",
     "hideLinkPreviews": "Hide link previews",

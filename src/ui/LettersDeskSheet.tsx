@@ -237,6 +237,9 @@ export function LettersDeskSheet({
                           title={t(`theme.${pref}`)}
                         >
                           <Icon aria-hidden width={16} height={16} />
+                          {active ? (
+                            <span className="letters-desk-sheet__seg-text">{t(`theme.${pref}`)}</span>
+                          ) : null}
                         </button>
                       )
                     })}
@@ -265,6 +268,9 @@ export function LettersDeskSheet({
                       <span className="app-mode-toggle__ic" aria-hidden>
                         <ChildModeIcon />
                       </span>
+                      {appMode === "child" ? (
+                        <span className="letters-desk-sheet__seg-text">{t("mode.child")}</span>
+                      ) : null}
                     </button>
                     <button
                       type="button"
@@ -279,6 +285,9 @@ export function LettersDeskSheet({
                       <span className="app-mode-toggle__ic" aria-hidden>
                         <ParentModeIcon />
                       </span>
+                      {appMode === "parent" ? (
+                        <span className="letters-desk-sheet__seg-text">{t("mode.parent")}</span>
+                      ) : null}
                     </button>
                   </div>
                 </div>

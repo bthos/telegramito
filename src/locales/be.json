@@ -459,12 +459,6 @@
       "circles": "Кружкі",
       "desk": "Стол"
     },
-    "mobileTabGlyph": {
-      "letters": "✉",
-      "dayMail": "☙",
-      "circles": "◎",
-      "desk": "❦"
-    },
     "deskSheetAria": "Стол — налады і ўліковы запіс",
     "deskSheetTitle": "Стол",
     "deskUnfinishedTitle": "На стале · незакончаныя лісты",
@@ -476,6 +470,8 @@
     "dayMailTitle": "Пошта дня",
     "dayMailSubtitle": "Што прыйшло, пакуль вас не было.",
     "dayMailEmpty": "Нічога новага за вашай адсутнасці.",
+    "dayMailScopeDrafts": "Толькі з лістоў з незавершанымі чарнавікамі.",
+    "dayMailScopeReturned": "Толькі з вернутых (архіўных) лістоў.",
     "dayMailOpenChatAria": "Адкрыць чат: {{name}}",
     "dayMailOpenMessageAria": "Адкрыць паведамленне ў чаце: {{name}}",
     "dayMailSaid": "сказаў, што",
@@ -520,6 +516,8 @@
     "draftsEmptySub": "Чарнавікі, якія вы пачнеце, застануцца тут, як лісты на стале.",
     "returnedEmptyTitle": "Нічога вернутага няма",
     "returnedEmptySub": "Архіваваныя лісты будуць паказвацца тут.",
+    "tabNoPrivateTitle": "Прыватных лістоў тут няма",
+    "tabNoPrivateSub": "Групы і каналы ніжэй іх маюць.",
     "draftsPreviewAttachment": "Чарнавік з далучэннем",
     "continueLetter": "Працягнуць пісьмо",
     "continueLetterShort": "Працягнуць ↗",
@@ -575,6 +573,8 @@
   "pin": {
     "title": "Бацькаўскі PIN",
     "enter": "Увядзіце PIN",
+    "new": "Новы PIN",
+    "confirm": "Паўтарыце новы PIN",
     "set": "Новы PIN (не менш за 4 знака)",
     "change": "Змяніць PIN",
     "remove": "Прыбраць PIN",
@@ -586,7 +586,7 @@
   },
   "parental": {
     "childModeGroup": "Дзіцячы рэжым",
-    "appliesInChildView": "Гэтыя налады дзейнічаюць толькі ў дзіцячым рэжыме. Пераключыце рэжым у загалоўку.",
+    "appliesInChildView": "Гэтыя налады дзейнічаюць толькі ў дзіцячым рэжыме. Пераключыце рэжым у меню «Стол».",
     "pinProtectHint": "Патрэбен для змены наладаў у дзіцячым рэжыме, калі ўсталяваны PIN.",
     "blockUnknownPrivate": "Блакіраваць невядомыя прыватныя перапіскі",
     "hideLinkPreviews": "Схаваць перадпрагляд паводле гіперспасыл",

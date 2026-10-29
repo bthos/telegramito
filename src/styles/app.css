@@ -13,6 +13,11 @@ html {
   max-height: 100dvh;
   overflow: hidden;
   scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+}
+
+/* `scrollbar-width` is not inherited: set it on every element so nested panes (chat list, sheets,
+   modals) get the same thin bar instead of the OS bar with arrow buttons. */
+* {
   scrollbar-width: thin;
 }
 
@@ -1216,16 +1221,15 @@ button.switch:active .switch__thumb {
   gap: 0.4rem;
 }
 .empty-chat__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 4.5rem;
   height: 4.5rem;
   border-radius: 50%;
-  background: radial-gradient(
-    circle at 35% 30%,
-    var(--ds-color-primary) 0,
-    var(--ds-color-elevated) 50%,
-    var(--ds-color-canvas-list) 100%
-  );
-  opacity: 0.6;
+  background: var(--ds-color-elevated);
+  color: var(--ds-color-primary);
+  font-size: 2rem;
   margin-bottom: 0.25rem;
 }
 .empty-chat__t {
@@ -3003,6 +3007,11 @@ button.msg-reaction-pick--on {
   height: 1rem;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 0.1rem;
+}
+.msg-reaction-emoji--uni {
+  display: inline-block;
+  font-size: 1rem;
+  line-height: 1rem;
 }
 .msg-reaction-who {
   min-width: 11rem;

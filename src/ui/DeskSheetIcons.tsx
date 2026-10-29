@@ -11,42 +11,43 @@ const strokeIco = {
   strokeLinejoin: "round" as const,
 }
 
-/** Desk household — theme row (crescent moon). */
+/** Desk household — theme row (half-filled disc: light/dark contrast, not tied to one theme). */
 export function DeskThemeRowIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg aria-hidden focusable="false" {...strokeIco} {...props}>
-      <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79" />
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" />
     </svg>
   )
 }
 
-/** Desk household — mode row (sprout). */
+/** Desk household — profile row (person). */
 export function DeskModeRowIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg aria-hidden focusable="false" {...strokeIco} {...props}>
-      <path d="M12 22V12" />
-      <path d="M12 12C12 8 8 6 5 8c3 2 4 4 7 4" />
-      <path d="M12 12c0-4 4-6 7-4-3 2-4 4-7 4" />
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4.5 20.5c1-4 4-6 7.5-6s6.5 2 7.5 6" />
     </svg>
   )
 }
 
-/** Desk household — access requests (envelope). */
+/** Desk household — access requests (inbox tray; envelope is reserved for Letters). */
 export function DeskRequestsIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg aria-hidden focusable="false" {...strokeIco} {...props}>
-      <rect x="3" y="5" width="18" height="14" rx="1.5" />
-      <path d="m3 7 9 6 9-6" />
+      <path d="M3 13.5 5.8 5.7A1.5 1.5 0 0 1 7.2 4.7h9.6a1.5 1.5 0 0 1 1.4 1L21 13.5" />
+      <path d="M3 13.5V18a1.5 1.5 0 0 0 1.5 1.5h15A1.5 1.5 0 0 0 21 18v-4.5h-5a4 4 0 0 1-8 0Z" />
     </svg>
   )
 }
 
-/** Desk household — settings (gear). */
+/** Desk household — settings (sliders). */
 export function DeskSettingsIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg aria-hidden focusable="false" {...strokeIco} {...props}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+      <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+      <circle cx="15" cy="7" r="2" />
+      <circle cx="9" cy="17" r="2" />
     </svg>
   )
 }

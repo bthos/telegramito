@@ -59,7 +59,7 @@ async function fetchPeerPhotoUrl(
     registerRevokeOnUnload()
     return url
   } catch {
-    urlCache.set(peerId, null)
+    // Transient failure (flood wait, dropped connection): leave uncached so the next mount retries.
     return null
   }
 }

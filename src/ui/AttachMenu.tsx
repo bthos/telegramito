@@ -167,6 +167,7 @@ export function AttachMenu({
                 pickFile()
               }}
             >
+              <AttachFileAddIcon className="attach-menu__clip-ico" aria-hidden />
               {t("chat.composeFile")}
             </button>
           </div>

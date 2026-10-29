@@ -12,19 +12,19 @@
   /* Bubble fills */
   --bubble-out:     rgba(176,62,27,.08);  /* outgoing — terracotta wash */
   --bubble-out-2:   rgba(176,62,27,.15);
-  --bubble-in:      #e9e4d8;              /* incoming — newsprint card  */
+  --bubble-in:      #ebe6da;              /* incoming — newsprint card  */
   --bubble-shadow:  0 1px 3px rgba(28,24,21,.12);
 
   /* Chat surface — newsprint */
-  --chat-bg:        #cac5bc;
-  --chat-bg-2:      #bfbab1;
+  --chat-bg:        #f6f3ec;
+  --chat-bg-2:      #ece8de;
 
   /* Ink scale — warm */
   --ink:            #1c1815;
   --ink-2:          #3a322a;
-  --ink-3:          #7a705f;
+  --ink-3:          #6b6252;
   --ink-4:          #a89e8b;
-  --ink-5:          #ccc7b8;
+  --ink-5:          #d6d0c1;
   --link:           #8b2f12;
 
   /* Status */
@@ -34,8 +34,8 @@
   --gold:           #b08030;
 
   /* Surfaces — newsprint gray */
-  --surface:        #dfdbd2;
-  --surface-2:      #d4cfc3;
+  --surface:        #f1ede4;
+  --surface-2:      #e8e3d7;
   --hairline:       rgba(28,24,21,.14);
 
   /* Overlay */
@@ -142,7 +142,7 @@ html, body {
 .stage {
   flex: 1;
   background:
-    radial-gradient(120% 120% at 30% 0%, #c9c3b8 0%, #bab3a8 100%);
+    radial-gradient(120% 120% at 30% 0%, #e4dfd3 0%, #d6d0c4 100%);
   border-radius: var(--r-card);
   padding: 22px;
   display: flex;

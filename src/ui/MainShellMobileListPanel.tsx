@@ -65,6 +65,7 @@ export function MainShellMobileListPanel({
           <DayMailRail
             dialogs={childListDialogs}
             selectedKey={lettersRailSelectedKey}
+            correspondenceTab={correspondenceTab}
             onSelect={onDayMailSelect}
             client={client}
           />

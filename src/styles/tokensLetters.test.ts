@@ -33,10 +33,10 @@ describe("Letters token realignment", () => {
       /html\[data-theme="light"\] \.app-root--main[\s\S]*?--ds-chat-accent:\s*#b03e1b/,
     )
     expect(lettersCss).toMatch(
-      /html\[data-theme="light"\] \.app-root--main[\s\S]*?--chat-bg:\s*#cac5bc/,
+      /html\[data-theme="light"\] \.app-root--main[\s\S]*?--chat-bg:\s*#f6f3ec/,
     )
     expect(lettersCss).toMatch(
-      /html\[data-theme="light"\] \.app-root--main[\s\S]*?--bubble-in:\s*#e9e4d8/,
+      /html\[data-theme="light"\] \.app-root--main[\s\S]*?--bubble-in:\s*#ebe6da/,
     )
     expect(lettersCss).toMatch(
       /html\[data-theme="light"\] \.app-root--main[\s\S]*?--overlay:\s*rgba\(20,\s*14,\s*10,\s*0\.92\)/,
@@ -59,9 +59,9 @@ describe("Letters token realignment", () => {
   it("uses warm newsprint preview shade and shimmer on Letters light (AC-T4, AC-T5)", () => {
     const lettersCss = readCss("tokens-letters.css")
     expect(lettersCss).toMatch(
-      /html\[data-theme="light"\] \.app-root--main[\s\S]*?--placeholder-bg:\s*#c8c2b8/,
+      /html\[data-theme="light"\] \.app-root--main[\s\S]*?--placeholder-bg:\s*#ddd7cb/,
     )
-    expect(lettersCss).toContain("#c9c3b8")
+    expect(lettersCss).toContain("#e4dfd3")
     expect(lettersCss).not.toMatch(/--ds-media-preview-shade:[^;]*#a855f7/)
   })
 

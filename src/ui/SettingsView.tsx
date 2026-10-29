@@ -307,7 +307,8 @@ export function SettingsView({ canEdit, onRequestPin }: Props) {
             name="p1"
             type="password"
             autoComplete="new-password"
-            placeholder={t("pin.enter")}
+            placeholder={t("pin.new")}
+            aria-label={t("pin.new")}
             value={pin0}
             onChange={(e) => {
               setPin0(e.target.value)
@@ -317,7 +318,8 @@ export function SettingsView({ canEdit, onRequestPin }: Props) {
             name="p2"
             type="password"
             autoComplete="new-password"
-            placeholder={t("pin.enter")}
+            placeholder={t("pin.confirm")}
+            aria-label={t("pin.confirm")}
             value={pin1}
             onChange={(e) => {
               setPin1(e.target.value)

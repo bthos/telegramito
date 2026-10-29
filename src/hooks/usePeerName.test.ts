@@ -84,4 +84,28 @@ describe("usePeerName", () => {
       expect(result.current).toBe("News Channel")
     })
   })
+
+  it("still resolves resolvable peers when another peer in the same batch cannot be resolved", async () => {
+    const good = makePeerUser(1)
+    const bad = makePeerUser(2)
+    const getEntity = vi.fn(async (arg: unknown) => {
+      const list = Array.isArray(arg) ? arg : [arg]
+      if (list.some((p) => String((p as Api.PeerUser).userId) === "2")) {
+        throw new Error("Could not find the input entity")
+      }
+      const entity = { className: "User", firstName: "Alice" }
+      return Array.isArray(arg) ? list.map(() => entity) : entity
+    })
+    const client = { getEntity } as unknown as TelegramClient
+
+    const { result } = renderHook(() => ({
+      good: usePeerName(good, client),
+      bad: usePeerName(bad, client),
+    }))
+
+    await waitFor(() => {
+      expect(result.current.good).toBe("Alice")
+    })
+    expect(result.current.bad).toBe("")
+  })
 })

@@ -9,10 +9,12 @@ import {
   type SetStateAction,
 } from "react"
 import type { Dialog } from "teleproto/tl/custom/dialog"
+import type { CorrespondenceTab } from "../util/correspondenceFilter"
 
 export type LettersRailDigestProps = {
   dialogs: Dialog[]
   selectedKey: string | null
+  correspondenceTab: CorrespondenceTab
   onSelect: (d: Dialog, opts?: { focusMessageId?: number }) => void
 }
 

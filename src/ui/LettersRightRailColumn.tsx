@@ -21,6 +21,7 @@ export function LettersRightRailColumn() {
       <DayMailRail
         dialogs={digest.dialogs}
         selectedKey={digest.selectedKey}
+        correspondenceTab={digest.correspondenceTab}
         onSelect={digest.onSelect}
         client={client}
       />

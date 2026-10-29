@@ -41,9 +41,19 @@ function flushBatch(): void {
         entry.resolve(name)
       })
     } catch {
-      for (const [, entry] of entries) {
-        entry.resolve("")
-      }
+      // One unresolvable peer rejects the whole batch; retry individually so the
+      // others still get their names instead of all falling back to "Someone".
+      await Promise.all(
+        entries.map(async ([key, entry]) => {
+          try {
+            const name = telegramEntityDisplayName(await client.getEntity(entry.peerId))
+            nameCache.set(key, name)
+            entry.resolve(name)
+          } catch {
+            entry.resolve("")
+          }
+        }),
+      )
     } finally {
       for (const [key] of entries) {
         inFlight.delete(key)

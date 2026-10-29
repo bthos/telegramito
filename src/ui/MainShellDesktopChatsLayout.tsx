@@ -4,8 +4,9 @@ import type { ParentalSettings } from "../parental/types"
 import { getPeerInfo } from "../telegram/dialogUtils"
 import { ChatView } from "./ChatView"
 import { ChatsListPanel } from "./ChatsListPanel"
-import { LettersChatRailProvider } from "./LettersChatRailContext"
+import { LettersChatRailProvider, type LettersRailDigestProps } from "./LettersChatRailContext"
 import { LettersRightRailColumn } from "./LettersRightRailColumn"
+import { ShellLettersIcon } from "./ShellIcons"
 
 export type MainShellDesktopChatsLayoutProps = {
   lettersThreeCol: boolean
@@ -23,11 +24,7 @@ export type MainShellDesktopChatsLayoutProps = {
   onCoReadingBookmarked: () => void
   lettersInChatSearchSeed: string | null
   onLettersInChatSearchSeedConsumed: () => void
-  lettersRailDigest: {
-    dialogs: Dialog[]
-    selectedKey: string | null
-    onSelect: (d: Dialog, opts?: { focusMessageId?: number }) => void
-  }
+  lettersRailDigest: LettersRailDigestProps
   lettersRailSelectedKey: string | null
 }
 
@@ -71,9 +68,13 @@ export function MainShellDesktopChatsLayout({
             />
           ) : (
             <div className="empty-chat" role="status">
-              <div className="empty-chat__icon" aria-hidden />
-              <p className="empty-chat__t">{noChatLabel}</p>
-              <p className="empty-chat__d muted small">{emptyHint}</p>
+              <div className="empty-chat__card">
+                <div className="empty-chat__icon" aria-hidden>
+                  <ShellLettersIcon />
+                </div>
+                <p className="empty-chat__t">{noChatLabel}</p>
+                <p className="empty-chat__d muted small">{emptyHint}</p>
+              </div>
             </div>
           )}
         </div>

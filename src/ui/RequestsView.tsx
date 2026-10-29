@@ -150,6 +150,7 @@ export function RequestsView({ dialogs }: Props) {
                     }}
                     aria-pressed={rowState === "allowed"}
                     aria-label={t("requests.ariaAllowed")}
+                    title={t("requests.ariaAllowed")}
                   >
                     <RequestsAllowedIcon />
                   </button>
@@ -165,6 +166,7 @@ export function RequestsView({ dialogs }: Props) {
                     }}
                     aria-pressed={rowState === "pending"}
                     aria-label={t("requests.ariaPending")}
+                    title={t("requests.ariaPending")}
                   >
                     <RequestsPendingIcon />
                   </button>
@@ -180,6 +182,7 @@ export function RequestsView({ dialogs }: Props) {
                     }}
                     aria-pressed={rowState === "denied"}
                     aria-label={t("requests.ariaDenied")}
+                    title={t("requests.ariaDenied")}
                   >
                     <RequestsDeniedIcon />
                   </button>

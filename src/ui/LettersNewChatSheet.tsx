@@ -14,6 +14,8 @@ import {
 import { openChatForRecipients } from "../telegram/openNewChat"
 import { getLettersPortalRoot } from "../util/lettersPortalRoot"
 import { Button, TextField } from "./ds"
+import { PeerAvatar } from "./PeerAvatar"
+import { ShellCloseIcon } from "./ShellIcons"
 
 type Props = {
   open: boolean
@@ -204,7 +206,7 @@ export function LettersNewChatSheet({
             title={t("common.close")}
             onClick={onClose}
           >
-            ×
+            <ShellCloseIcon width="1.1rem" height="1.1rem" />
           </Button>
         </header>
 
@@ -290,9 +292,17 @@ export function LettersNewChatSheet({
                   className={active ? "letters-new-chat-row is-selected" : "letters-new-chat-row"}
                   onClick={() => toggleRecipient(r)}
                 >
-                  <span className="letters-new-chat-row__name">{r.name}</span>
-                  {r.user.username ? (
-                    <span className="letters-new-chat-row__meta muted small">@{r.user.username}</span>
+                  <PeerAvatar id={`u:${r.id}`} name={r.name} size={36} client={client} />
+                  <span className="letters-new-chat-row__text">
+                    <span className="letters-new-chat-row__name">{r.name}</span>
+                    {r.user.username ? (
+                      <span className="letters-new-chat-row__meta muted small">@{r.user.username}</span>
+                    ) : null}
+                  </span>
+                  {active ? (
+                    <span className="letters-new-chat-row__check" aria-hidden>
+                      ✓
+                    </span>
                   ) : null}
                 </button>
               )

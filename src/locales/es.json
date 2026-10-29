@@ -459,12 +459,6 @@
       "circles": "Círculos",
       "desk": "Escritorio"
     },
-    "mobileTabGlyph": {
-      "letters": "✉",
-      "dayMail": "☙",
-      "circles": "◎",
-      "desk": "❦"
-    },
     "deskSheetAria": "Escritorio — ajustes y cuenta",
     "deskSheetTitle": "Escritorio",
     "deskUnfinishedTitle": "En el escritorio · cartas sin terminar",
@@ -476,6 +470,8 @@
     "dayMailTitle": "El correo del día",
     "dayMailSubtitle": "Lo que llegó mientras no estaba.",
     "dayMailEmpty": "Nada nuevo en su ausencia.",
+    "dayMailScopeDrafts": "Solo de cartas con borradores sin terminar.",
+    "dayMailScopeReturned": "Solo de cartas devueltas (archivadas).",
     "dayMailOpenChatAria": "Abrir chat: {{name}}",
     "dayMailOpenMessageAria": "Abrir mensaje en el chat: {{name}}",
     "dayMailSaid": "dijo que",
@@ -520,6 +516,8 @@
     "draftsEmptySub": "Los borradores que empiece descansarán aquí como hojas sobre el escritorio.",
     "returnedEmptyTitle": "Nada devuelto",
     "returnedEmptySub": "Las cartas archivadas aparecerán aquí.",
+    "tabNoPrivateTitle": "No hay cartas privadas aquí",
+    "tabNoPrivateSub": "Los grupos y canales de abajo tienen algunas.",
     "draftsPreviewAttachment": "Borrador con adjunto",
     "continueLetter": "Continuar carta",
     "continueLetterShort": "Continuar ↗",
@@ -575,6 +573,8 @@
   "pin": {
     "title": "PIN de padre/madre",
     "enter": "Pin",
+    "new": "Nuevo PIN",
+    "confirm": "Repite el nuevo PIN",
     "set": "Nuevo PIN (mín. 4 caracteres)",
     "change": "Cambiar PIN",
     "remove": "Quitar PIN",
@@ -586,7 +586,7 @@
   },
   "parental": {
     "childModeGroup": "Modo niño/a",
-    "appliesInChildView": "Estas opciones solo aplican en el modo «Niño/a». Cambia el modo en la cabecera.",
+    "appliesInChildView": "Estas opciones solo aplican en el modo «Niño/a». Cambia el modo en el menú «Escritorio».",
     "pinProtectHint": "Necesario para cambiar ajustes mientras un niño usa la app, si hay PIN.",
     "blockUnknownPrivate": "Bloquear privados a desconocidos",
     "hideLinkPreviews": "Ocultar vistas previas de enlaces",

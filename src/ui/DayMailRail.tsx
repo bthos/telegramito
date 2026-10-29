@@ -9,7 +9,9 @@ import { usePeerName } from "../hooks/usePeerName"
 import { getDayMailRailHeadlineParts } from "../telegram/dialogPreview"
 import { getPeerInfo, isBroadcastChannelDialog, dialogIsMultiMemberChat } from "../telegram/dialogUtils"
 import { formatMessageTime } from "../util/timeFormat"
+import { telegramEntityDisplayName } from "../util/telegramEntityDisplayName"
 import type { NightMode } from "../parental/types"
+import type { CorrespondenceTab } from "../util/correspondenceFilter"
 import {
   buildEveningSummary,
   isInEveningEditionPeriod,
@@ -26,6 +28,8 @@ type Props = {
   onSelect?: (dialog: Dialog, opts?: { focusMessageId?: number }) => void
   client?: TelegramClient | null
   nightMode?: NightMode
+  /** Drafts / Returned tabs narrow `dialogs`; the rail says so instead of silently showing a subset. */
+  correspondenceTab?: CorrespondenceTab
 }
 
 type RailRowPreview = {
@@ -68,7 +72,7 @@ function DayMailRailRow({
     if (pa.length > 0) {
       return pa
     }
-    const trimmedPeer = peerName.trim()
+    const trimmedPeer = (peerName.trim() || telegramEntityDisplayName(m.sender).trim())
     if (trimmedPeer.length > 0) {
       return trimmedPeer
     }
@@ -131,6 +135,7 @@ export function DayMailRail({
   onSelect,
   client = null,
   nightMode: nightModeProp,
+  correspondenceTab = "letters",
 }: Props) {
   const { t, i18n } = useTranslation()
   const { settings } = useParentalSettings()
@@ -311,6 +316,13 @@ export function DayMailRail({
       <p className="letters-day-mail__sub">
         {eveningEdition ? t("letters.eveningEditionSubtitle") : t("letters.dayMailSubtitle")}
       </p>
+      {correspondenceTab !== "letters" ? (
+        <p className="letters-day-mail__scope small" role="note">
+          {correspondenceTab === "drafts"
+            ? t("letters.dayMailScopeDrafts")
+            : t("letters.dayMailScopeReturned")}
+        </p>
+      ) : null}
       {lockMinutes != null ? (
         <p className="letters-day-mail__lock-notice small" role="status">
           {t("letters.eveningLockNotice", { time: nightMode!.start })}

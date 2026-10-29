@@ -55,13 +55,6 @@ html[data-theme="light"] .app-root--letters-chats .chats-narrow-list,
 html[data-theme="light"] .app-root--letters-chats .letters-day-mail-aside {
   background-color: var(--letters-paper);
   background-image:
-    repeating-linear-gradient(
-      0deg,
-      rgba(28, 24, 21, 0.035) 0,
-      rgba(28, 24, 21, 0.035) 1px,
-      transparent 1px,
-      transparent 3px
-    ),
     radial-gradient(760px 460px at 100% 0%, var(--letters-accent-soft), transparent 72%);
   color: var(--letters-ink);
 }
@@ -70,13 +63,6 @@ html[data-theme="dark"] .app-root--letters-chats .chat-aside,
 html[data-theme="dark"] .app-root--letters-chats .chats-narrow-list,
 html[data-theme="dark"] .app-root--letters-chats .letters-day-mail-aside {
   background:
-    repeating-linear-gradient(
-      0deg,
-      rgba(255, 255, 255, 0.028) 0,
-      rgba(255, 255, 255, 0.028) 1px,
-      transparent 1px,
-      transparent 3px
-    ),
     radial-gradient(760px 460px at 100% 0%, var(--letters-accent-soft), transparent 72%),
     var(--letters-paper);
   color: var(--letters-ink);
@@ -285,15 +271,6 @@ html[data-theme="dark"] .app-root--letters-chats .chats-narrow__thread {
   gap: 0.25rem;
 }
 
-.letters-masthead__sep {
-  flex-shrink: 0;
-  font-family: var(--letters-serif);
-  font-size: 1rem;
-  line-height: 1;
-  color: var(--letters-ink-3);
-  user-select: none;
-}
-
 .letters-nav-pill {
   cursor: pointer;
   border: 1px solid var(--letters-lines);
@@ -326,6 +303,26 @@ html[data-theme="dark"] .app-root--letters-chats .chats-narrow__thread {
   flex: 0 1 14rem;
   min-width: min(140px, 100%);
   max-width: 18rem;
+}
+
+/* Legacy `.input-search` ships a blue-grey border, white fill (light) and a blue focus glow; align it with the paper palette. */
+.app-root--main .input-search {
+  font-family: var(--letters-ui);
+  border-color: var(--letters-hairline);
+  color: var(--letters-ink);
+}
+
+html[data-theme="light"] .app-root--main .input-search {
+  background: var(--letters-paper);
+}
+
+.app-root--main .input-search::placeholder {
+  color: var(--letters-ink-3);
+}
+
+.app-root--main .input-search:focus {
+  border-color: var(--letters-terra);
+  outline: 2px solid color-mix(in srgb, var(--letters-terra) 35%, transparent);
 }
 
 .letters-masthead__write {
@@ -434,6 +431,16 @@ html[data-theme="dark"] .app-root--letters-chats .chats-narrow__thread {
   font-size: 0.81rem;
   line-height: 1.4;
   color: var(--letters-ink-3);
+}
+
+.letters-day-mail__scope {
+  margin: 0.35rem 0 0;
+  padding-left: 0.55rem;
+  border-left: 2px solid var(--letters-terra);
+  font-family: var(--letters-ui);
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--letters-ink-2);
 }
 
 .letters-day-mail__empty {
@@ -896,6 +903,11 @@ html[data-theme="dark"] .letters-day-mail__item.is-active {
   display: none;
 }
 
+/* Empty Drafts / Returned note hugs its content so Groups / Channels follow it instead of sinking to the bottom. */
+.letters-aside-accordion__panel.letters-aside-accordion__panel--shrink {
+  flex: 0 0 auto;
+}
+
 /* Channels + bulletins: one vertical scroll for groups list + FM rows. */
 .letters-aside-accordion__panel--channels {
   overflow: hidden;
@@ -1163,7 +1175,7 @@ html[data-theme="dark"] .app-root--letters-chats .chat-row.is-active {
 
 .app-root--letters-chats .chat-row__unread {
   background: var(--letters-ink);
-  color: #f5f0e6;
+  color: var(--letters-paper);
   font-family: var(--letters-ui);
   font-size: 10px;
   font-weight: 700;
@@ -1362,6 +1374,12 @@ html[data-theme="dark"] .app-root--letters-chats .chat-row.is-active {
 }
 
 .thread.thread--letters .attach-menu__letters-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
   color: var(--letters-ink-3);
   font-family: var(--letters-ui);
   font-size: 10px;
@@ -1369,6 +1387,11 @@ html[data-theme="dark"] .app-root--letters-chats .chat-row.is-active {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   text-decoration: none;
+}
+
+.thread.thread--letters .attach-menu__letters-link .attach-menu__clip-ico {
+  width: 16px;
+  height: 16px;
 }
 
 .thread.thread--letters .attach-menu__letters-link:hover {
@@ -1412,6 +1435,7 @@ html[data-theme="dark"] .app-root--letters-chats .chat-row.is-active {
   --letters-thread-x-inset-end: max(8px, env(safe-area-inset-right, 0px));
   --letters-passage-speaker-col: clamp(116px, 22%, 164px);
   --letters-passage-gap: clamp(14px, 2.8vw, 26px);
+  --letters-thread-max: 64rem;
 }
 
 .thread.thread--letters > .thread-header-row,
@@ -1490,6 +1514,9 @@ html[data-theme="dark"]
   column-gap: var(--letters-passage-gap);
   align-items: start;
   padding: 0.85rem 0 1rem;
+  /* Keep line length readable on wide monitors; compose is capped to the same width. */
+  max-width: var(--letters-thread-max);
+  margin-inline: auto;
 }
 
 .thread.thread--letters .letters-passage__speaker {
@@ -1526,7 +1553,21 @@ html[data-theme="dark"]
 .thread.thread--letters .letters-passage__reaction-picker.btn-ghost.btn-ghost--icon:focus-visible {
   border: none;
   outline: none;
-  background: rgba(90, 160, 255, 0.1);
+  background: color-mix(in srgb, var(--letters-terra) 12%, transparent);
+}
+
+/* Pointer devices: reveal the reaction picker on hover/focus instead of a smiley under every message. */
+@media (hover: hover) and (pointer: fine) {
+  .thread.thread--letters .letters-passage__reaction-picker.btn-ghost.btn-ghost--icon {
+    opacity: 0;
+    transition: opacity 0.12s ease, background 0.12s ease;
+  }
+
+  .thread.thread--letters .letters-passage:hover .letters-passage__reaction-picker.btn-ghost.btn-ghost--icon,
+  .thread.thread--letters .letters-passage__reaction-picker.btn-ghost.btn-ghost--icon:focus-visible,
+  .thread.thread--letters .letters-passage__reaction-picker.btn-ghost.btn-ghost--icon[aria-expanded="true"] {
+    opacity: 1;
+  }
 }
 
 .thread.thread--letters .letters-passage__reaction-picker svg {
@@ -1641,6 +1682,18 @@ html[data-theme="dark"] .thread.thread--letters .letters-passage__body--out {
   margin: 0;
   font-weight: 400;
   color: inherit;
+  /* Keep long lines readable on ultra-wide windows (~75 characters). */
+  max-width: 48rem;
+}
+
+/* Rich-text spans otherwise fall back to the global sans stack and clash with the serif letter prose. */
+.thread.thread--letters .letters-passage__prose .msg-text-richtext {
+  font-family:
+    var(--letters-serif),
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Noto Color Emoji",
+    serif;
 }
 
 .thread.thread--letters .letters-passage__prose:empty {
@@ -1786,6 +1839,16 @@ html[data-theme="dark"] .thread.thread--letters .letters-passage__body--out {
   min-height: 28px;
 }
 
+.thread.thread--letters .letters-passage__reactions .msg-reaction-emoji--uni {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 20px;
+  line-height: 1;
+}
+
 .thread.thread--letters .letters-passage--search-hit .letters-passage__sheet {
   /* Full-bleed correction: uses `--letters-thread-x-inset` from `.thread.thread--letters`. */
   margin-left: calc(-1 * var(--letters-thread-x-inset, max(8px, env(safe-area-inset-left, 0px))));
@@ -1853,13 +1916,17 @@ html[data-theme="dark"] .thread.thread--letters .letters-passage__body--out {
   grid-template-columns: var(--letters-passage-speaker-col) minmax(0, 1fr);
   column-gap: var(--letters-passage-gap);
   justify-content: start;
+  /* Cancel the inner padding-top (1.75rem) so the chip pins flush to the scroll edge, not 28px below it. */
+  top: -1.75rem;
 }
 
 .thread.thread--letters .message-scroll__date-overlay > .msg-date-pill {
   grid-column: 1;
   justify-self: end;
   text-align: right;
-  max-width: 100%;
+  max-width: none;
+  white-space: nowrap;
+  padding: 0.2rem 0.6rem;
   font-family: var(--letters-serif);
   font-style: italic;
   font-size: 12px;
@@ -1875,8 +1942,8 @@ html[data-theme="dark"] .thread.thread--letters .letters-passage__body--out {
 .thread.thread--letters .compose {
   margin-top: 0;
   margin-bottom: calc(5px + env(safe-area-inset-bottom, 0));
-  margin-left: var(--letters-thread-x-inset);
-  margin-right: var(--letters-thread-x-inset-end);
+  margin-left: max(var(--letters-thread-x-inset), calc((100% - var(--letters-thread-max)) / 2));
+  margin-right: max(var(--letters-thread-x-inset-end), calc((100% - var(--letters-thread-max)) / 2));
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0));
   border: 1px solid var(--letters-ink);
   border-radius: 0;
@@ -2225,6 +2292,19 @@ html[data-theme="dark"] .thread.thread--letters .message-scroll__fab {
 .letters-insights {
   margin: 0;
   padding: 0;
+  container-type: inline-size;
+}
+
+/* Side-by-side volume + 28-day grid needs ~300px; in a narrower host (right info rail) stack them
+   so the calendar's Friday/Saturday columns aren't clipped. */
+@container (max-width: 300px) {
+  .letters-insights .letters-insights__inner {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 12px;
+  }
+  .letters-insights .letters-insights__rule {
+    display: none;
+  }
 }
 
 .letters-insights__inner {
@@ -2729,7 +2809,9 @@ button.letters-insights__cal-cell {
   position: fixed;
   inset: 0;
   z-index: var(--ds-z-modal, 1200);
-  background: rgba(28, 24, 21, 0.42);
+  background: var(--letters-scrim);
+  -webkit-backdrop-filter: blur(var(--letters-scrim-blur));
+  backdrop-filter: blur(var(--letters-scrim-blur));
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.22s ease-out;
@@ -2755,13 +2837,15 @@ button.letters-insights__cal-cell {
   max-width: 480px;
   max-height: min(88vh, 640px);
   overflow-y: auto;
-  background: var(--letters-panel);
-  border: 1px solid var(--letters-lines);
+  background: var(--letters-glass-bg);
+  -webkit-backdrop-filter: var(--letters-glass-filter);
+  backdrop-filter: var(--letters-glass-filter);
+  border: 1px solid var(--letters-glass-border);
   border-radius: 16px 16px 0 0;
   padding: 8px 20px calc(20px + env(safe-area-inset-bottom, 0));
   color: var(--letters-ink);
   font-family: var(--letters-ui);
-  box-shadow: 0 -8px 32px rgba(28, 24, 21, 0.18);
+  box-shadow: var(--letters-glass-shadow);
   transform: translateY(100%);
   transition: transform 0.22s ease-out;
 }
@@ -2951,6 +3035,35 @@ button.letters-insights__cal-cell {
 
 .letters-desk-sheet__mode .app-mode-toggle__btn:focus-visible {
   outline-color: var(--letters-terra);
+}
+
+.letters-desk-sheet__seg,
+.letters-desk-sheet__mode.app-mode-toggle {
+  padding: 3px;
+  gap: 2px;
+  flex-wrap: nowrap;
+}
+
+.letters-desk-sheet__seg-btn,
+.letters-desk-sheet__mode .app-mode-toggle__btn {
+  gap: 6px;
+  border-radius: 999px;
+  min-height: 40px;
+}
+
+.letters-desk-sheet__seg-text {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* The pill clips with overflow:hidden, so keep the focus ring inside it. */
+.letters-desk-sheet__seg-btn:focus-visible,
+.letters-desk-sheet__mode .app-mode-toggle__btn:focus-visible {
+  outline: 2px solid var(--letters-terra);
+  outline-offset: -3px;
+  border-radius: 999px;
 }
 
 /* Switches — warm off-track to match desk sheet (not legacy navy). */
@@ -3263,6 +3376,7 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
     min-width: 44px;
     min-height: 44px;
     border-radius: 12px;
+    border-color: transparent;
   }
 
   .app-root--letters-mobile .letters-nav-pill,
@@ -3284,6 +3398,10 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
     height: 44px;
     min-width: 44px;
     min-height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: none;
   }
 
   .letters-mobile-seg {
@@ -3354,15 +3472,17 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    background: var(--letters-ink);
-    color: #f5f0e6;
-    border: none;
-    border-radius: 2px;
+    background: color-mix(in srgb, var(--letters-terra) 86%, transparent);
+    -webkit-backdrop-filter: var(--letters-glass-filter);
+    backdrop-filter: var(--letters-glass-filter);
+    color: #fff8f0;
+    border: 1px solid var(--letters-glass-border);
+    border-radius: 999px;
     font-family: var(--letters-ui);
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.16em;
-    box-shadow: 4px 4px 0 rgba(28, 24, 21, 0.22);
+    box-shadow: var(--letters-glass-shadow);
     cursor: pointer;
   }
 
@@ -3371,7 +3491,9 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
     display: flex;
     align-items: stretch;
     border-top: 1px solid var(--letters-masthead-rule);
-    background: var(--letters-panel);
+    background: var(--letters-glass-bg);
+    -webkit-backdrop-filter: var(--letters-glass-filter);
+    backdrop-filter: var(--letters-glass-filter);
     padding-bottom: env(safe-area-inset-bottom, 0);
     font-family: var(--letters-ui);
   }
@@ -3412,8 +3534,8 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   }
 
   .letters-mobile-tab__glyph {
-    font-family: var(--letters-serif);
-    font-size: 19px;
+    display: inline-flex;
+    font-size: 22px;
     line-height: 1;
   }
 
@@ -3424,9 +3546,9 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
     font-size: 8.5px;
     font-weight: 800;
     background: var(--letters-terra);
-    color: #f5f0e6;
-    padding: 1px 5px;
-    border-radius: 0;
+    color: #fff8f0;
+    padding: 1px 6px;
+    border-radius: 999px;
     pointer-events: none;
   }
 
@@ -3894,7 +4016,9 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   position: fixed;
   inset: 0;
   z-index: var(--ds-z-modal, 1200);
-  background: rgba(28, 24, 21, 0.38);
+  background: var(--letters-scrim);
+  -webkit-backdrop-filter: blur(var(--letters-scrim-blur));
+  backdrop-filter: blur(var(--letters-scrim-blur));
   display: flex;
   justify-content: flex-end;
 }
@@ -3904,8 +4028,10 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   width: min(360px, 92vw);
   height: 100%;
   overflow-y: auto;
-  background: var(--letters-paper);
-  border-left: 1px solid var(--letters-masthead-rule);
+  background: var(--letters-glass-bg);
+  -webkit-backdrop-filter: var(--letters-glass-filter);
+  backdrop-filter: var(--letters-glass-filter);
+  border-left: 1px solid var(--letters-glass-border);
   padding: 12px 16px 24px;
   color: var(--letters-ink);
   font-family: var(--letters-ui);
@@ -3914,30 +4040,45 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
 
 .letters-day-mail-slide__head {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 8px;
 }
 
-.letters-masthead__day-mail-btn {
-  min-width: 44px;
-  min-height: 44px;
-  font-family: var(--letters-serif);
-  font-size: 1.15rem;
-  line-height: 1;
-  color: var(--letters-terra);
+.letters-day-mail-slide__head--end {
+  justify-content: flex-end;
 }
 
-.letters-masthead__circles-btn {
+.letters-day-mail-slide__close {
+  flex-shrink: 0;
+}
+
+.letters-day-mail-slide__title {
+  margin: 0;
+  font-family: var(--letters-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--letters-ink);
+}
+
+/* Masthead tool icons: one size / colour / hover for Desk, Day mail, Circles. */
+.letters-masthead__tools .btn-ghost--icon {
   min-width: 44px;
   min-height: 44px;
-  font-family: var(--letters-serif);
-  font-size: 1.15rem;
-  line-height: 1;
+  border-radius: 12px;
+  border-color: transparent;
+  color: var(--letters-ink-2);
+}
+
+.letters-masthead__tools .btn-ghost--icon:hover,
+.letters-masthead__tools .btn-ghost--icon:focus-visible {
   color: var(--letters-terra);
+  background: color-mix(in srgb, var(--letters-terra) 12%, transparent);
 }
 
 .letters-circles-slide {
-  padding-top: 0;
+  padding-top: 12px;
 }
 
 .letters-new-chat-backdrop {
@@ -3948,7 +4089,9 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   align-items: flex-end;
   justify-content: center;
   padding: 12px;
-  background: color-mix(in srgb, var(--letters-ink) 42%, transparent);
+  background: var(--letters-scrim);
+  -webkit-backdrop-filter: blur(var(--letters-scrim-blur));
+  backdrop-filter: blur(var(--letters-scrim-blur));
 }
 
 .letters-new-chat-sheet {
@@ -3958,9 +4101,12 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   flex-direction: column;
   gap: 0.75rem;
   padding: 1rem 1rem 1.1rem;
-  border: 1px solid var(--letters-hairline, rgba(28, 24, 21, 0.16));
-  background: var(--letters-panel, var(--letters-paper, #dfdbd2));
-  box-shadow: 0 18px 48px rgba(28, 24, 21, 0.18);
+  border: 1px solid var(--letters-glass-border);
+  border-radius: 16px;
+  background: var(--letters-glass-bg);
+  -webkit-backdrop-filter: var(--letters-glass-filter);
+  backdrop-filter: var(--letters-glass-filter);
+  box-shadow: var(--letters-glass-shadow);
 }
 
 .letters-new-chat-sheet__head {
@@ -4006,24 +4152,56 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
 
 .letters-new-chat-row {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.1rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.7rem;
   width: 100%;
-  padding: 0.65rem 0.8rem;
+  padding: 0.5rem 0.8rem;
   border: 0;
   border-bottom: 1px solid var(--letters-hairline, rgba(28, 24, 21, 0.08));
   background: transparent;
   text-align: left;
+  cursor: pointer;
+}
+
+.letters-new-chat-row:hover {
+  background: color-mix(in srgb, var(--letters-ink) 5%, transparent);
 }
 
 .letters-new-chat-row.is-selected {
   background: color-mix(in srgb, var(--letters-terra) 12%, transparent);
 }
 
+.letters-new-chat-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .letters-new-chat-row__name {
   font-family: var(--letters-serif, Georgia, serif);
   font-size: 0.98rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.letters-new-chat-row__check {
+  flex: 0 0 auto;
+  color: var(--letters-terra);
+  font-weight: 700;
+}
+
+.letters-new-chat-sheet__close {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .letters-new-chat-sheet__foot {
@@ -4223,4 +4401,108 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   font-size: 1.15rem;
   color: var(--letters-ink);
   overflow-wrap: anywhere;
+}
+
+/*
+ * Frosted glass — floating chrome that sits above scrolling content: sticky date pill,
+ * jump-to-latest button, jump-to-date calendar. Tokens: tokens-letters.css.
+ */
+.app-root--main .thread.thread--letters .msg-date-pill--floating,
+.app-root--main .thread.thread--letters .message-scroll__fab,
+.app-root--main .jump-date-cal {
+  background: var(--letters-glass-bg);
+  -webkit-backdrop-filter: var(--letters-glass-filter);
+  backdrop-filter: var(--letters-glass-filter);
+  border: 1px solid var(--letters-glass-border);
+  color: var(--letters-ink-2);
+  box-shadow: 0 4px 18px rgba(28, 24, 21, 0.14);
+}
+
+.app-root--main .thread.thread--letters .msg-date-pill--jump:not(:disabled):hover {
+  color: var(--letters-terra);
+}
+
+/*
+ * Frosted glass — desktop shell chrome. An ambient wash on the shell root gives the
+ * translucent masthead / list / rail something to refract; floating search results
+ * and the empty-thread card blur the thread behind them.
+ */
+html[data-theme] .app-root--letters-chats.app-root--main {
+  background:
+    radial-gradient(640px 420px at 6% 8%, color-mix(in srgb, var(--letters-terra) 20%, transparent), transparent 70%),
+    radial-gradient(720px 520px at 94% 96%, color-mix(in srgb, var(--letters-terra) 14%, transparent), transparent 70%),
+    radial-gradient(520px 520px at 60% 40%, color-mix(in srgb, var(--letters-ink-3) 12%, transparent), transparent 70%),
+    var(--letters-paper);
+}
+
+html[data-theme] .app-root--letters-chats .letters-masthead,
+html[data-theme] .app-root--letters-chats .chats-layout > .letters-correspondents-aside,
+html[data-theme] .app-root--letters-chats .chats-layout > .letters-day-mail-aside {
+  background: var(--letters-glass-bg);
+  -webkit-backdrop-filter: var(--letters-glass-filter);
+  backdrop-filter: var(--letters-glass-filter);
+}
+
+html[data-theme] .app-root--letters-chats .letters-masthead {
+  border-bottom-color: var(--letters-glass-border);
+}
+
+html[data-theme] .app-root--letters-chats .chat-main--letters {
+  position: relative;
+}
+
+.app-root--letters-chats .empty-chat__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 24rem;
+  padding: 1.75rem 2rem;
+  border: 1px solid var(--letters-glass-border);
+  border-radius: 18px;
+  background: var(--letters-glass-bg);
+  -webkit-backdrop-filter: var(--letters-glass-filter);
+  backdrop-filter: var(--letters-glass-filter);
+  box-shadow: var(--letters-glass-shadow);
+}
+
+/* In-chat search: controls + results float over the transcript instead of pushing it down. */
+.app-root--letters-chats .chat-search-bar {
+  position: relative;
+}
+
+.app-root--letters-chats .chat-search-bar__panel {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  z-index: 2;
+  border-color: var(--letters-glass-border);
+  border-radius: 12px;
+  background: var(--letters-glass-bg);
+  -webkit-backdrop-filter: var(--letters-glass-filter);
+  backdrop-filter: var(--letters-glass-filter);
+  box-shadow: var(--letters-glass-shadow);
+}
+
+.app-root--letters-chats .chat-search-bar__panel .chat-search-bar__hint {
+  margin: 0;
+  padding: 0.6rem 0.85rem;
+}
+
+/* Browsers without backdrop-filter: keep chrome legible instead of see-through. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .letters-desk-sheet,
+  .letters-day-mail-slide,
+  .letters-new-chat-sheet,
+  .letters-mobile-tabbar,
+  .app-root--letters-chats .letters-masthead,
+  .app-root--letters-chats .chats-layout > .letters-correspondents-aside,
+  .app-root--letters-chats .chats-layout > .letters-day-mail-aside,
+  .app-root--letters-chats .empty-chat__card,
+  .app-root--letters-chats .chat-search-bar__panel,
+  .app-root--main .jump-date-cal,
+  .app-root--main .thread.thread--letters .msg-date-pill--floating,
+  .app-root--main .thread.thread--letters .message-scroll__fab {
+    background: var(--letters-panel);
+  }
 }

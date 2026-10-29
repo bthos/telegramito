@@ -842,7 +842,8 @@ export function ChatView({
       <LettersLetterHeader
         titleHeadingLevel="h2"
         title={name}
-        titleVisuallyHidden={lettersTitleVisuallyHidden}
+        /* The context panel's avatar row right below already shows the name; keep the h2 for AT only. */
+        titleVisuallyHidden
         layoutVariant="stacked"
         kickerLine={lettersLettersKicker}
         trailingInTitleRow={null}

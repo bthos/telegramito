@@ -18,6 +18,7 @@ import { CommunitiesAccordion } from "./CommunitiesAccordion"
 import type { CommunityStub } from "../telegram/communityDialogs"
 import { SearchResultRow, searchResultSenderLabel } from "./SearchResultRow"
 import { TextField } from "./ds"
+import { ShellArchiveIcon, ShellDraftIcon } from "./ShellIcons"
 import type { CorrespondenceTab } from "../util/correspondenceFilter"
 import {
   groupGlobalSearchHits,
@@ -367,23 +368,42 @@ export function ChatsListPanel({
     })
   })()
 
+  const correspondentsList = lettersMode ? peopleDialogs : dialogs
+  /**
+   * Drafts / Returned with nothing to show: the empty note is the whole panel, so it must not
+   * stretch (and shove the Groups / Channels headers to the bottom of the column).
+   */
+  const correspondentsEmptyState: "drafts" | "returned" | null =
+    correspondenceTab === "drafts" && peopleDialogs.length === 0
+      ? "drafts"
+      : correspondenceTab === "returned" && correspondentsList.length === 0
+        ? "returned"
+        : null
+
+  /** Groups / channels filtered by the same tab can still hold drafts or archived threads. */
+  const circlesHoldTabItems = groupDialogs.length > 0 || channelListDialogs.length > 0
+
   const correspondentsChatList = (
     <>
-      {correspondenceTab === "drafts" && peopleDialogs.length === 0 ? (
+      {correspondentsEmptyState != null ? (
         <div className="letters-drafts-empty" role="status">
           <p className="letters-drafts-empty__mark" aria-hidden>
-            ✎
+            {correspondentsEmptyState === "drafts" ? (
+              <ShellDraftIcon width="2rem" height="2rem" />
+            ) : (
+              <ShellArchiveIcon width="2rem" height="2rem" />
+            )}
           </p>
-          <p className="letters-drafts-empty__title">{t("letters.draftsEmptyTitle")}</p>
-          <p className="letters-drafts-empty__sub muted small">{t("letters.draftsEmptySub")}</p>
-        </div>
-      ) : correspondenceTab === "returned" && (lettersMode ? peopleDialogs : dialogs).length === 0 ? (
-        <div className="letters-drafts-empty" role="status">
-          <p className="letters-drafts-empty__mark" aria-hidden>
-            ✎
+          <p className="letters-drafts-empty__title">
+            {circlesHoldTabItems
+              ? t("letters.tabNoPrivateTitle")
+              : t(`letters.${correspondentsEmptyState}EmptyTitle`)}
           </p>
-          <p className="letters-drafts-empty__title">{t("letters.returnedEmptyTitle")}</p>
-          <p className="letters-drafts-empty__sub muted small">{t("letters.returnedEmptySub")}</p>
+          <p className="letters-drafts-empty__sub muted small">
+            {circlesHoldTabItems
+              ? t("letters.tabNoPrivateSub")
+              : t(`letters.${correspondentsEmptyState}EmptySub`)}
+          </p>
         </div>
       ) : (
         <ChatList
@@ -490,7 +510,7 @@ export function ChatsListPanel({
                 id={corrPanelId}
                 role="region"
                 aria-labelledby={corrHeadId}
-                className="letters-aside-accordion__panel"
+                className={`letters-aside-accordion__panel${correspondentsEmptyState ? " letters-aside-accordion__panel--shrink" : ""}`}
                 hidden={openSection !== "correspondents"}
               >
                 {showSearch ? (

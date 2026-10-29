@@ -20,6 +20,30 @@ index 57716c1..6d20af4 100644
  exports.sleep = sleep;
  /**
   * Helper to export two buffers of same length
+diff --git a/node_modules/teleproto/client/downloads.js b/node_modules/teleproto/client/downloads.js
+index 46ced3e..1c7760b 100644
+--- a/node_modules/teleproto/client/downloads.js
++++ b/node_modules/teleproto/client/downloads.js
+@@ -84,7 +84,9 @@ function getWriter(outputFile) {
+     }
+ }
+ async function closeWriter(writer) {
+-    if (writer instanceof fs.WriteStream) {
++    // patch-package: teleproto+1.228.5.patch — `fs` is an empty stub in browser builds,
++    // so `fs.WriteStream` is undefined and a bare `instanceof` throws TypeError.
++    if (typeof fs.WriteStream === "function" && writer instanceof fs.WriteStream) {
+         await new Promise((resolve, reject) => {
+             const onErr = (err) => {
+                 writer.removeListener("close", onClose);
+@@ -108,7 +110,7 @@ function returnWriterValue(writer) {
+     if (writer instanceof extensions_1.BinaryWriter) {
+         return writer.getValue();
+     }
+-    if (writer instanceof fs.WriteStream) {
++    if (typeof fs.WriteStream === "function" && writer instanceof fs.WriteStream) {
+         if (typeof writer.path == "string") {
+             return path_1.default.resolve(writer.path);
+         }
 diff --git a/node_modules/teleproto/tl/custom/message.d.ts b/node_modules/teleproto/tl/custom/message.d.ts
 index 2687127..212b693 100644
 --- a/node_modules/teleproto/tl/custom/message.d.ts

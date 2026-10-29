@@ -11,6 +11,12 @@
     var(--bg);
 }
 
+html[data-theme="light"] .app-root--peripheral .auth-screen {
+  background:
+    radial-gradient(120% 80% at 50% -20%, var(--letters-accent-soft, rgba(176, 62, 27, 0.12)), transparent 55%),
+    var(--bg);
+}
+
 html[data-theme="dark"] .app-root--peripheral .auth-screen {
   background:
     radial-gradient(120% 80% at 50% -20%, var(--letters-accent-soft, rgba(224, 120, 80, 0.1)), transparent 55%),
@@ -34,4 +40,21 @@ html[data-theme="dark"] .app-root--peripheral .auth-screen {
 .app-root--peripheral .auth-card__form .btn {
   font-family: var(--letters-ui, var(--ds-font-sans));
   letter-spacing: 0.06em;
+}
+
+/* Vertically center the card (auto margins keep it scrollable on short viewports). */
+.app-root--peripheral .auth-card {
+  margin-block: auto;
+}
+
+/* Warm paper input instead of the legacy navy sink. */
+.app-root--peripheral .auth-card .input {
+  background: color-mix(in srgb, var(--text) 6%, var(--card));
+  border-color: var(--line);
+  min-height: 2.75rem;
+}
+
+.app-root--peripheral .auth-card .input:focus-visible {
+  outline: 2px solid var(--letters-terra, var(--acc));
+  outline-offset: 1px;
 }

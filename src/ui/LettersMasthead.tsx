@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import { useHardwareBackLayer } from "../hooks/useHardwareBack"
 import type { CorrespondenceTab } from "../util/correspondenceFilter"
 import { Button, TextField } from "./ds"
+import { ShellCirclesIcon, ShellCloseIcon, ShellDayMailIcon, ShellDeskIcon, ShellSearchIcon } from "./ShellIcons"
 
 type Props = {
   dateLine: string
@@ -18,33 +19,15 @@ type Props = {
   onSearchExpandedChange?: (open: boolean) => void
   /** Wider viewports: opens the desk sheet (theme, rituals, co-reading). */
   onOpenDesk?: () => void
-  /** Tablet band: ☙ opens day-mail slide-over (not shown when `compact`). */
+  /** Tablet band: day-mail icon opens day-mail slide-over (not shown when `compact`). */
   showDayMailButton?: boolean
   onOpenDayMail?: () => void
-  /** Tablet / desktop: ◎ opens Circles (stories) slide-over (not shown when `compact`). */
+  /** Tablet / desktop: Circles (stories) icon opens slide-over (not shown when `compact`). */
   showCirclesButton?: boolean
   onOpenCircles?: () => void
   /** Scroll-hide on list / day-mail screens. */
   chromeHidden?: boolean
 }
-
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="1.25rem" height="1.25rem" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="11" cy="11" r="7" />
-      <path d="M20 20l-4-4" />
-    </svg>
-  )
-}
-
-function MenuIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="1.35rem" height="1.35rem" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
-  )
-}
-
 
 export function LettersMasthead({
   dateLine,
@@ -115,7 +98,7 @@ export function LettersMasthead({
                 onSearchExpandedChange?.(false)
               }}
             >
-              ×
+              <ShellCloseIcon />
             </Button>
           </div>
         ) : (
@@ -137,7 +120,7 @@ export function LettersMasthead({
                   onSearchExpandedChange?.(true)
                 }}
               >
-                <SearchIcon />
+                <ShellSearchIcon width="1.25rem" height="1.25rem" />
               </Button>
             </div>
           </>
@@ -177,9 +160,6 @@ export function LettersMasthead({
               </button>
             ))}
           </nav>
-          <span className="letters-masthead__sep" aria-hidden>
-            ·
-          </span>
           <div className="letters-masthead__search">
             <TextField
               type="search"
@@ -215,7 +195,7 @@ export function LettersMasthead({
               onOpenDesk?.()
             }}
           >
-            <MenuIcon />
+            <ShellDeskIcon width="1.35rem" height="1.35rem" />
           </Button>
           {showDayMailButton ? (
             <Button
@@ -228,7 +208,7 @@ export function LettersMasthead({
                 onOpenDayMail?.()
               }}
             >
-              ☙
+              <ShellDayMailIcon width="1.35rem" height="1.35rem" />
             </Button>
           ) : null}
           {showCirclesButton ? (
@@ -242,7 +222,7 @@ export function LettersMasthead({
                 onOpenCircles?.()
               }}
             >
-              {t("letters.mobileTabGlyph.circles")}
+              <ShellCirclesIcon width="1.35rem" height="1.35rem" />
             </Button>
           ) : null}
         </div>

@@ -6,6 +6,7 @@ import { useDismissibleLayer } from "../hooks/useDismissibleLayer"
 import { getLettersPortalRoot } from "../util/lettersPortalRoot"
 import { StoriesRailStrip } from "./StoriesRailStrip"
 import { Button } from "./ds"
+import { ShellCloseIcon } from "./ShellIcons"
 
 type Props = {
   open: boolean
@@ -17,7 +18,7 @@ type Props = {
   deniedPeerIds: ReadonlySet<string>
 }
 
-/** Tablet / desktop: Circles (stories corkboard) via masthead ◎ → slide-over panel. */
+/** Tablet / desktop: Circles (stories corkboard) via masthead Circles icon → slide-over panel. */
 export function LettersCirclesSlideOver({
   open,
   onClose,
@@ -54,8 +55,16 @@ export function LettersCirclesSlideOver({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="letters-day-mail-slide__head">
-          <Button variant="ghost" type="button" className="letters-day-mail-slide__close" onClick={onClose}>
-            {t("common.close")}
+          <h2 className="letters-day-mail-slide__title">{t("letters.mobileTab.circles")}</h2>
+          <Button
+            variant="ghostIcon"
+            type="button"
+            className="letters-day-mail-slide__close"
+            aria-label={t("common.close")}
+            title={t("common.close")}
+            onClick={onClose}
+          >
+            <ShellCloseIcon />
           </Button>
         </div>
         <StoriesRailStrip

@@ -120,10 +120,10 @@ export function useChatCompose(opts: UseChatComposeOpts) {
 
   const resizeComposeTextareaToContent = useCallback(() => {
     const el = textareaRef.current
-    if (!el || lettersLayout) return
+    if (!el) return
     el.style.height = "auto"
     el.style.height = `${Math.min(el.scrollHeight, MAX_COMPOSE_HEIGHT)}px`
-  }, [lettersLayout])
+  }, [])
 
   const applyComposeText = useCallback((text: string) => {
     draftRef.current = text
@@ -340,14 +340,8 @@ export function useChatCompose(opts: UseChatComposeOpts) {
   }, [dialogPeerKey, dialog, applyComposeText, resizeComposeTextareaToContent])
 
   useLayoutEffect(() => {
-    const el = textareaRef.current
-    if (!el) return
-    if (lettersLayout) {
-      el.style.removeProperty("height")
-      return
-    }
     resizeComposeTextareaToContent()
-  }, [lettersLayout, resizeComposeTextareaToContent])
+  }, [resizeComposeTextareaToContent])
 
   return {
     t,
