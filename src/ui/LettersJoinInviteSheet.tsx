@@ -21,6 +21,8 @@ type Props = {
   refreshDialogs: () => Promise<void>
   /** Called after a successful join so the shell can refresh + select the chat. */
   onJoined: (hint: { username?: string; title?: string }) => void
+  /** Prefill (e.g. `@username` from Global search); the user still confirms with Look up. */
+  initialInput?: string
 }
 
 type Stage =
@@ -37,6 +39,7 @@ export function LettersJoinInviteSheet({
   client,
   refreshDialogs,
   onJoined,
+  initialInput = "",
 }: Props) {
   const { t } = useTranslation()
   const panelRef = useDismissibleLayer(open, onClose)
@@ -44,11 +47,13 @@ export function LettersJoinInviteSheet({
   const [stage, setStage] = useState<Stage>({ s: "compose" })
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      setInput(initialInput)
+    } else {
       setInput("")
       setStage({ s: "compose" })
     }
-  }, [open])
+  }, [open, initialInput])
 
   const parsed = parseJoinInviteInput(input)
   const busy = stage.s === "lookingUp" || stage.s === "joining"

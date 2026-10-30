@@ -21,6 +21,7 @@ import {
   type CorrespondenceTab,
 } from "../util/correspondenceFilter"
 import { formatLiteraryDateLine } from "../util/literaryDate"
+import { removeCoReadingBookmark } from "../util/lettersRitualsStorage"
 import { ChatView, THREAD_HEADER_ACTIONS_ID, THREAD_HEADER_CENTER_ID } from "./ChatView"
 import { LettersDayMailSlideOver } from "./LettersDayMailSlideOver"
 import { LettersCirclesSlideOver } from "./LettersCirclesSlideOver"
@@ -45,10 +46,11 @@ import {
   showDesktopCirclesButton,
 } from "./mainShellChromeGate"
 import { filterDialogsBySearch } from "./mainShellDialogFilter"
-import { focusLettersComposer } from "./lettersWriteAction"
+import { focusLettersComposer, focusLettersSearch } from "./lettersWriteAction"
 import { useMainShellDialogSelection } from "./useMainShellDialogSelection"
 import { useMainShellMobileChrome } from "./useMainShellMobileChrome"
 import { useMainShellPassages } from "./useMainShellPassages"
+import { useMainShellGlobalPeers } from "./useMainShellGlobalPeers"
 
 type Tab = "chats"
 
@@ -63,6 +65,7 @@ export function MainShell() {
     client,
     hasMoreDialogs,
     dialogsLoadingMore,
+    dialogsInitialLoading,
     loadMoreDialogs,
   } = useTelegram()
   const tab: Tab = "chats"
@@ -77,6 +80,7 @@ export function MainShell() {
   const [circlesSlideOpen, setCirclesSlideOpen] = useState(false)
   const [newChatOpen, setNewChatOpen] = useState(false)
   const [joinInviteOpen, setJoinInviteOpen] = useState(false)
+  const [joinInviteInitial, setJoinInviteInitial] = useState("")
   const { communities: communityStubs } = useCommunityDialogs(client)
   const mobilePanelRef = useRef<HTMLDivElement>(null)
 
@@ -112,14 +116,18 @@ export function MainShell() {
   }, [dialogs])
 
   useEffect(() => {
-    if (!client) return
+    // Boot already loads the first page (tick 0): refreshing again right away is a duplicate
+    // GetDialogs, which is how reloads ran into FLOOD_WAIT. Later ticks mean new messages.
+    if (!client || lastMessageTick === 0) return
     void refreshDialogs()
   }, [client, lastMessageTick, refreshDialogs])
 
   usePeriodicTick(30_000)
 
   const [exitArmed, setExitArmed] = useState(false)
-  useEffect(() => installHardwareBackRoot(setExitArmed), [])
+  // Desktop (masthead search on screen): Back at the root focuses the search, as in Telegram
+  // Web K, and never exits. Compact/mobile has no such field and keeps press-Back-again-to-exit.
+  useEffect(() => installHardwareBackRoot(setExitArmed, focusLettersSearch), [])
 
   useEffect(() => {
     if (settings.appMode === "parent") {
@@ -212,8 +220,33 @@ export function MainShell() {
       onJumpToDialogMessage: handleJumpToDialogMessage,
     })
 
+  const { globalPeersPanelProps } = useMainShellGlobalPeers({
+    client,
+    query: search,
+    disabled: nightHidden,
+    settings,
+    deniedPeerIds,
+    dialogs,
+    refreshDialogs,
+    onOpenDialog: (dialog) => {
+      setCorrespondenceTab("letters")
+      handleSelectChat(dialog)
+    },
+    onJoinPublic: (username) => {
+      setJoinInviteInitial(`@${username}`)
+      setJoinInviteOpen(true)
+    },
+  })
+
   const handleWrite = () => {
     setNewChatOpen(true)
+  }
+
+  // Collapsing the compact search field (X or Back) drops the query too: otherwise the list and
+  // the day-mail rail stay silently filtered while no search UI is visible.
+  const handleSearchExpandedChange = (open: boolean) => {
+    setSearchExpanded(open)
+    if (!open) setSearch("")
   }
 
   const handleNewChatOpened = (dialog: Parameters<typeof handleSelectChat>[0]) => {
@@ -237,7 +270,9 @@ export function MainShell() {
     void refreshDialogs()
   }
 
-  useHardwareBackLayer(mobileStack && selected != null, clearSelected)
+  // Browser/hardware Back closes the open chat on every layout (desktop 3-column included),
+  // mirroring Telegram Web K, instead of falling through to the root «press Back to exit» arm.
+  useHardwareBackLayer(selected != null, clearSelected)
 
   const childListDialogs = useMemo(
     () => filterDialogsBySearch(dialogsEligibleToRetainSelection, deferredSearch, t),
@@ -331,6 +366,7 @@ export function MainShell() {
     hasMoreDialogs,
     loadMoreDialogs,
     dialogsLoadingMore,
+    dialogsInitialLoading,
     loadedDialogCount: dialogs.length,
     client,
     lettersMode: true as const,
@@ -343,6 +379,7 @@ export function MainShell() {
     correspondenceTab,
     communityStubs,
     ...passagesPanelProps,
+    ...globalPeersPanelProps,
   }
 
   return (
@@ -358,8 +395,8 @@ export function MainShell() {
         search={search}
         onSearchChange={setSearch}
         onWrite={handleWrite}
-        searchExpanded={searchExpanded}
-        onSearchExpandedChange={setSearchExpanded}
+        searchExpanded={searchExpanded || (mobileCompact && search !== "")}
+        onSearchExpandedChange={handleSearchExpandedChange}
         chromeHidden={mastheadChromeHidden}
         showTabletDayMailBtn={showTabletDayMailBtn}
         onOpenDayMail={() => {
@@ -455,7 +492,7 @@ export function MainShell() {
       </div>
 
       {exitArmed ? (
-        <div className="letters-wax-seal-toast" role="status">
+        <div className="letters-exit-toast" role="status">
           <span>{t("common.pressBackToExit")}</span>
         </div>
       ) : null}
@@ -479,6 +516,9 @@ export function MainShell() {
         pendingRequestCount={pendingRequestCount}
         coReadingBookmarks={settings.appMode === "parent" ? coReadingBookmarks : []}
         onCoReadingNavigate={handleCoReadingNavigate}
+        onCoReadingRemove={(b) => {
+          void removeCoReadingBookmark(b.id).then(refreshCoReadingBookmarks)
+        }}
         dialogs={dialogs}
         canEditSettings={canEditSettings}
         onRequestPin={() => {
@@ -526,6 +566,7 @@ export function MainShell() {
         deniedPeerIds={deniedPeerIds}
         onOpenChat={handleNewChatOpened}
         onOpenJoinInvite={() => {
+          setJoinInviteInitial("")
           setJoinInviteOpen(true)
         }}
       />
@@ -536,6 +577,7 @@ export function MainShell() {
           setJoinInviteOpen(false)
         }}
         client={client}
+        initialInput={joinInviteInitial}
         refreshDialogs={refreshDialogs}
         onJoined={handleJoinedViaInvite}
       />

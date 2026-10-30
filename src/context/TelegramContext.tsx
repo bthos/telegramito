@@ -150,6 +150,8 @@ type TelegramValue = {
   submitEmailCode: (code: string) => void
   dismissCaptchaBlock: () => void
   logOut: () => Promise<void>
+  /** True while the first dialog page loads in the background after boot (empty list ≠ no chats). */
+  dialogsInitialLoading: boolean
   refreshDialogs: () => Promise<void>
   loadMoreDialogs: () => Promise<void>
 }
@@ -174,6 +176,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
   const [errorSeconds, setErrorSeconds] = useState<number | null>(null)
   const [dialogs, setDialogs] = useState<Dialog[]>([])
   const [hasMoreDialogs, setHasMoreDialogs] = useState(true)
+  const [dialogsInitialLoading, setDialogsInitialLoading] = useState(false)
   const [dialogsLoadingMore, setDialogsLoadingMore] = useState(false)
   const [lastMessageTick, setLastMessageTick] = useState(0)
   const ephemeralPeersRef = useRef<Set<string>>(new Set())
@@ -209,6 +212,26 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
       await loadDialogsFirstPage(client)
     }
   }, [client, loadDialogsFirstPage])
+
+  /** Boot-time first page: retried a couple of times (flood wait / flaky link), never fatal. */
+  const loadInitialDialogs = useCallback(
+    async (c: TelegramClient, isCancelled: () => boolean) => {
+      const retryDelaysMs = [2000, 5000]
+      for (let attempt = 0; ; attempt += 1) {
+        try {
+          await loadDialogsFirstPage(c)
+          return
+        } catch (e) {
+          if (isCancelled() || attempt >= retryDelaysMs.length) {
+            appLog.warn("initial dialogs", e)
+            return
+          }
+          await new Promise((resolve) => setTimeout(resolve, retryDelaysMs[attempt]))
+        }
+      }
+    },
+    [loadDialogsFirstPage],
+  )
 
   const loadMoreDialogs = useCallback(async () => {
     if (!client || !hasMoreDialogs || dialogsLoadingMore) {
@@ -287,11 +310,19 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
               setClient(b.client)
               setAuthorized(true)
               setLoginStep("idle")
-              await loadDialogsFirstPage(b.client)
               attachNewMessageListener(b.client, msgBuilder.current, () => {
                 setLastMessageTick(Date.now())
               })
               attachEphemeralListener(b.client, rawBuilder.current, handleEphemeralForPeer)
+              // The shell does not wait for the first dialog page: a slow (or flood-waited)
+              // GetDialogs used to hold the splash for its whole duration. The list shows a
+              // loading state until the page lands.
+              setDialogsInitialLoading(true)
+              void loadInitialDialogs(b.client, () => cancelled).finally(() => {
+                if (!cancelled) {
+                  setDialogsInitialLoading(false)
+                }
+              })
             } else {
               await destroyClient(b.client)
             }
@@ -324,7 +355,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
     return () => {
       cancelled = true
     }
-  }, [destroyClient, loadDialogsFirstPage])
+  }, [destroyClient, loadDialogsFirstPage, loadInitialDialogs, handleEphemeralForPeer])
 
   const startLogin = useCallback(
     async (phone: string) => {
@@ -519,6 +550,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
       dialogs,
       hasMoreDialogs,
       dialogsLoadingMore,
+      dialogsInitialLoading,
       lastMessageTick,
       ephemeralPeerKeys: ephemeralPeersRef.current,
       ephemeralTick,
@@ -545,6 +577,7 @@ export function TelegramProvider({ children }: { children: ReactNode }): React.R
       dialogs,
       hasMoreDialogs,
       dialogsLoadingMore,
+      dialogsInitialLoading,
       lastMessageTick,
       ephemeralTick,
       loginStep,

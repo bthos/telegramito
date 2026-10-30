@@ -66,6 +66,20 @@ export async function markChatReadUpTo(
       )
       return
     }
+    if (peer.className === "InputPeerChannel") {
+      // `messages.ReadHistory` rejects channel/supergroup peers with PEER_ID_INVALID —
+      // they have their own pts space and need `channels.ReadHistory`.
+      await client.invoke(
+        new Api.channels.ReadHistory({
+          channel: new Api.InputChannel({
+            channelId: peer.channelId,
+            accessHash: peer.accessHash,
+          }),
+          maxId,
+        })
+      )
+      return
+    }
     await client.invoke(
       new Api.messages.ReadHistory({
         peer,

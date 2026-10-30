@@ -28,6 +28,10 @@ export type ChatSearchBarProps = {
   onSelect: (msg: Api.Message) => void
   peerDisplayName: string
   forumDisabled?: boolean
+  /** More hits exist beyond the loaded pages (the count then reads «N+»). */
+  hasMore?: boolean
+  loadingMore?: boolean
+  onLoadMore?: () => void
 }
 
 /**
@@ -44,6 +48,9 @@ export function ChatSearchBar({
   onSelect,
   peerDisplayName,
   forumDisabled,
+  hasMore = false,
+  loadingMore = false,
+  onLoadMore,
 }: ChatSearchBarProps) {
   const { t, i18n } = useTranslation()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -121,7 +128,7 @@ export function ChatSearchBar({
           ) : total > 0 ? (
             t("chat.searchResultCount", {
               n: Math.min(currentIndex + 1, total),
-              m: total,
+              m: hasMore ? `${total}+` : total,
             })
           ) : (
             "\u00a0"
@@ -204,6 +211,18 @@ export function ChatSearchBar({
               />
             ))}
           </ul>
+        ) : null}
+        {!forumDisabled && total > 0 && hasMore && onLoadMore != null ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="chat-search-bar__more"
+            disabled={loadingMore}
+            onClick={onLoadMore}
+          >
+            {loadingMore ? t("chat.searchLoadingMore") : t("chat.searchShowMore")}
+          </Button>
         ) : null}
       </div>
     </div>

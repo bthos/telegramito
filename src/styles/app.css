@@ -80,15 +80,105 @@ body,
   padding: 1rem;
 }
 
+.app-boot__mark-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  /* Room for the waves to spread out before they reach the label. */
+  margin-bottom: 4rem;
+  flex-shrink: 0;
+}
+
 .app-boot__mark {
+  position: relative;
+  z-index: 1;
   width: 40px;
   height: 40px;
   flex-shrink: 0;
   object-fit: contain;
 }
 
+/* Radio waves: thin rings spreading from the mark like a broadcast signal, one after another,
+   fading as they widen. Pure transform/opacity, so the animation stays on the compositor. */
+.app-boot__waves {
+  --wave-color: var(--letters-terra, var(--acc));
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 240px;
+  height: 240px;
+  margin: -120px 0 0 -120px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.app-boot__wave {
+  fill: none;
+  stroke: var(--wave-color);
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+  /* Static look (reduced motion): three still rings, fading outward. */
+  opacity: 0.55;
+  transform: scale(0.45);
+}
+
+.app-boot__wave:nth-child(2) {
+  opacity: 0.32;
+  transform: scale(0.72);
+}
+
+.app-boot__wave:nth-child(3) {
+  opacity: 0.16;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .app-boot__wave {
+    animation: app-boot-wave 2.7s cubic-bezier(0.2, 0.5, 0.3, 1) infinite;
+  }
+
+  .app-boot__wave:nth-child(2) {
+    animation-delay: 0.9s;
+  }
+
+  .app-boot__wave:nth-child(3) {
+    animation-delay: 1.8s;
+  }
+}
+
 .app-boot__label {
   font-size: 0.95rem;
+  animation: app-boot-label 2s ease-in-out infinite;
+}
+
+/* Short loads (<150ms) never flash the animation: it fades in only if boot lingers. */
+.app-boot {
+  animation: app-boot-in 0.3s ease-out 0.15s backwards;
+}
+
+@keyframes app-boot-in {
+  from { opacity: 0; }
+}
+
+@keyframes app-boot-wave {
+  0% { transform: scale(0.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes app-boot-label {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-boot,
+  .app-boot__label {
+    animation: none;
+  }
 }
 
 h1,
@@ -2912,14 +3002,26 @@ button.msg-reaction--mine {
   position: fixed;
   z-index: var(--ds-z-popover);
   max-width: min(24rem, calc(100vw - 1.5rem));
-  padding: 0.4rem 0.45rem;
-  border-radius: 0.45rem;
+  padding: 0.35rem;
+  border-radius: 0.9rem;
   background: var(
     --msg-pop-bg,
     linear-gradient(165deg, rgba(32, 38, 52, 0.99) 0%, rgba(20, 24, 36, 0.99) 100%)
   );
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--hairline, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 0.6rem 1.6rem rgba(0, 0, 0, 0.38);
+  animation: msg-reaction-pop-in 0.14s ease-out;
+}
+@keyframes msg-reaction-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .msg-reaction-pop {
+    animation: none;
+  }
 }
 .msg-reaction-pop__err {
   margin: 0 0 0.3rem 0;
@@ -2927,45 +3029,56 @@ button.msg-reaction--mine {
 .msg-reaction-pop__grid {
   display: grid;
   grid-template-columns: repeat(9, minmax(0, 1fr));
-  gap: 0.22rem 0.28rem;
+  gap: 0.1rem;
   max-height: 15rem;
   overflow-y: auto;
   min-width: min(22rem, calc(100vw - 2.5rem));
-  padding: 0.1rem 0.05rem 0.2rem 0.05rem;
+  padding: 0.1rem;
+  scrollbar-width: thin;
 }
 button.msg-reaction-pop__btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 2.45rem;
-  max-height: 2.55rem;
-  padding: 0.12rem 0.08rem;
+  aspect-ratio: 1;
+  min-height: 2.3rem;
+  padding: 0;
   margin: 0;
   font: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.4rem;
-  background: rgba(0, 0, 0, 0.18);
+  color: inherit;
+  border: 0;
+  border-radius: 0.6rem;
+  background: transparent;
   cursor: pointer;
   line-height: 1;
-  flex: 0 0 auto;
+  transition: background 0.12s ease;
 }
-button.msg-reaction-pop__btn:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.35);
+button.msg-reaction-pop__btn:hover:not(:disabled),
+button.msg-reaction-pop__btn:focus-visible {
+  background: color-mix(in srgb, var(--ds-color-primary) 14%, transparent);
+}
+button.msg-reaction-pop__btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ds-color-primary) 55%, transparent);
+  outline-offset: -2px;
 }
 button.msg-reaction-pop__btn:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
 button.msg-reaction-pop__btn--on {
-  border-color: rgba(120, 200, 255, 0.5);
-  background: rgba(80, 150, 220, 0.2);
+  background: color-mix(in srgb, var(--ds-color-primary) 20%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ds-color-primary) 55%, transparent);
 }
 .msg-reaction-pick-ico {
   display: block;
   font-size: 1.1rem;
   line-height: 1;
   text-align: center;
+  transition: transform 0.12s ease;
+}
+button.msg-reaction-pop__btn:hover:not(:disabled) .msg-reaction-pick-ico {
+  transform: scale(1.18);
 }
 img.msg-reaction-pick-ico {
   object-fit: contain;
@@ -2974,6 +3087,15 @@ img.msg-reaction-pick-ico {
   width: 1.9rem;
   height: 1.9rem;
   image-rendering: -webkit-optimize-contrast;
+}
+/* Native emoji stands in until the Telegram artwork arrives, so the grid is never blank. */
+.msg-reaction-pick-ico--emoji {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  font-size: 1.45rem;
+  opacity: 0.8;
 }
 .msg-reaction-pick-ico--ph {
   display: block;
@@ -3560,26 +3682,55 @@ html[data-theme="light"] .msg-bubble--out .msg-time {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 0.3rem 0.4rem;
-  margin: 0 0 0.4rem 0;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 0.15rem;
+  margin: 0 0 0.3rem 0;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--hairline, rgba(255, 255, 255, 0.1));
 }
 button.msg-bubble-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.3rem;
   font: inherit;
-  font-size: 0.82rem;
-  padding: 0.3rem 0.55rem;
-  border-radius: 0.35rem;
-  border: 1px solid rgba(120, 180, 255, 0.4);
-  background: rgba(60, 120, 200, 0.2);
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.15;
+  padding: 0.5rem 0.4rem 0.45rem;
+  border-radius: 0.65rem;
+  border: 0;
+  background: transparent;
   color: inherit;
   cursor: pointer;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
   text-align: center;
+  transition: background 0.12s ease, color 0.12s ease;
 }
-button.msg-bubble-action:hover {
-  background: rgba(80, 150, 220, 0.3);
+.msg-bubble-action__ico {
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+  opacity: 0.85;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+button.msg-bubble-action:hover .msg-bubble-action__ico,
+button.msg-bubble-action:focus-visible .msg-bubble-action__ico {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+.msg-bubble-action__label {
+  overflow-wrap: anywhere;
+}
+button.msg-bubble-action:hover,
+button.msg-bubble-action:focus-visible {
+  background: color-mix(in srgb, var(--ds-color-primary) 14%, transparent);
+  color: var(--ds-color-primary);
+}
+button.msg-bubble-action:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ds-color-primary) 55%, transparent);
+  outline-offset: -2px;
 }
 /* If any ancestor still scrolls (e.g. mobile), keep the bar at the bottom of the viewport. */
 @supports (position: sticky) {
@@ -4035,11 +4186,6 @@ button.msg-bubble-action:hover {
   gap: var(--ds-space-4);
   margin: 0 0 var(--ds-space-7);
   text-align: center;
-}
-.auth-card__mark {
-  flex-shrink: 0;
-  border-radius: 50%;
-  box-shadow: var(--ds-shadow-sm);
 }
 .auth-card__product {
   margin: 0;

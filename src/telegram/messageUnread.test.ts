@@ -1,6 +1,10 @@
 import { Api } from "teleproto"
 import { describe, expect, it } from "vitest"
-import { isInboundUnreadForThread, readInboxMaxIdForThread } from "./messageUnread"
+import {
+  isInboundUnreadForThread,
+  readInboxMaxIdForThread,
+  unreadCountForThread,
+} from "./messageUnread"
 
 describe("messageUnread", () => {
   it("readInboxMaxIdForThread uses ForumTopic for forums", () => {
@@ -16,6 +20,16 @@ describe("messageUnread", () => {
       dialog: { className: "Dialog" as const, readInboxMaxId: 77 },
     } as never
     expect(readInboxMaxIdForThread(dialog, false, null, [])).toBe(77)
+  })
+
+  it("unreadCountForThread uses the topic's own count in forums, the dialog's otherwise", () => {
+    const dialog = { unreadCount: 500 } as never
+    const topics = [
+      { className: "ForumTopic" as const, id: 5, unreadCount: 3 },
+    ] as Api.ForumTopic[]
+    expect(unreadCountForThread(dialog, true, 5, topics)).toBe(3)
+    expect(unreadCountForThread(dialog, true, 6, topics)).toBe(0)
+    expect(unreadCountForThread(dialog, false, null, [])).toBe(500)
   })
 
   it("isInboundUnreadForThread respects read horizon and out flag", () => {

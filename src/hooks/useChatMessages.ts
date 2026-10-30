@@ -26,6 +26,13 @@ const UNREAD_SEEK_MAX_OLDER_PAGES = 40
  */
 const AROUND_PAGE_SIZE = 50
 
+/**
+ * Open-at-first-unread window: `offsetId: readMax + 1, addOffset: -newer` fetches
+ * up to `newer` unread messages plus the rest of the page as read context above
+ * the divider — enough to fill a tall viewport below the first unread message.
+ */
+const UNREAD_OPEN_WINDOW = { limit: 60, newer: 40 } as const
+
 export function useChatMessages(opts: {
   client: TelegramClient | null
   dialog: Dialog
@@ -45,6 +52,12 @@ export function useChatMessages(opts: {
    * per initial load; the parent mirrors its live jump-request prop here.
    */
   pendingOpenJumpIdRef?: RefObject<number | null>
+  /**
+   * Frozen read horizon (`readInboxMaxId`) captured when this `convKey` opened with
+   * unread messages, or null. The initial load lands the first page on the first
+   * unread message instead of the live tail (Telegram "open at unread" behaviour).
+   */
+  openAtUnreadReadMaxRef?: RefObject<number | null>
 }): {
   list: Api.Message[]
   hasMoreOlder: boolean
@@ -74,6 +87,8 @@ export function useChatMessages(opts: {
   patchMessageReactions: (messageId: number, next: Api.MessageReactions) => void
   /** True once the initial history page for the current `convKey` has settled (success or error). */
   initialLoadDone: boolean
+  /** The `convKey` whose initial page is in `list` (null until it lands) — guards stale rows after a topic switch. */
+  loadedConvKey: string | null
 } {
   const {
     client,
@@ -87,6 +102,7 @@ export function useChatMessages(opts: {
     listForViewLengthRef,
     lastMessageTick,
     pendingOpenJumpIdRef,
+    openAtUnreadReadMaxRef,
   } = opts
 
   const [list, setList] = useState<Api.Message[]>([])
@@ -99,6 +115,7 @@ export function useChatMessages(opts: {
     () => new Map(),
   )
   const [initialLoadDone, setInitialLoadDone] = useState(false)
+  const [loadedConvKey, setLoadedConvKey] = useState<string | null>(null)
 
   const loadGenRef = useRef(0)
   const loadedConvKeyRef = useRef<string | null>(null)
@@ -107,6 +124,8 @@ export function useChatMessages(opts: {
    * re-fired initial load for the same conversation must load the plain tail,
    * not re-install the around-window (which would resurrect windowed mode). */
   const openJumpHandledConvKeyRef = useRef<string | null>(null)
+  /** convKey whose open-at-unread window the initial load already installed (one-shot, like `openJumpHandledConvKeyRef`). */
+  const openUnreadHandledConvKeyRef = useRef<string | null>(null)
   /** Entity identity churns on every dialog-list refresh; effects must key on
    * `convKey` (stable per conversation) and read the live entity through here,
    * otherwise a background dialogs refresh re-runs the initial load mid-session. */
@@ -331,25 +350,30 @@ export function useChatMessages(opts: {
   ])
 
   const fetchWindowAround = useCallback(
-    async (id: number): Promise<Api.Message[]> => {
+    async (
+      id: number,
+      size: { readonly limit: number; readonly newer: number } = {
+        limit: AROUND_PAGE_SIZE,
+        newer: Math.floor(AROUND_PAGE_SIZE / 2),
+      },
+    ): Promise<Api.Message[]> => {
       if (!client || !dialog.entity) {
         return []
       }
       const entity = dialog.entity
-      const backHalf = Math.floor(AROUND_PAGE_SIZE / 2)
       if (isForum) {
         if (topicId == null) {
           return []
         }
-        return getForumThreadMessagesPage(client, entity, topicId, AROUND_PAGE_SIZE, {
+        return getForumThreadMessagesPage(client, entity, topicId, size.limit, {
           offsetId: id,
-          addOffset: -backHalf,
+          addOffset: -size.newer,
         })
       }
       const r = await client.getMessages(entity, {
-        limit: AROUND_PAGE_SIZE,
+        limit: size.limit,
         offsetId: id,
-        addOffset: -backHalf,
+        addOffset: -size.newer,
       })
       return toMessageList(r)
     },
@@ -579,6 +603,10 @@ export function useChatMessages(opts: {
       openJumpHandledConvKeyRef.current === convKey
         ? null
         : (pendingOpenJumpIdRef?.current ?? null)
+    const unreadReadMax =
+      openUnreadHandledConvKeyRef.current === convKey
+        ? null
+        : (openAtUnreadReadMaxRef?.current ?? null)
     void (async () => {
       try {
         if (!client || !entityRef.current) {
@@ -613,6 +641,32 @@ export function useChatMessages(opts: {
             /* fall through to the tail page */
           }
         }
+        if (typeof unreadReadMax === "number" && unreadReadMax > 0 && openJumpTarget == null) {
+          // Opening a thread with unread messages: land the first page on the
+          // first unread message. On any miss, fall through to the tail page.
+          try {
+            const probe = unreadReadMax + 1
+            const around = await withTransientRetry(client, () =>
+              fetchWindowAround(probe, UNREAD_OPEN_WINDOW),
+            )
+            if (loadGenRef.current !== gen) {
+              return
+            }
+            if (around.some((m) => typeof m.id === "number" && m.id > unreadReadMax)) {
+              openUnreadHandledConvKeyRef.current = convKey
+              setList(uniqueMessagesSort(around))
+              setHasMoreOlder(true)
+              setHasMoreNewer(!windowReachesLiveTail(around, probe))
+              loadedConvKeyRef.current = convKey
+              lastTickSyncedRef.current = lastMessageTickRef.current
+              setLoadedConvKey(convKey)
+              setInitialLoadDone(true)
+              return
+            }
+          } catch {
+            /* fall through to the tail page */
+          }
+        }
         const head: Api.Message[] = await withTransientRetry(client, async () => {
           if (isForum && topicId != null) {
             return getForumThreadMessages(
@@ -633,6 +687,7 @@ export function useChatMessages(opts: {
         setHasMoreOlder(head.length > 0)
         loadedConvKeyRef.current = convKey
         lastTickSyncedRef.current = lastMessageTickRef.current
+        setLoadedConvKey(convKey)
         setInitialLoadDone(true)
       } catch {
         if (loadGenRef.current !== gen) {
@@ -642,6 +697,7 @@ export function useChatMessages(opts: {
         setHasMoreOlder(true)
         loadedConvKeyRef.current = convKey
         lastTickSyncedRef.current = lastMessageTickRef.current
+        setLoadedConvKey(convKey)
         setInitialLoadDone(true)
       }
     })()
@@ -768,5 +824,6 @@ export function useChatMessages(opts: {
     auxMessagesById,
     patchMessageReactions,
     initialLoadDone,
+    loadedConvKey,
   }
 }

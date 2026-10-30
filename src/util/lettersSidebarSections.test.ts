@@ -24,8 +24,10 @@ describe("buildLettersSidebarSectionsOrdered (AC6 + Passages)", () => {
     ])
   })
 
-  it("puts messages first when the query is eligible", () => {
+  it("puts Chats, Global search and Passages first when the query is eligible", () => {
     expect(buildLettersSidebarSectionsOrdered({ lettersMode: true, query: "hi" })).toEqual([
+      "chats",
+      "global",
       "messages",
       "correspondents",
       "groups",
@@ -33,18 +35,21 @@ describe("buildLettersSidebarSectionsOrdered (AC6 + Passages)", () => {
     ])
   })
 
-  it("does not include messages for short queries", () => {
-    expect(
-      buildLettersSidebarSectionsOrdered({ lettersMode: true, query: "h" }),
-    ).not.toContain("messages")
+  it("keeps only the local Chats filter for a single character", () => {
+    expect(buildLettersSidebarSectionsOrdered({ lettersMode: true, query: "h" })).toEqual([
+      "chats",
+      "correspondents",
+      "groups",
+      "channels",
+    ])
   })
 })
 
-describe("nextOpenSectionOnQueryChange (rising-edge Passages)", () => {
-  const orderedWith = ["messages", "correspondents", "groups", "channels"] as const
+describe("nextOpenSectionOnQueryChange (rising-edge search)", () => {
+  const orderedWith = ["chats", "global", "messages", "correspondents", "groups", "channels"] as const
   const orderedWithout = ["correspondents", "groups", "channels"] as const
 
-  it("auto-opens messages only on the rising edge", () => {
+  it("auto-opens Chats only on the rising edge", () => {
     expect(
       nextOpenSectionOnQueryChange({
         prevEligible: false,
@@ -52,10 +57,10 @@ describe("nextOpenSectionOnQueryChange (rising-edge Passages)", () => {
         current: "groups",
         ordered: orderedWith,
       }),
-    ).toBe("messages")
+    ).toBe("chats")
   })
 
-  it("does not re-force messages while already eligible", () => {
+  it("does not re-force Chats while already eligible", () => {
     expect(
       nextOpenSectionOnQueryChange({
         prevEligible: true,

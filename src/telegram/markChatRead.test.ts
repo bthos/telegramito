@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { Api } from "teleproto"
-import { maxMessageIdInBatch, readMaxIdForMarkRead } from "./markChatRead"
+import bigInt from "big-integer"
+import { markChatReadUpTo, maxMessageIdInBatch, readMaxIdForMarkRead } from "./markChatRead"
 
 describe("maxMessageIdInBatch", () => {
   it("returns undefined for empty list", () => {
@@ -38,5 +39,41 @@ describe("readMaxIdForMarkRead", () => {
       topMessage: 9000,
     } as Api.ForumTopic
     expect(readMaxIdForMarkRead([msg], { isForum: false, topic })).toBe(12)
+  })
+})
+
+function clientFor(peer: Api.TypeInputPeer) {
+  const invoke = vi.fn(async (_req: unknown) => true)
+  const client = { getInputEntity: vi.fn(async () => peer), invoke } as never
+  return { client, invoke }
+}
+
+describe("markChatReadUpTo", () => {
+  it("uses channels.ReadHistory for channels and supergroups (messages.ReadHistory rejects them)", async () => {
+    const { client, invoke } = clientFor(
+      new Api.InputPeerChannel({ channelId: bigInt(1371514299), accessHash: bigInt(77) }),
+    )
+    await markChatReadUpTo(client, {} as never, 980001, { isForum: false, topicId: null })
+    expect(invoke).toHaveBeenCalledTimes(1)
+    const req = invoke.mock.calls[0]![0] as Api.channels.ReadHistory
+    expect(req).toBeInstanceOf(Api.channels.ReadHistory)
+    expect(req.maxId).toBe(980001)
+    expect((req.channel as Api.InputChannel).className).toBe("InputChannel")
+  })
+
+  it("uses messages.ReadHistory for users and basic groups", async () => {
+    const { client, invoke } = clientFor(
+      new Api.InputPeerUser({ userId: bigInt(5), accessHash: bigInt(9) }),
+    )
+    await markChatReadUpTo(client, {} as never, 12, { isForum: false, topicId: null })
+    expect(invoke.mock.calls[0]![0]).toBeInstanceOf(Api.messages.ReadHistory)
+  })
+
+  it("reads a forum topic through messages.ReadDiscussion", async () => {
+    const { client, invoke } = clientFor(
+      new Api.InputPeerChannel({ channelId: bigInt(1), accessHash: bigInt(2) }),
+    )
+    await markChatReadUpTo(client, {} as never, 40, { isForum: true, topicId: 7 })
+    expect(invoke.mock.calls[0]![0]).toBeInstanceOf(Api.messages.ReadDiscussion)
   })
 })

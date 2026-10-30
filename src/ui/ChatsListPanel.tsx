@@ -17,6 +17,8 @@ import { ChatList } from "./ChatList"
 import { CommunitiesAccordion } from "./CommunitiesAccordion"
 import type { CommunityStub } from "../telegram/communityDialogs"
 import { SearchResultRow, searchResultSenderLabel } from "./SearchResultRow"
+import { PeerAvatar } from "./PeerAvatar"
+import type { GlobalPeerHit } from "../telegram/globalPeerSearch"
 import { TextField } from "./ds"
 import { ShellArchiveIcon, ShellDraftIcon } from "./ShellIcons"
 import type { CorrespondenceTab } from "../util/correspondenceFilter"
@@ -53,6 +55,8 @@ type Props = {
   lettersMode?: boolean
   /** When false, omit list search field (search lives in masthead). */
   showSearch?: boolean
+  /** The first dialog page is still loading (boot): an empty list is not «no chats» yet. */
+  dialogsInitialLoading?: boolean
   /** Letters: private dialogs only — correspondents accordion ChatList (defaults from `dialogs` if omitted). */
   correspondentsDialogs?: Dialog[]
   /** Letters: groups + channels except broadcasts — split into group / channel accordions (defaults derived if omitted). */
@@ -68,6 +72,10 @@ type Props = {
   /** Opaque error token from the global search hook; renders the error + Retry state. */
   passagesError?: string | null
   onPassagesRetry?: () => void
+  /** More hits exist beyond the loaded pages (counts then read «N+»). */
+  passagesHasMore?: boolean
+  passagesLoadingMore?: boolean
+  onPassagesLoadMore?: () => void
   onPassageSelect?: (hit: GlobalSearchHit) => void
   onPassagesSeeAll?: (cluster: GlobalSearchCluster) => void
   /** The passage whose chat could not be opened — renders the inline jump error. */
@@ -76,9 +84,19 @@ type Props = {
   unfilteredCirclesDialogs?: Dialog[]
   /** communities-dialogs: Layer 228 `DialogCommunity` stubs (empty ⇒ no accordion). */
   communityStubs?: CommunityStub[]
+  /** «Global search» (`contacts.Search`): public people/channels not already in «Chats». */
+  globalPeers?: GlobalPeerHit[]
+  globalPeersLoading?: boolean
+  /** Opaque error token from the peer-search hook; renders the error + Retry state. */
+  globalPeersError?: string | null
+  /** Key of the hit that could not be opened — renders the inline error under its row. */
+  globalPeersOpenError?: string | null
+  onGlobalPeersRetry?: () => void
+  onGlobalPeerSelect?: (hit: GlobalPeerHit) => void
 }
 
 const NO_PASSAGE_HITS: GlobalSearchHit[] = []
+const NO_GLOBAL_PEERS: GlobalPeerHit[] = []
 
 function clusterInitial(name: string): string {
   return name.trim().slice(0, 1).toUpperCase() || "§"
@@ -108,6 +126,23 @@ function CompactEmpty({
   )
 }
 
+/** Placeholder rows while the first dialog page loads. */
+function ChatListSkeleton() {
+  return (
+    <ul className="chat-list chat-list-skeleton" aria-hidden>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <li key={i} className="chat-list-skeleton__row">
+          <span className="chat-list-skeleton__ava" />
+          <span className="chat-list-skeleton__lines">
+            <span className="chat-list-skeleton__line chat-list-skeleton__line--name" />
+            <span className="chat-list-skeleton__line" />
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 export function ChatsListPanel({
   search,
   onSearchChange,
@@ -121,6 +156,7 @@ export function ChatsListPanel({
   hasMoreDialogs,
   loadMoreDialogs,
   dialogsLoadingMore,
+  dialogsInitialLoading = false,
   loadedDialogCount,
   client,
   lettersMode = false,
@@ -134,11 +170,20 @@ export function ChatsListPanel({
   passagesLoading = false,
   passagesError = null,
   onPassagesRetry,
+  passagesHasMore = false,
+  passagesLoadingMore = false,
+  onPassagesLoadMore,
   onPassageSelect,
   onPassagesSeeAll,
   passagesJumpError = null,
   unfilteredCirclesDialogs,
   communityStubs,
+  globalPeers = NO_GLOBAL_PEERS,
+  globalPeersLoading = false,
+  globalPeersError = null,
+  globalPeersOpenError = null,
+  onGlobalPeersRetry,
+  onGlobalPeerSelect,
 }: Props) {
   const { t, i18n } = useTranslation()
   const corrUid = useId()
@@ -157,7 +202,23 @@ export function ChatsListPanel({
   const msgHeadId = `${msgUid}-msg-h`
   const msgPanelId = `${msgUid}-msg-panel`
 
-  const [openSection, setOpenSection] = useState<LettersSidebarSection>("correspondents")
+  const chatsUid = useId()
+  const chatsHeadId = `${chatsUid}-chats-h`
+  const chatsPanelId = `${chatsUid}-chats-panel`
+
+  const globalUid = useId()
+  const globalHeadId = `${globalUid}-global-h`
+  const globalPanelId = `${globalUid}-global-panel`
+
+  // The panel remounts when a chat is opened/closed on the mobile stack; with an active search
+  // start on Chats (as the query effect would) so Back lands on the results the user tapped.
+  const [openSection, setOpenSection] = useState<LettersSidebarSection>(() =>
+    lettersMode &&
+    !nightListHidden &&
+    buildLettersSidebarSectionsOrdered({ lettersMode, query: search }).includes("chats")
+      ? "chats"
+      : "correspondents",
+  )
 
   const peopleDialogs = useMemo(() => {
     if (!lettersMode) {
@@ -231,26 +292,28 @@ export function ChatsListPanel({
     return nightListHidden ? ordered.filter((s) => s === "correspondents") : ordered
   }, [lettersMode, search, nightListHidden])
 
+  const showChatsSection = sidebarSectionsOrdered.includes("chats")
+  const showGlobalSection = sidebarSectionsOrdered.includes("global")
   const showPassagesSection = sidebarSectionsOrdered.includes("messages")
 
-  const prevPassagesEligibleRef = useRef(showPassagesSection)
+  const prevSearchEligibleRef = useRef(showChatsSection)
 
   useEffect(() => {
     if (!lettersMode) {
       return
     }
-    const prevEligible = prevPassagesEligibleRef.current
-    prevPassagesEligibleRef.current = showPassagesSection
+    const prevEligible = prevSearchEligibleRef.current
+    prevSearchEligibleRef.current = showChatsSection
     const next = nextOpenSectionOnQueryChange({
       prevEligible,
-      nextEligible: showPassagesSection,
+      nextEligible: showChatsSection,
       current: openSection,
       ordered: sidebarSectionsOrdered,
     })
     if (next !== openSection) {
       setOpenSection(next)
     }
-  }, [lettersMode, openSection, showPassagesSection, sidebarSectionsOrdered])
+  }, [lettersMode, openSection, showChatsSection, sidebarSectionsOrdered])
 
   const onLettersSectionHeaderClick = useCallback((section: LettersSidebarSection) => {
     if (!sidebarSectionsOrdered.includes(section)) {
@@ -267,6 +330,9 @@ export function ChatsListPanel({
     () => groupGlobalSearchHits(passagesResults),
     [passagesResults],
   )
+
+  // A full page means older hits may exist: counts are lower bounds and read «N+».
+  const passagesCapped = passagesHasMore
 
   const passagesBody = (() => {
     if (passagesError != null) {
@@ -308,7 +374,10 @@ export function ChatsListPanel({
             </span>
             <span className="letters-passages__cluster-name">{cluster.peerDisplayName}</span>
             <span className="letters-passages__cluster-count">
-              {t("chat.passagesClusterCount", { n: cluster.totalCount })}
+              {t("chat.passagesClusterCount", {
+                count: cluster.totalCount,
+                context: passagesCapped ? "capped" : undefined,
+              })}
             </span>
           </div>
           <ul
@@ -368,6 +437,70 @@ export function ChatsListPanel({
     })
   })()
 
+  const globalPeersBody = (() => {
+    if (globalPeersError != null) {
+      return (
+        <CompactEmpty
+          mark="@"
+          title={t("chat.globalSearchError")}
+          sub={t("chat.globalSearchErrorSub")}
+          action={
+            onGlobalPeersRetry != null ? (
+              <button
+                type="button"
+                className="letters-compact-empty__action"
+                onClick={onGlobalPeersRetry}
+              >
+                {t("common.retry")}
+              </button>
+            ) : null
+          }
+        />
+      )
+    }
+    if (globalPeers.length === 0) {
+      return globalPeersLoading ? null : (
+        <CompactEmpty
+          mark="@"
+          title={t("chat.globalSearchNoResults", { query: search.trim() })}
+          sub={t("chat.globalSearchNoResultsSub")}
+        />
+      )
+    }
+    return (
+      <ul className="chat-list" role="list">
+        {globalPeers.map((hit) => (
+          <li key={hit.key}>
+            <button
+              type="button"
+              className="chat-row"
+              onClick={() => {
+                onGlobalPeerSelect?.(hit)
+              }}
+            >
+              <PeerAvatar id={hit.key} name={hit.name} size={48} client={client} />
+              <div className="chat-row__body">
+                <div className="chat-row__top">
+                  <div className="chat-row__title">
+                    <span className="chat-row__name">{hit.name}</span>
+                  </div>
+                </div>
+                <p className="chat-row__preview">
+                  {hit.username != null ? `@${hit.username}` : t("chat.globalPeerKind", { context: hit.kind })}
+                </p>
+              </div>
+            </button>
+            {globalPeersOpenError === hit.key ? (
+              <p className="letters-passages__jump-error small" role="alert">
+                {t("chat.globalSearchOpenError")}
+              </p>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    )
+  })()
+
   const correspondentsList = lettersMode ? peopleDialogs : dialogs
   /**
    * Drafts / Returned with nothing to show: the empty note is the whole panel, so it must not
@@ -383,7 +516,11 @@ export function ChatsListPanel({
   /** Groups / channels filtered by the same tab can still hold drafts or archived threads. */
   const circlesHoldTabItems = groupDialogs.length > 0 || channelListDialogs.length > 0
 
-  const correspondentsChatList = (
+  const listLoading = lettersMode && dialogsInitialLoading && (loadedDialogCount ?? 0) === 0
+
+  const correspondentsChatList = listLoading ? (
+    <ChatListSkeleton />
+  ) : (
     <>
       {correspondentsEmptyState != null ? (
         <div className="letters-drafts-empty" role="status">
@@ -444,6 +581,81 @@ export function ChatsListPanel({
       {lettersMode ? (
         <div className="letters-sidebar-accordions">
           <CommunitiesAccordion communities={communityStubs ?? []} />
+          {showChatsSection ? (
+            <>
+              <button
+                type="button"
+                id={chatsHeadId}
+                className="letters-aside-accordion__trigger letters-aside-accordion__trigger--chats"
+                aria-expanded={openSection === "chats"}
+                aria-controls={chatsPanelId}
+                onClick={() => {
+                  onLettersSectionHeaderClick("chats")
+                }}
+              >
+                <span className="letters-correspondents-h">{t("chat.chatsSectionLabel")}</span>
+                <ChevronDownIcon
+                  className={`letters-aside-accordion__chev${openSection === "chats" ? " is-expanded" : ""}`}
+                  aria-hidden
+                />
+              </button>
+              <div
+                id={chatsPanelId}
+                role="region"
+                aria-label={t("chat.chatsSectionAriaLabel")}
+                className="letters-aside-accordion__panel"
+                hidden={openSection !== "chats"}
+              >
+                {dialogs.length > 0 ? (
+                  <ChatList
+                    {...circlesChatListShared}
+                    dialogs={dialogs}
+                    draftsMode={correspondenceTab === "drafts"}
+                  />
+                ) : (
+                  <CompactEmpty
+                    mark="⌾"
+                    title={t("chat.chatsNoResults", { query: search.trim() })}
+                  />
+                )}
+              </div>
+            </>
+          ) : null}
+          {showGlobalSection ? (
+            <>
+              <button
+                type="button"
+                id={globalHeadId}
+                className="letters-aside-accordion__trigger letters-aside-accordion__trigger--global"
+                aria-expanded={openSection === "global"}
+                aria-controls={globalPanelId}
+                onClick={() => {
+                  onLettersSectionHeaderClick("global")
+                }}
+              >
+                <span className="letters-correspondents-h">{t("chat.globalSearchSectionLabel")}</span>
+                {globalPeersLoading ? (
+                  <span className="chat-search-bar__spinner" aria-hidden />
+                ) : null}
+                <ChevronDownIcon
+                  className={`letters-aside-accordion__chev${openSection === "global" ? " is-expanded" : ""}`}
+                  aria-hidden
+                />
+              </button>
+              <div
+                id={globalPanelId}
+                role="region"
+                aria-label={t("chat.globalSearchSectionAriaLabel")}
+                className="letters-aside-accordion__panel"
+                hidden={openSection !== "global"}
+              >
+                <p className="letters-passages__live muted small" aria-live="polite">
+                  {globalPeersLoading ? t("chat.globalSearchLoading") : ""}
+                </p>
+                {globalPeersBody}
+              </div>
+            </>
+          ) : null}
           {showPassagesSection ? (
             <>
               <button
@@ -482,9 +694,22 @@ export function ChatsListPanel({
                     ? t("chat.passagesLoading")
                     : passagesError != null
                       ? t("chat.passagesError")
-                      : t("chat.passagesClusterCount", { n: passagesResults.length })}
+                      : t("chat.passagesClusterCount", {
+                          count: passagesResults.length,
+                          context: passagesCapped ? "capped" : undefined,
+                        })}
                 </p>
                 {passagesBody}
+                {passagesHasMore && passagesError == null && onPassagesLoadMore != null ? (
+                  <button
+                    type="button"
+                    className="letters-passages__see-all letters-passages__more"
+                    disabled={passagesLoadingMore}
+                    onClick={onPassagesLoadMore}
+                  >
+                    {passagesLoadingMore ? t("chat.passagesLoadingMore") : t("chat.passagesShowMore")}
+                  </button>
+                ) : null}
               </div>
             </>
           ) : null}
@@ -560,7 +785,9 @@ export function ChatsListPanel({
                 className="letters-aside-accordion__panel"
                 hidden={openSection !== "groups"}
               >
-                {groupsEmptyKind === "none" ? (
+                {listLoading ? (
+                  <ChatListSkeleton />
+                ) : groupsEmptyKind === "none" ? (
                   <ChatList
                     {...circlesChatListShared}
                     dialogs={groupDialogs}
@@ -622,7 +849,8 @@ export function ChatsListPanel({
                       client={client}
                     />
                   ) : null}
-                  {channelsEmptyKind === "filtered" ? (
+                  {listLoading ? <ChatListSkeleton /> : null}
+                  {listLoading ? null : channelsEmptyKind === "filtered" ? (
                     <CompactEmpty
                       mark="⌾"
                       title={t("chat.channelsNoResults", { query: search.trim() })}

@@ -125,10 +125,16 @@ export async function prefetchAvailableReactionsAssets(client: TelegramClient): 
       seen.add(k)
       docs.push(d as Api.Document)
     }
-    for (let i = 0; i < docs.length; i += PREFETCH_REACTION_ICON_CONCURRENCY) {
-      const slice = docs.slice(i, i + PREFETCH_REACTION_ICON_CONCURRENCY)
-      await Promise.all(slice.map((doc) => getReactionStaticIconObjectUrl(client, doc)))
+    let next = 0
+    const worker = async () => {
+      while (next < docs.length) {
+        const doc = docs[next++]
+        await getReactionStaticIconObjectUrl(client, doc)
+      }
     }
+    await Promise.all(
+      Array.from({ length: Math.min(PREFETCH_REACTION_ICON_CONCURRENCY, docs.length) }, worker),
+    )
   } catch {
     /* best-effort */
   }

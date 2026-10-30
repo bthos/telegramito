@@ -42,9 +42,57 @@ html[data-theme="dark"] .app-root--peripheral .auth-screen {
   letter-spacing: 0.06em;
 }
 
-/* Vertically center the card (auto margins keep it scrollable on short viewports). */
+/*
+ * Sealed envelope: the card is the envelope back. A V-shaped flap (two stacked
+ * clip-path layers: edge line + paper fill) closes it, and the wax seal sits on
+ * the flap tip, half on the flap and half on the body, as on a real envelope.
+ * Auto block margins keep it vertically centred yet scrollable on short viewports.
+ */
 .app-root--peripheral .auth-card {
+  --auth-flap: 5.5rem;
+  --auth-seal: 5rem;
+  position: relative;
+  overflow: hidden;
   margin-block: auto;
+  border-radius: var(--ds-radius-md);
+  padding-top: calc(var(--auth-flap) + var(--auth-seal) / 2 + var(--ds-space-5));
+}
+
+.app-root--peripheral .auth-card::before,
+.app-root--peripheral .auth-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--auth-flap);
+  pointer-events: none;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+/* Flap edge: same triangle, a hair taller than the fill, so a thin line shows along the V. */
+.app-root--peripheral .auth-card::before {
+  height: calc(var(--auth-flap) + 2px);
+  background: color-mix(in srgb, var(--line) 70%, var(--text) 30%);
+}
+
+.app-root--peripheral .auth-card::after {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 84%, var(--text) 16%),
+    color-mix(in srgb, var(--card) 93%, var(--text) 7%)
+  );
+}
+
+.app-root--peripheral .auth-card__seal {
+  position: absolute;
+  top: var(--auth-flap);
+  left: 50%;
+  z-index: 1;
+  width: var(--auth-seal);
+  height: var(--auth-seal);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0.2rem 0.3rem rgba(60, 12, 4, 0.38));
 }
 
 /* Warm paper input instead of the legacy navy sink. */

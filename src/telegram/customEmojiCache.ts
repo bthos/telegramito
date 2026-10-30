@@ -111,10 +111,10 @@ function mimeFromRasterHeader(u8: Uint8Array): string | null {
  * Download a displayable raster for an emoji {@link Api.Document} (try several thumb sizes).
  * Skips animated TGS bodies (gzip). Caller supplies a fresh doc from the API (valid file_reference).
  */
-async function createRasterObjectUrlFromDocument(
+async function downloadRasterBlob(
   client: TelegramClient,
   doc: Api.Document,
-): Promise<string | null> {
+): Promise<Blob | null> {
   for (const ts of thumbTypesToTry(doc)) {
     const loc = new Api.InputDocumentFileLocation({
       id: doc.id,
@@ -134,12 +134,20 @@ async function createRasterObjectUrlFromDocument(
       const mime =
         mimeFromRasterHeader(u8) ??
         (mimeForDoc(doc).startsWith("image/") ? mimeForDoc(doc) : "image/webp")
-      return URL.createObjectURL(new Blob([u8.slice()], { type: mime }))
+      return new Blob([u8.slice()], { type: mime })
     } catch {
       /* try next thumbSize */
     }
   }
   return null
+}
+
+async function createRasterObjectUrlFromDocument(
+  client: TelegramClient,
+  doc: Api.Document,
+): Promise<string | null> {
+  const blob = await downloadRasterBlob(client, doc)
+  return blob == null ? null : URL.createObjectURL(blob)
 }
 
 /**
@@ -226,9 +234,58 @@ export async function prefetchCustomEmojiDocuments(
 
 const reactionIconInflight = new Map<string, Promise<string | null>>()
 
+/** Already-resolved icon URL (memory cache only) so a re-opened picker paints with no placeholder frame. */
+export function peekReactionIconObjectUrl(doc: Api.TypeDocument | undefined): string | null {
+  if (doc == null || doc.className !== "Document") {
+    return null
+  }
+  const id = (doc as Api.Document).id
+  return id == null ? null : (blobByDocId.get(String(id)) ?? null)
+}
+
 /**
- * Icon for a reaction in the picker (3D / custom emoji from {@link Api.AvailableReaction}):
- * 1) same path as message custom emoji; 2) thumb from the inline `Document` from the API.
+ * Reaction artwork never changes for a given document id, so it is kept across sessions in the
+ * Cache API: after the first run the picker paints from disk instead of ~75 MTProto downloads.
+ * Bump the suffix if the stored shape ever changes.
+ */
+const REACTION_ICON_CACHE = "reaction-icons-v1"
+
+function reactionIconCacheKey(idKey: string): string {
+  return `/__reaction-icon__/${idKey}`
+}
+
+async function readPersistedReactionIcon(idKey: string): Promise<string | null> {
+  if (typeof caches === "undefined") {
+    return null
+  }
+  try {
+    const store = await caches.open(REACTION_ICON_CACHE)
+    const hit = await store.match(reactionIconCacheKey(idKey))
+    return hit == null ? null : URL.createObjectURL(await hit.blob())
+  } catch {
+    return null
+  }
+}
+
+async function persistReactionIcon(idKey: string, blob: Blob): Promise<void> {
+  if (typeof caches === "undefined") {
+    return
+  }
+  try {
+    const store = await caches.open(REACTION_ICON_CACHE)
+    await store.put(
+      reactionIconCacheKey(idKey),
+      new Response(blob, { headers: { "Content-Type": blob.type } }),
+    )
+  } catch {
+    /* quota / private mode — the in-memory cache still works */
+  }
+}
+
+/**
+ * Icon for a reaction in the picker (3D / custom emoji from {@link Api.AvailableReaction}).
+ * Order: in-memory → persisted copy → direct download of the inline `Document` from the API
+ * (valid file_reference, no extra RPC) → custom-emoji lookup as a last resort.
  * Prefer {@link Api.AvailableReaction.centerIcon} for display when present.
  */
 export function getReactionStaticIconObjectUrl(
@@ -252,15 +309,19 @@ export function getReactionStaticIconObjectUrl(
   }
   const p = (async () => {
     try {
-      const u = await getCustomEmojiObjectUrl(client, d.id)
-      if (u) {
-        return u
+      const stored = await readPersistedReactionIcon(idKey)
+      if (stored) {
+        blobByDocId.set(idKey, stored)
+        return stored
       }
-      const u2 = await createRasterObjectUrlFromDocument(client, d)
-      if (u2) {
-        blobByDocId.set(idKey, u2)
+      const blob = await downloadRasterBlob(client, d)
+      if (blob) {
+        const url = URL.createObjectURL(blob)
+        blobByDocId.set(idKey, url)
+        void persistReactionIcon(idKey, blob)
+        return url
       }
-      return u2
+      return await getCustomEmojiObjectUrl(client, d.id)
     } catch {
       return null
     } finally {

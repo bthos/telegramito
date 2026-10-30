@@ -32,6 +32,26 @@ export function readInboxMaxIdForThread(
   return 0
 }
 
+/**
+ * Unread incoming message count for the current thread: forum topic uses
+ * {@link Api.ForumTopic.unreadCount}; otherwise the chat list dialog's own count.
+ */
+export function unreadCountForThread(
+  dialog: Dialog,
+  isForum: boolean,
+  topicId: number | null,
+  topics: readonly Api.ForumTopic[],
+): number {
+  if (isForum && topicId != null) {
+    const tp = topics.find((x) => x.id === topicId && x.className === "ForumTopic") as
+      | Api.ForumTopic
+      | undefined
+    return tp != null && typeof tp.unreadCount === "number" ? Math.max(0, tp.unreadCount) : 0
+  }
+  const n = (dialog as unknown as { unreadCount?: number }).unreadCount
+  return typeof n === "number" ? Math.max(0, n) : 0
+}
+
 /** Incoming messages with id greater than the thread read horizon count as unread for this filter. */
 export function isInboundUnreadForThread(m: Api.Message, readInboxMaxId: number): boolean {
   if (m.className !== "Message" || m.id == null) {

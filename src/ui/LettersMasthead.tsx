@@ -171,6 +171,13 @@ export function LettersMasthead({
               }}
               placeholder={t("chat.search")}
               aria-label={t("chat.search")}
+              onKeyDown={(e) => {
+                // Telegram Web K parity: Esc leaves search mode (drops the query) before anything else.
+                if (e.key === "Escape" && search !== "") {
+                  e.preventDefault()
+                  onSearchChange("")
+                }
+              }}
               autoComplete="off"
             />
           </div>
@@ -196,6 +203,7 @@ export function LettersMasthead({
             }}
           >
             <ShellDeskIcon width="1.35rem" height="1.35rem" />
+            <span className="letters-masthead__tool-label">{t("letters.mobileTab.desk")}</span>
           </Button>
           {showDayMailButton ? (
             <Button
@@ -209,6 +217,7 @@ export function LettersMasthead({
               }}
             >
               <ShellDayMailIcon width="1.35rem" height="1.35rem" />
+              <span className="letters-masthead__tool-label">{t("letters.mobileTab.dayMail")}</span>
             </Button>
           ) : null}
           {showCirclesButton ? (
@@ -223,6 +232,7 @@ export function LettersMasthead({
               }}
             >
               <ShellCirclesIcon width="1.35rem" height="1.35rem" />
+              <span className="letters-masthead__tool-label">{t("letters.mobileTab.circles")}</span>
             </Button>
           ) : null}
         </div>

@@ -1,20 +1,32 @@
 /**
- * Pure Letters sidebar accordion section helpers for global-message-search
- * (Passages + AC6 Groups/Channels always visible).
+ * Pure Letters sidebar accordion section helpers for search
+ * (Chats + Global search + Passages, plus AC6 Groups/Channels always visible).
  */
 
-export type LettersSidebarSection = "messages" | "correspondents" | "groups" | "channels"
+export type LettersSidebarSection =
+  | "chats"
+  | "global"
+  | "messages"
+  | "correspondents"
+  | "groups"
+  | "channels"
 
 export type EmptyKind = "none" | "neverHad" | "filtered"
 
+/** Telegram's server-side searches (public peers, message history) need two characters. */
 export function passagesEligible(query: string): boolean {
   return query.trim().length >= 2
 }
 
+/** The «Chats» section is a local filter, so a single character already works. */
+export function chatsEligible(query: string): boolean {
+  return query.trim().length >= 1
+}
+
 /**
- * Stable sidebar section order for Letters mode.
- * When Passages is eligible it sorts first; Groups/Channels are always included
- * (AC6) regardless of filtered dialog counts.
+ * Stable sidebar section order for Letters mode. While searching, the result sections come
+ * first in Telegram Web K order: Chats, Global search, then message hits (Passages).
+ * Groups/Channels are always included (AC6) regardless of filtered dialog counts.
  */
 export function buildLettersSidebarSectionsOrdered(opts: {
   lettersMode: boolean
@@ -24,15 +36,18 @@ export function buildLettersSidebarSectionsOrdered(opts: {
     return ["correspondents"]
   }
   const list: LettersSidebarSection[] = []
+  if (chatsEligible(opts.query)) {
+    list.push("chats")
+  }
   if (passagesEligible(opts.query)) {
-    list.push("messages")
+    list.push("global", "messages")
   }
   list.push("correspondents", "groups", "channels")
   return list
 }
 
 /**
- * Rising-edge only: when Passages becomes eligible, open `"messages"`.
+ * Rising-edge only: when the search sections appear, open the first one (`"chats"`).
  * Otherwise keep `current` if still available, else first ordered section.
  */
 export function nextOpenSectionOnQueryChange(opts: {
@@ -41,8 +56,8 @@ export function nextOpenSectionOnQueryChange(opts: {
   current: LettersSidebarSection
   ordered: readonly LettersSidebarSection[]
 }): LettersSidebarSection {
-  if (!opts.prevEligible && opts.nextEligible && opts.ordered.includes("messages")) {
-    return "messages"
+  if (!opts.prevEligible && opts.nextEligible && opts.ordered.includes("chats")) {
+    return "chats"
   }
   if (opts.ordered.includes(opts.current)) {
     return opts.current

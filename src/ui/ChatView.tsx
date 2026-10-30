@@ -17,6 +17,8 @@ import { getPeerInfo, isUserContactForPolicy, isPrivateUserDialog } from "../tel
 import { useForumTopics } from "../hooks/useForumTopics"
 import { useChatMessages } from "../hooks/useChatMessages"
 import { useReadReceipt } from "../hooks/useReadReceipt"
+import { useViewportMaxMessageId } from "../hooks/useViewportMaxMessageId"
+import { useOpenAtFirstUnread, type OpenLanding } from "../hooks/useOpenAtFirstUnread"
 import { useChatScroll } from "../hooks/useChatScroll"
 import { useViewportMessageSlice } from "../hooks/useViewportMessageSlice"
 import { useChatCompose } from "../hooks/useChatCompose"
@@ -38,8 +40,8 @@ import {
 import { collectCustomEmojiDocumentIdsFromMessages } from "../telegram/customEmojiFromMessages"
 import { prefetchCustomEmojiDocuments } from "../telegram/customEmojiCache"
 import { computeMessageClusterRoles, type MessageClusterRole } from "../telegram/messageBubbleGroup"
-import { readInboxMaxIdForThread } from "../telegram/messageUnread"
-import { readMaxIdForMarkRead } from "../telegram/markChatRead"
+import { readInboxMaxIdForThread, unreadCountForThread } from "../telegram/messageUnread"
+import { maxMessageIdInBatch, readMaxIdForMarkRead } from "../telegram/markChatRead"
 import { isBroadcastChannelEntity } from "../telegram/messageTickState"
 import { findFirstUnreadRowIndex, insertCatchUpRibbon } from "../util/threadCatchUp"
 import { ForumTopicBadge } from "./ForumTopicBadge"
@@ -250,6 +252,25 @@ export function ChatView({
     [key, isForum, topicId]
   )
 
+  /**
+   * Read horizon frozen when this thread opened with unread messages (else null). Telegram
+   * semantics: the thread opens on the first unread message and the divider stays put for
+   * the whole visit, even though read receipts advance the live `readInboxMaxId` meanwhile.
+   * Opening straight into a jump target wins over it.
+   */
+  const openAtUnreadReadMaxRef = useRef<number | null>(null)
+  const openUnreadConvKeyRef = useRef<string | null>(null)
+  if (openUnreadConvKeyRef.current !== convKey) {
+    openUnreadConvKeyRef.current = convKey
+    const readMax = readInboxMaxIdForThread(dialog, isForum, topicId, topics)
+    const unread = unreadCountForThread(dialog, isForum, topicId, topics)
+    const hasJump = lettersJumpToMessageId != null && lettersJumpToMessageId > 0
+    openAtUnreadReadMaxRef.current = !hasJump && readMax > 0 && unread > 0 ? readMax : null
+  }
+  const openUnreadReadMax = openAtUnreadReadMaxRef.current
+  const [openLandedKey, setOpenLandedKey] = useState<string | null>(null)
+  const awaitingOpenLanding = openUnreadReadMax != null && openLandedKey !== convKey
+
   // listForViewLength for the unread-seek effect inside useChatMessages.
   // We track it via a ref that is updated each render so the async effect sees a current value.
   const listForViewLengthRef = useRef(0)
@@ -270,6 +291,7 @@ export function ChatView({
     auxMessagesById,
     patchMessageReactions,
     initialLoadDone,
+    loadedConvKey,
   } = useChatMessages({
     client,
     dialog,
@@ -282,6 +304,7 @@ export function ChatView({
     listForViewLengthRef,
     lastMessageTick,
     pendingOpenJumpIdRef,
+    openAtUnreadReadMaxRef,
   })
 
   const isInitialLoad = deriveIsInitialLoad(list.length)
@@ -365,24 +388,6 @@ export function ChatView({
     [messageByIdLoaded],
   )
 
-  const maxMsgIdVisible = useMemo(
-    () => readMaxIdForMarkRead(list, { isForum, topic: currentForumTopic }),
-    [list, isForum, currentForumTopic]
-  )
-
-  useReadReceipt({
-    client,
-    entity: dialog.entity,
-    convKey,
-    maxMsgIdVisible,
-    isForum,
-    topicId,
-    blocked,
-    appMode: settings.appMode,
-    refreshDialogs,
-    refreshForumTopics,
-  })
-
   useEffect(() => {
     queueMicrotask(() => {
       setMessagesUnreadOnly(false)
@@ -416,20 +421,11 @@ export function ChatView({
       }
       out.push({ kind: "msg", message: m })
     }
-    if (!lettersLayout || messagesUnreadOnly) {
+    if (!lettersLayout || messagesUnreadOnly || openUnreadReadMax == null) {
       return out
     }
-    const readMax = readInboxMaxIdForThread(dialog, isForum, topicId, topics)
-    if (readMax <= 0) {
-      return out
-    }
-    return insertCatchUpRibbon(out, readMax)
-  }, [dialog, isForum, lettersLayout, listForView, messagesUnreadOnly, topicId, topics])
-
-  const readInboxMaxId = useMemo(
-    () => readInboxMaxIdForThread(dialog, isForum, topicId, topics),
-    [dialog, isForum, topicId, topics],
-  )
+    return insertCatchUpRibbon(out, openUnreadReadMax)
+  }, [lettersLayout, listForView, messagesUnreadOnly, openUnreadReadMax])
 
   const {
     scrollFabVisible,
@@ -449,8 +445,15 @@ export function ChatView({
     returnToLiveTail,
     transcriptEpoch,
     convKey,
-    hasPendingJump: lettersJumpToMessageId != null && lettersJumpToMessageId > 0,
+    hasPendingJump:
+      (lettersJumpToMessageId != null && lettersJumpToMessageId > 0) || awaitingOpenLanding,
     jumpSettlingRef,
+  })
+
+  const { viewportMaxId, measure: measureViewportMax } = useViewportMaxMessageId({
+    scrollRef,
+    datedList,
+    convKey,
   })
 
   const {
@@ -472,7 +475,62 @@ export function ChatView({
   const handleMessageScroll = useCallback(() => {
     onScroll()
     onViewportSliceScroll()
-  }, [onScroll, onViewportSliceScroll])
+    measureViewportMax()
+  }, [onScroll, onViewportSliceScroll, measureViewportMax])
+
+  const handleOpenLanded = useCallback(
+    (where: OpenLanding) => {
+      setOpenLandedKey(convKey)
+      if (where === "bottom") {
+        scrollToLatestMessages()
+        return
+      }
+      setFreshMailDismissed(true)
+      handleMessageScroll()
+    },
+    [convKey, handleMessageScroll, scrollToLatestMessages],
+  )
+
+  useOpenAtFirstUnread({
+    awaiting: awaitingOpenLanding,
+    readMax: openUnreadReadMax,
+    convKey,
+    loadedConvKey,
+    scrollRef,
+    datedList,
+    expandToRowIndex,
+    jumpSettlingRef,
+    onLanded: handleOpenLanded,
+  })
+
+  /**
+   * Read receipts follow what is on screen, not what is loaded: a thread opened at its first
+   * unread message must not be marked read to the tail. Reaching the loaded live tail keeps the
+   * old "read to the latest" semantics (including the forum topic's top message).
+   */
+  const maxMsgIdVisible = useMemo(() => {
+    if (awaitingOpenLanding || viewportMaxId == null) {
+      return undefined
+    }
+    const listMax = maxMessageIdInBatch(list)
+    if (!hasMoreNewer && listMax != null && viewportMaxId >= listMax) {
+      return readMaxIdForMarkRead(list, { isForum, topic: currentForumTopic })
+    }
+    return viewportMaxId
+  }, [awaitingOpenLanding, currentForumTopic, hasMoreNewer, isForum, list, viewportMaxId])
+
+  useReadReceipt({
+    client,
+    entity: dialog.entity,
+    convKey,
+    maxMsgIdVisible,
+    isForum,
+    topicId,
+    blocked,
+    appMode: settings.appMode,
+    refreshDialogs,
+    refreshForumTopics,
+  })
 
   const {
     searchMode,
@@ -581,7 +639,8 @@ export function ChatView({
     scrollFabVisible
 
   const scrollToFirstUnread = useCallback(() => {
-    const idx = findFirstUnreadRowIndex(datedList, readInboxMaxId)
+    const idx =
+      openUnreadReadMax == null ? -1 : findFirstUnreadRowIndex(datedList, openUnreadReadMax)
     if (idx < 0) {
       scrollToLatestMessages()
       setFreshMailDismissed(true)
@@ -597,7 +656,7 @@ export function ChatView({
       alignRowInScroller(root, node, { align: "start", smooth: !reducedMotion })
     }
     setFreshMailDismissed(true)
-  }, [datedList, expandToRowIndex, readInboxMaxId, scrollToLatestMessages])
+  }, [datedList, expandToRowIndex, openUnreadReadMax, scrollToLatestMessages])
 
   useEffect(() => {
     setFreshMailDismissed(false)

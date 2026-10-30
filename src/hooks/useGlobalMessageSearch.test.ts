@@ -193,4 +193,75 @@ describe("useGlobalMessageSearch", () => {
     })
     expect(result.current.results.map((h) => h.message.id)).toEqual([2])
   })
+
+  describe("paging", () => {
+    const fullPage = (fromId: number) =>
+      Array.from({ length: 40 }, (_, i) => makeMessage(fromId - i, 5, `hit ${String(fromId - i)}`))
+
+    it("full page → hasMore; loadMore sends the previous page's last hit as offset and appends", async () => {
+      vi.useFakeTimers()
+      const invoke = vi
+        .fn()
+        .mockResolvedValueOnce({
+          className: "messages.MessagesSlice",
+          messages: fullPage(100),
+          users: [{ className: "User", id: 5, firstName: "Eve" }],
+          chats: [],
+          nextRate: 777,
+        })
+        .mockResolvedValueOnce({
+          className: "messages.MessagesSlice",
+          // id 61 repeats the previous page's last hit: must not be listed twice.
+          messages: [makeMessage(61, 5, "dup"), makeMessage(60, 5, "older")],
+          users: [{ className: "User", id: 5, firstName: "Eve" }],
+          chats: [],
+        })
+      const client = {
+        invoke,
+        getInputEntity: vi.fn().mockResolvedValue({ className: "InputPeerUser", userId: 5 }),
+      } as never
+      const { result } = renderHook(() => useGlobalMessageSearch({ client, query: "hit" }))
+      await act(async () => {
+        vi.advanceTimersByTime(400)
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+      expect(result.current.results).toHaveLength(40)
+      expect(result.current.hasMore).toBe(true)
+
+      await act(async () => {
+        result.current.loadMore()
+        await Promise.resolve()
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+      const req = invoke.mock.calls[1]![0] as Api.messages.SearchGlobal
+      expect(req.offsetRate).toBe(777)
+      expect(req.offsetId).toBe(61)
+      expect((req.offsetPeer as Api.TypeInputPeer).className).toBe("InputPeerUser")
+      expect(result.current.results.map((h) => h.message.id).slice(-2)).toEqual([61, 60])
+      expect(result.current.results).toHaveLength(41)
+      // A short page is the end of the history.
+      expect(result.current.hasMore).toBe(false)
+    })
+
+    it("short first page → no further pages", async () => {
+      vi.useFakeTimers()
+      const client = makeClient(
+        vi.fn().mockResolvedValue({
+          className: "messages.Messages",
+          messages: [makeMessage(1, 5, "only")],
+          users: [{ className: "User", id: 5, firstName: "Eve" }],
+          chats: [],
+        }),
+      )
+      const { result } = renderHook(() => useGlobalMessageSearch({ client, query: "only" }))
+      await act(async () => {
+        vi.advanceTimersByTime(400)
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+      expect(result.current.hasMore).toBe(false)
+    })
+  })
 })

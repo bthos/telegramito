@@ -4,8 +4,8 @@ On Android — whether Telegramito is installed as a standalone app or open in a
 tab — and in desktop browsers, the Back button (hardware key, edge-swipe gesture, or browser Back)
 navigates *within* the app instead of immediately closing or leaving it. Whatever is currently on
 top — a photo or video viewer, an emoji picker, a menu, a panel, an open chat — closes first, one
-thing at a time, in the reverse order it was opened. Only once nothing is left open does Back start
-to exit the app, and even then it asks for confirmation first.
+thing at a time, in the reverse order it was opened. Once nothing is left open, Back on desktop
+focuses the search field; on phones it starts to exit the app, asking for confirmation first.
 
 ## What Back closes, one press at a time
 
@@ -30,17 +30,21 @@ Closing something with Back has exactly the same effect as closing it any other 
 close button, tapping outside it, or pressing Escape on desktop) — nothing is lost: scroll position,
 whatever you'd typed in the message box, and your selected chat are all preserved.
 
-## Exiting the app
+## Back at the root
 
-Once you're back at the chat list with nothing else open, pressing Back doesn't exit right away.
-The first press shows a brief message:
+Once you're back at the chat list with nothing else open, what Back does depends on the device.
+
+**Desktop browsers** (the masthead search field is on screen): Back focuses the search field, as in
+Telegram Web K. It never leaves the app and never shows a message, however many times you press it.
+
+**Phones and narrow windows** (no desktop search field): Back doesn't exit right away. The first
+press shows a brief message:
 
 > Press Back again to exit
 
-Pressing Back again within about two seconds exits, same as before. If you wait longer than that —
-or do anything else instead, like tapping into the chat list or opening a chat — the message goes
-away and the next Back press starts over from "press again to confirm," rather than exiting
-immediately.
+Pressing Back again within about two seconds exits. If you wait longer than that — or do anything
+else instead, like tapping into the chat list or opening a chat — the message goes away and the next
+Back press starts over from "press again to confirm," rather than exiting immediately.
 
 This message reuses the app's existing lightweight status-message style (the same look as the
 "message sending, tap to cancel" note that appears while sending a message) — it's not a new kind
@@ -48,14 +52,15 @@ of pop-up.
 
 ## Where this applies
 
-This works identically everywhere Telegramito runs on Android or desktop:
+This works identically everywhere Telegramito runs on Android or desktop for layers (everything in
+the table above). Only the root behaviour differs, as described in "Back at the root":
 
-- Installed as a standalone app on the phone
-- Open in a mobile browser tab
-- Open in a desktop browser (Back button or Back gesture)
+- Installed as a standalone app on the phone: press Back again to exit
+- Open in a mobile browser tab: press Back again to exit
+- Open in a desktop browser: Back focuses search
 
-There's no difference in behavior between these — the same rules apply regardless of device or
-window size.
+There's no difference in how layers close between these — the same rules apply regardless of device
+or window size.
 
 ## Known limitation: iOS
 

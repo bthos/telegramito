@@ -7,6 +7,7 @@ let suppressCount = 0
 let armed = false
 let armedTimer: ReturnType<typeof setTimeout> | null = null
 let rootArmedListener: ((armed: boolean) => void) | null = null
+let rootBackHandler: (() => boolean) | null = null
 let seq = 0
 
 const ARM_WINDOW_MS = 2000
@@ -49,6 +50,12 @@ function handlePopState() {
     history.back()
     return
   }
+  // Desktop: Back at the root is not an exit. The shell handles it (Telegram Web K focuses the
+  // search) and the sentinel is restored so the next Back is swallowed the same way.
+  if (rootBackHandler?.()) {
+    pushEntry({ hwBackSentinel: true })
+    return
+  }
   setArmed(true)
   pushEntry({ hwBackSentinel: true })
   armedTimer = setTimeout(() => {
@@ -58,19 +65,26 @@ function handlePopState() {
 }
 
 /** Call once, in a MainShell-level useEffect (MainShell mounts once per signed-in
- *  session -- see src/App.tsx). Returns a cleanup fn for MainShell unmount (sign-out). */
-export function installHardwareBackRoot(onRootArmedChange: (armed: boolean) => void): () => void {
+ *  session -- see src/App.tsx). Returns a cleanup fn for MainShell unmount (sign-out).
+ *  `onRootBack` runs on a Back press with nothing left to close; return true to consume it
+ *  (no exit toast, no exit) or false to fall back to press-again-to-exit. */
+export function installHardwareBackRoot(
+  onRootArmedChange: (armed: boolean) => void,
+  onRootBack?: () => boolean,
+): () => void {
   stack = []
   suppressCount = 0
   armed = false
   clearArmedTimer()
   rootArmedListener = onRootArmedChange
+  rootBackHandler = onRootBack ?? null
   window.addEventListener("popstate", handlePopState)
   pushEntry({ hwBackSentinel: true })
   return () => {
     window.removeEventListener("popstate", handlePopState)
     clearArmedTimer()
     rootArmedListener = null
+    rootBackHandler = null
   }
 }
 
@@ -111,4 +125,5 @@ export function __resetHardwareBackForTests(): void {
   armed = false
   clearArmedTimer()
   rootArmedListener = null
+  rootBackHandler = null
 }

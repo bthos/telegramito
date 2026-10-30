@@ -7,13 +7,20 @@ page.
 
 ## Searching across all chats (Passages)
 
-Type anything into the search field at the top of the letters panel. While you type, two things
-happen in parallel:
+Type anything into the search field at the top of the letters panel. The results appear as
+accordion sections above Correspondents, in the same order as Telegram Web K:
 
-- **Dialog filter** — Correspondents, Groups, and Channels are narrowed to names that match your
-  query. This works instantly, with no server round-trip.
-- **Global search** — Telegramito searches message history across all your chats and shows the hits
-  in a **§ Passages** section that appears above Correspondents in the sidebar.
+- **Chats** — your own chats (people, groups, channels) whose names match the query. This works
+  instantly, with no server round-trip, from the first character. It is the section that opens
+  first.
+- **Global search** — public people, groups and channels from Telegram's `contacts.Search`
+  (two characters or more). Peers you already chat with are not repeated here. Tapping a person
+  opens their chat; tapping a not-yet-joined group or channel opens the Join sheet with its
+  `@username` filled in. In child mode only people allowed by the new-chat rules are listed.
+- **§ Passages** — Telegramito searches message history across all your chats (two characters or
+  more).
+
+Groups and Channels are narrowed to matching names at the same time.
 
 Passages groups results by chat. Each chat cluster shows up to three matching excerpts, with a
 count of how many matches were found in that chat on the current page. The words you searched for
@@ -66,7 +73,8 @@ in-chat search, which searches only the thread you're currently reading.
 | In-chat search feature | How to reach it |
 |---|---|
 | Search the open chat | Tap the search icon (🔍) in the thread header |
-| Navigate between results | Use the up/down arrows in the search bar |
+| Navigate between results | Use the up/down arrows in the search bar; stepping past the last loaded hit loads the next page |
+| Load older hits | Tap **Show older results** under the list. Hits load 40 at a time and the counter reads «N+» while more exist |
 | Close in-chat search | Tap the × in the search bar, or press Escape |
 
 In-chat search is the right tool when you already know which chat your message is in and want to

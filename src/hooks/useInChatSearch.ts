@@ -1,12 +1,13 @@
 import { Api } from "teleproto"
 import type { TelegramClient } from "teleproto"
 import { generateRandomBigInt } from "teleproto/Helpers"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { toMessageList } from "../telegram/messageList"
 import { withTransientRetry } from "../telegram/invokeWithTransientRetry"
 
 const DEBOUNCE_MS = 400
-const SEARCH_LIMIT = 40
+/** Page size; a full page means older hits may exist and «Show more» loads the next one. */
+export const IN_CHAT_SEARCH_PAGE = 40
 
 export type UseInChatSearchArgs = {
   client: TelegramClient | null
@@ -35,6 +36,7 @@ async function searchTopicMessages(
   q: string,
   topicId: number,
   limit: number,
+  offsetId: number,
 ): Promise<Api.Message[]> {
   const peer = await client.getInputEntity(entity as never)
   const res = await client.invoke(
@@ -45,7 +47,7 @@ async function searchTopicMessages(
       topMsgId: topicId,
       minDate: 0,
       maxDate: 0,
-      offsetId: 0,
+      offsetId,
       addOffset: 0,
       limit,
       maxId: 0,
@@ -75,6 +77,10 @@ export function useInChatSearch({
   results: Api.Message[]
   loading: boolean
   error: string | null
+  /** A full page came back, so older hits may exist. */
+  hasMore: boolean
+  loadingMore: boolean
+  loadMore: () => void
 } {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<Api.Message[]>([])
@@ -82,6 +88,62 @@ export function useInChatSearch({
   const [error, setError] = useState<string | null>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fetchGenRef = useRef(0)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const loadingMoreRef = useRef(false)
+  const resultsRef = useRef<Api.Message[]>([])
+  const searchRef = useRef<{ q: string } | null>(null)
+
+  useEffect(() => {
+    resultsRef.current = results
+  }, [results])
+
+  /** One page of hits, newest first, strictly older than `offsetId` (0 = from the newest). */
+  const fetchPage = useCallback(
+    async (c: TelegramClient, q: string, offsetId: number): Promise<Api.Message[]> => {
+      if (topicId != null) {
+        return withTransientRetry(c, () =>
+          searchTopicMessages(c, entity, q, topicId, IN_CHAT_SEARCH_PAGE, offsetId),
+        )
+      }
+      const raw = await withTransientRetry(c, () =>
+        c.getMessages(entity as never, { search: q, limit: IN_CHAT_SEARCH_PAGE, offsetId }),
+      )
+      // toMessageList sorts oldest→newest; search lists newest first (Telegram / topic branch
+      // order), so «1 / N» is the latest hit rather than the oldest.
+      return toMessageList(raw).reverse()
+    },
+    [entity, topicId],
+  )
+
+  const loadMore = useCallback(() => {
+    const search = searchRef.current
+    const last = resultsRef.current[resultsRef.current.length - 1]
+    if (!client || search == null || last == null || loadingMoreRef.current) {
+      return
+    }
+    const gen = fetchGenRef.current
+    loadingMoreRef.current = true
+    setLoadingMore(true)
+    void (async () => {
+      try {
+        const page = await fetchPage(client, search.q, last.id)
+        if (gen !== fetchGenRef.current) {
+          return
+        }
+        setResults((prev) => {
+          const seen = new Set(prev.map((m) => m.id))
+          return [...prev, ...page.filter((m) => !seen.has(m.id))]
+        })
+        setHasMore(page.length >= IN_CHAT_SEARCH_PAGE)
+      } catch {
+        // Keep the loaded hits and the button: the user can simply try again.
+      } finally {
+        loadingMoreRef.current = false
+        setLoadingMore(false)
+      }
+    })()
+  }, [client, fetchPage])
 
   useEffect(() => {
     fetchGenRef.current += 1
@@ -94,19 +156,13 @@ export function useInChatSearch({
     }
 
     const q = query.trim()
-    if (!client || entity == null || disabled) {
+    if (!client || entity == null || disabled || q.length < 2) {
+      searchRef.current = null
       queueMicrotask(() => {
         setResults([])
         setLoading(false)
         setError(null)
-      })
-      return
-    }
-    if (q.length < 2) {
-      queueMicrotask(() => {
-        setResults([])
-        setLoading(false)
-        setError(null)
+        setHasMore(false)
       })
       return
     }
@@ -119,29 +175,21 @@ export function useInChatSearch({
       setError(null)
       void (async () => {
         try {
-          if (topicId != null) {
-            const list = await withTransientRetry(client, () =>
-              searchTopicMessages(client, entity, q, topicId, SEARCH_LIMIT),
-            )
-            if (runGen !== fetchGenRef.current) {
-              return
-            }
-            setResults(list)
-          } else {
-            const raw = await withTransientRetry(client, () =>
-              client.getMessages(entity as never, { search: q, limit: SEARCH_LIMIT }),
-            )
-            if (runGen !== fetchGenRef.current) {
-              return
-            }
-            setResults(toMessageList(raw))
+          const list = await fetchPage(client, q, 0)
+          if (runGen !== fetchGenRef.current) {
+            return
           }
+          searchRef.current = { q }
+          setResults(list)
+          setHasMore(list.length >= IN_CHAT_SEARCH_PAGE)
           setError(null)
         } catch {
           if (runGen !== fetchGenRef.current) {
             return
           }
+          searchRef.current = null
           setResults([])
+          setHasMore(false)
           setError("search_failed")
         } finally {
           if (runGen === fetchGenRef.current) {
@@ -157,7 +205,7 @@ export function useInChatSearch({
         debounceTimerRef.current = null
       }
     }
-  }, [query, client, entity, disabled, topicId])
+  }, [query, client, entity, disabled, fetchPage])
 
-  return { query, setQuery, results, loading, error }
+  return { query, setQuery, results, loading, error, hasMore, loadingMore, loadMore }
 }

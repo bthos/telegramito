@@ -64,7 +64,67 @@ describe("useInChatSearch", () => {
     })
     expect(
       (client as { getMessages: ReturnType<typeof vi.fn> }).getMessages,
-    ).toHaveBeenCalledWith(entity, { search: "hi", limit: 40 })
+    ).toHaveBeenCalledWith(entity, { search: "hi", limit: 40, offsetId: 0 })
+  })
+
+  it("pages past 40 hits: a full page offers more, and the next page continues from the oldest hit", async () => {
+    vi.useFakeTimers()
+    const client = makeClient()
+    const getMessages = (client as { getMessages: ReturnType<typeof vi.fn> }).getMessages
+    // Newest first, ids 100..61 (a full page of 40), then a short page 60..51.
+    const page = (from: number, count: number) =>
+      Array.from({ length: count }, (_, i) => ({
+        ...forumMessage(from - i),
+        date: from - i,
+      }))
+    getMessages.mockResolvedValueOnce(page(100, 40)).mockResolvedValueOnce(page(60, 10))
+    const { result } = renderHook(() =>
+      useInChatSearch({ client, entity, disabled: false }),
+    )
+    act(() => {
+      result.current.setQuery("hi")
+    })
+    await act(async () => {
+      vi.advanceTimersByTime(400)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(result.current.results).toHaveLength(40)
+    expect(result.current.hasMore).toBe(true)
+
+    await act(async () => {
+      result.current.loadMore()
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(getMessages).toHaveBeenLastCalledWith(entity, { search: "hi", limit: 40, offsetId: 61 })
+    expect(result.current.results).toHaveLength(50)
+    expect(result.current.results[0]!.id).toBe(100)
+    expect(result.current.results[49]!.id).toBe(51)
+    expect(result.current.hasMore).toBe(false)
+  })
+
+  it("lists hits newest first so «1 / N» is the latest match", async () => {
+    vi.useFakeTimers()
+    const client = makeClient()
+    // Telegram returns newest first; the hook must not turn that into oldest first.
+    ;(client as { getMessages: ReturnType<typeof vi.fn> }).getMessages.mockResolvedValue([
+      { ...forumMessage(30), date: 300 },
+      { ...forumMessage(20), date: 200 },
+      { ...forumMessage(10), date: 100 },
+    ])
+    const { result } = renderHook(() =>
+      useInChatSearch({ client, entity, disabled: false }),
+    )
+    act(() => {
+      result.current.setQuery("hi")
+    })
+    await act(async () => {
+      vi.advanceTimersByTime(400)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(result.current.results.map((m) => m.id)).toEqual([30, 20, 10])
   })
 
   it("does not request when disabled", () => {

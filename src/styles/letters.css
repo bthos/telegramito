@@ -737,6 +737,44 @@ html[data-theme="dark"] .letters-day-mail__item.is-active {
   font-size: 0.85rem;
 }
 
+/* «Press Back again to exit»: floating glass pill, out of flow so it never shifts the layout. */
+.letters-exit-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: calc(100vw - 2rem);
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--letters-glass-border);
+  background: var(--letters-glass-bg);
+  -webkit-backdrop-filter: var(--letters-glass-filter);
+  backdrop-filter: var(--letters-glass-filter);
+  box-shadow: var(--letters-glass-shadow);
+  color: var(--letters-ink);
+  font-family: var(--letters-ui);
+  font-size: 0.85rem;
+  pointer-events: none;
+  animation: letters-exit-toast-in 0.18s ease-out;
+}
+
+@media (max-width: 700px) {
+  .letters-exit-toast {
+    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@keyframes letters-exit-toast-in {
+  from { opacity: 0; transform: translate(-50%, 0.5rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .letters-exit-toast {
+    animation: none;
+  }
+}
+
 .btn-send--sealing {
   animation: letters-wax-seal-pulse 0.3s ease-out;
 }
@@ -789,6 +827,36 @@ html[data-theme="dark"] .letters-day-mail__item.is-active {
   cursor: pointer;
   font: inherit;
   color: inherit;
+}
+
+.letters-desk-sheet__bookmark-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.letters-desk-sheet__bookmark-row > .letters-desk-sheet__bookmark {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  border-bottom: 0;
+}
+
+.letters-desk-sheet__bookmark-remove {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--letters-ink-3, var(--muted));
+  font: inherit;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .letters-desk-sheet__bookmark-chat {
@@ -975,6 +1043,15 @@ html[data-theme="dark"] .letters-day-mail__item.is-active {
   overscroll-behavior: contain;
 }
 
+/* The header right below an open (scrolling) panel: a hairline + frosted strip, so rows scrolling
+   under the panel edge are not sliced mid-line against bare header text. */
+.letters-aside-accordion__panel:not([hidden]) + .letters-aside-accordion__trigger {
+  border-top: 1px solid var(--letters-lines);
+  background: var(--letters-glass-bg);
+  -webkit-backdrop-filter: var(--letters-glass-filter);
+  backdrop-filter: var(--letters-glass-filter);
+}
+
 .letters-passages__live {
   margin: 0;
   padding: 0.15rem 0.85rem 0.35rem;
@@ -1073,6 +1150,16 @@ html[data-theme="dark"] .letters-day-mail__item.is-active {
 .letters-passages__see-all:focus-visible {
   outline: 2px solid var(--letters-terra);
   outline-offset: 2px;
+}
+
+.letters-passages__more {
+  display: block;
+  margin: 0.5rem auto 0.9rem;
+}
+
+.letters-passages__more:disabled {
+  opacity: 0.6;
+  cursor: progress;
 }
 
 /* Accordion-scale empty state: `.letters-drafts-empty` shape at panel scale. */
@@ -3370,6 +3457,13 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
     min-width: 0;
   }
 
+  /* The adjacent close button already clears + collapses; drop the browser's (blue) second ×. */
+  .app-root--letters-mobile .letters-masthead__compact-search input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+  }
+
   .app-root--letters-mobile .letters-masthead__icon-btn {
     width: 44px;
     height: 44px;
@@ -4077,6 +4171,30 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   background: color-mix(in srgb, var(--letters-terra) 12%, transparent);
 }
 
+/* Icon + caption where there is room: the glyphs alone (a desk, three rings) don't say what
+   they open. Narrower bands keep the icon-only buttons, which carry aria-label/title. */
+.letters-masthead__tool-label {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .letters-masthead__tools .btn-ghost--icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-inline: 0.7rem;
+  }
+
+  .letters-masthead__tool-label {
+    display: inline;
+    font-family: var(--letters-ui);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+}
+
 .letters-circles-slide {
   padding-top: 12px;
 }
@@ -4418,8 +4536,54 @@ html[data-theme="light"] .app-root--main .letters-desk-sheet .letters-desk-sheet
   box-shadow: 0 4px 18px rgba(28, 24, 21, 0.14);
 }
 
+/* Reaction / message-actions popover: denser content than the pills above, so a firmer glass wash. */
+.app-root--main .msg-reaction-pop {
+  background: color-mix(in srgb, var(--letters-paper) 95%, transparent);
+  -webkit-backdrop-filter: var(--letters-glass-filter);
+  backdrop-filter: var(--letters-glass-filter);
+  border-color: var(--letters-glass-border);
+  box-shadow: var(--letters-glass-shadow);
+  color: var(--letters-ink-2);
+}
+
+.app-root--main .msg-reaction-pop .msg-bubble-action-row {
+  border-bottom-color: var(--letters-hairline);
+}
+
+.app-root--main .msg-reaction-pop button.msg-bubble-action {
+  font-family: var(--letters-ui);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--letters-ink-2);
+}
+
+.app-root--main .msg-reaction-pop button.msg-bubble-action:hover,
+.app-root--main .msg-reaction-pop button.msg-bubble-action:focus-visible {
+  background: color-mix(in srgb, var(--letters-terra) 12%, transparent);
+  color: var(--letters-terra);
+}
+
+.app-root--main .msg-reaction-pop button.msg-reaction-pop__btn:hover:not(:disabled),
+.app-root--main .msg-reaction-pop button.msg-reaction-pop__btn:focus-visible {
+  background: color-mix(in srgb, var(--letters-terra) 12%, transparent);
+}
+
+.app-root--main .msg-reaction-pop button.msg-reaction-pop__btn--on {
+  background: color-mix(in srgb, var(--letters-terra) 18%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--letters-terra) 55%, transparent);
+}
+
 .app-root--main .thread.thread--letters .msg-date-pill--jump:not(:disabled):hover {
   color: var(--letters-terra);
+}
+
+/* Phones: the glass wash is too thin over body text, which shows through the sticky date pill.
+   Keep the blur but back it with an almost opaque panel fill so the label stays readable. */
+@media (max-width: 700px) {
+  .app-root--main .thread.thread--letters .msg-date-pill--floating {
+    background: color-mix(in srgb, var(--letters-panel) 96%, transparent);
+  }
 }
 
 /*
@@ -4501,8 +4665,60 @@ html[data-theme] .app-root--letters-chats .chat-main--letters {
   .app-root--letters-chats .empty-chat__card,
   .app-root--letters-chats .chat-search-bar__panel,
   .app-root--main .jump-date-cal,
+  .app-root--main .msg-reaction-pop,
   .app-root--main .thread.thread--letters .msg-date-pill--floating,
   .app-root--main .thread.thread--letters .message-scroll__fab {
     background: var(--letters-panel);
   }
+}
+
+/* First dialog page still loading after boot: placeholder rows instead of «no chats». */
+.chat-list-skeleton {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.chat-list-skeleton__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+}
+
+.chat-list-skeleton__ava {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--letters-hairline);
+}
+
+.chat-list-skeleton__lines {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chat-list-skeleton__line {
+  height: 0.65rem;
+  width: 80%;
+  border-radius: 6px;
+  background: var(--letters-hairline);
+}
+
+.chat-list-skeleton__line--name {
+  width: 45%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chat-list-skeleton__ava,
+  .chat-list-skeleton__line {
+    animation: chat-list-skeleton-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes chat-list-skeleton-pulse {
+  50% { opacity: 0.45; }
 }

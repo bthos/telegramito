@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import { useTelegram } from "../context/TelegramContext"
 import { normalizePhone } from "../util/normalizePhone"
 import { AuthLayout, Button, PageCard, TextField } from "./ds"
-import { TelegramMark } from "./TelegramMark"
+import { WaxSeal } from "./WaxSeal"
 
 const EMAIL_LOOKS_VALID_RE = /^[^\s@]+@[^\s@]+$/
 
@@ -75,13 +75,7 @@ export function LoginView() {
       <AuthLayout role="alert">
         <PageCard variant="auth">
           <div className="auth-card__header">
-            <TelegramMark
-              className="auth-card__mark"
-              width={56}
-              height={56}
-              alt={t("appName")}
-              title={t("appName")}
-            />
+            <WaxSeal className="auth-card__seal" label={t("appName")} />
             <h1 className="auth-card__title">{t("appName")}</h1>
           </div>
           <p className="muted">{t("apiMissing")}</p>
@@ -95,13 +89,7 @@ export function LoginView() {
       <AuthLayout>
         <PageCard variant="auth">
           <div className="auth-card__header">
-            <TelegramMark
-              className="auth-card__mark"
-              width={56}
-              height={56}
-              alt={t("appName")}
-              title={t("appName")}
-            />
+            <WaxSeal className="auth-card__seal" label={t("appName")} />
             <p className="auth-card__product">{t("appName")}</p>
             <h1 className="auth-card__title">{t("login.title")}</h1>
           </div>
@@ -122,13 +110,7 @@ export function LoginView() {
     <AuthLayout>
       <PageCard variant="auth">
         <div className="auth-card__header">
-          <TelegramMark
-            className="auth-card__mark"
-            width={56}
-            height={56}
-            alt={t("appName")}
-            title={t("appName")}
-          />
+          <WaxSeal className="auth-card__seal" label={t("appName")} />
           <p className="auth-card__product">{t("appName")}</p>
           <h1 className="auth-card__title">{t("login.title")}</h1>
         </div>

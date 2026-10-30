@@ -20,3 +20,19 @@ export function focusLettersComposer(): void {
 
   requestAnimationFrame(tick)
 }
+
+/** Name of the desktop masthead search field (`LettersMasthead`). */
+const LETTERS_SEARCH_INPUT_NAME = "letters-q"
+
+/** Focus the desktop masthead search. Returns false when no such field is on screen. */
+export function focusLettersSearch(): boolean {
+  const el = document.querySelector<HTMLInputElement>(
+    `input[name="${LETTERS_SEARCH_INPUT_NAME}"]`,
+  )
+  if (!el || el.offsetParent === null) {
+    return false
+  }
+  el.focus()
+  el.select()
+  return true
+}

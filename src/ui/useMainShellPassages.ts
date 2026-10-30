@@ -54,7 +54,7 @@ export function useMainShellPassages({
   refreshDialogs,
   onJumpToDialogMessage,
 }: UseMainShellPassagesOpts) {
-  const { results, loading, error, retry } = useGlobalMessageSearch({
+  const { results, loading, error, retry, hasMore, loadingMore, loadMore } = useGlobalMessageSearch({
     client,
     query,
     disabled,
@@ -147,6 +147,9 @@ export function useMainShellPassages({
       passagesError: error,
       passagesJumpError: jumpError,
       onPassagesRetry: retry,
+      passagesHasMore: hasMore,
+      passagesLoadingMore: loadingMore,
+      onPassagesLoadMore: loadMore,
       onPassageSelect: handlePassageSelect,
       onPassagesSeeAll: handlePassagesSeeAll,
     },

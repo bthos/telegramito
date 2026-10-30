@@ -38,6 +38,9 @@ export function ChatViewInChatSearch({
     setQuery,
     results,
     loading,
+    hasMore,
+    loadingMore,
+    loadMore,
   } = useInChatSearch({
     client,
     entity,
@@ -56,8 +59,17 @@ export function ChatViewInChatSearch({
     setQuery(seedQuery)
   }, [seedQuery, setQuery])
 
+  // «Next» on the last loaded hit asks for the next page and steps onto its first hit.
+  const advanceFromRef = useRef<number | null>(null)
+
   useEffect(() => {
     queueMicrotask(() => {
+      const from = advanceFromRef.current
+      if (from != null && results.length > from) {
+        advanceFromRef.current = null
+        setResultIndex(from)
+        return
+      }
       setResultIndex((i) => {
         const n = results.length
         if (n === 0) {
@@ -68,18 +80,31 @@ export function ChatViewInChatSearch({
     })
   }, [results.length])
 
-  const navigate = useCallback((dir: "up" | "down") => {
-    setResultIndex((i) => {
+  // A failed page load must not leave a marker that a later, unrelated result change would obey.
+  useEffect(() => {
+    if (!loadingMore) {
+      // Queued after the results effect's microtask, so a successful page advances first.
+      queueMicrotask(() => {
+        advanceFromRef.current = null
+      })
+    }
+  }, [loadingMore])
+
+  const navigate = useCallback(
+    (dir: "up" | "down") => {
       const n = results.length
       if (n === 0) {
-        return 0
+        return
       }
-      if (dir === "down") {
-        return Math.min(n - 1, i + 1)
+      if (dir === "down" && resultIndex === n - 1 && hasMore) {
+        advanceFromRef.current = n
+        loadMore()
+        return
       }
-      return Math.max(0, i - 1)
-    })
-  }, [results.length])
+      setResultIndex(dir === "down" ? Math.min(n - 1, resultIndex + 1) : Math.max(0, resultIndex - 1))
+    },
+    [results.length, resultIndex, hasMore, loadMore],
+  )
 
   const handleClose = useCallback(() => {
     onClose()
@@ -99,6 +124,9 @@ export function ChatViewInChatSearch({
       }}
       peerDisplayName={peerDisplayName}
       forumDisabled={forumDisabled}
+      hasMore={hasMore}
+      loadingMore={loadingMore}
+      onLoadMore={loadMore}
     />
   )
 }

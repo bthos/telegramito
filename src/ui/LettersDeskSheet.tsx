@@ -51,6 +51,7 @@ type Props = {
   onDraftSelect?: (d: Dialog) => void
   coReadingBookmarks?: CoReadingBookmark[]
   onCoReadingNavigate?: (bookmark: CoReadingBookmark) => void
+  onCoReadingRemove?: (bookmark: CoReadingBookmark) => void
 }
 
 export function LettersDeskSheet({
@@ -67,6 +68,7 @@ export function LettersDeskSheet({
   onDraftSelect,
   coReadingBookmarks = [],
   onCoReadingNavigate,
+  onCoReadingRemove,
 }: Props) {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
@@ -296,30 +298,39 @@ export function LettersDeskSheet({
                   {t("mode.ephemeralLimitation")}
                 </p>
 
-                {showParentRows ? (
+                {showParentRows && coReadingBookmarks.length > 0 ? (
                   <div className="letters-desk-sheet__bookmarks">
                     <h3 className="letters-desk-sheet__bookmarks-title">{t("letters.coReadingDeskTitle")}</h3>
-                    {coReadingBookmarks.length > 0 ? (
-                      <ul className="letters-desk-sheet__bookmarks-list" role="list">
-                        {coReadingBookmarks.map((b) => (
-                          <li key={b.id}>
-                            <button
-                              type="button"
-                              className="letters-desk-sheet__bookmark"
-                              onClick={() => {
-                                onCoReadingNavigate?.(b)
-                                onClose()
-                              }}
-                            >
-                              <span className="letters-desk-sheet__bookmark-chat">{b.chatTitle}</span>
-                              <span className="letters-desk-sheet__bookmark-preview muted small">
-                                {b.preview}
-                              </span>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
+                    <ul className="letters-desk-sheet__bookmarks-list" role="list">
+                      {coReadingBookmarks.map((b) => (
+                        <li key={b.id} className="letters-desk-sheet__bookmark-row">
+                          <button
+                            type="button"
+                            className="letters-desk-sheet__bookmark"
+                            onClick={() => {
+                              onCoReadingNavigate?.(b)
+                              onClose()
+                            }}
+                          >
+                            <span className="letters-desk-sheet__bookmark-chat">{b.chatTitle}</span>
+                            <span className="letters-desk-sheet__bookmark-preview muted small">
+                              {b.preview}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className="letters-desk-sheet__bookmark-remove"
+                            aria-label={t("letters.coReadingRemove")}
+                            title={t("letters.coReadingRemove")}
+                            onClick={() => {
+                              onCoReadingRemove?.(b)
+                            }}
+                          >
+                            ×
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
                     <p className="letters-desk-sheet__bookmarks-hint" role="status">
                       {t("letters.coReadingDeviceOnlyHint")}
                     </p>

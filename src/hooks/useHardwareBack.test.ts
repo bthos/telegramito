@@ -211,6 +211,36 @@ describe("useHardwareBack", () => {
     })
   })
 
+  describe("root: consumed by the shell (desktop focus-search)", () => {
+    it("a Back the shell consumes neither arms the toast nor exits, however often it repeats", async () => {
+      const onRootArmedChange = vi.fn()
+      const onRootBack = vi.fn(() => true)
+      const uninstallRoot = installHardwareBackRoot(onRootArmedChange, onRootBack)
+      const backSpy = vi.spyOn(history, "back")
+
+      await pressBack()
+      await pressBack()
+
+      expect(onRootBack).toHaveBeenCalledTimes(2)
+      expect(onRootArmedChange).not.toHaveBeenCalledWith(true)
+      // Only pressBack's own simulated presses: no internal exit call.
+      expect(backSpy).toHaveBeenCalledTimes(2)
+
+      uninstallRoot()
+      backSpy.mockRestore()
+    })
+
+    it("falls back to press-again-to-exit when the shell declines", async () => {
+      const onRootArmedChange = vi.fn()
+      const uninstallRoot = installHardwareBackRoot(onRootArmedChange, () => false)
+
+      await pressBack()
+
+      expect(onRootArmedChange).toHaveBeenCalledWith(true)
+      uninstallRoot()
+    })
+  })
+
   describe("root arming is cancelled by navigating away instead of pressing Back again", () => {
     it("opening a new layer while the exit-confirmation is armed disarms it", async () => {
       const onRootArmedChange = vi.fn()

@@ -1,6 +1,7 @@
 import { Api } from "teleproto"
 import type { TelegramClient } from "teleproto"
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useState, type ReactNode } from "react"
+import { CoReadIcon, ForwardIcon, PinIcon, ReplyIcon, UnpinIcon } from "./ChatChromeIcons"
 import { useTranslation } from "react-i18next"
 import { useDismissiblePopover } from "../hooks/useDismissiblePopover"
 import {
@@ -10,7 +11,7 @@ import {
   peekAvailableReactionsCache,
   pickReactionDisplayDocument,
 } from "../telegram/availableReactionsCache"
-import { getReactionStaticIconObjectUrl } from "../telegram/customEmojiCache"
+import { getReactionStaticIconObjectUrl, peekReactionIconObjectUrl } from "../telegram/customEmojiCache"
 import { setMessageReactions } from "../telegram/reactionsAndPolls"
 
 type TChat = (k: string, o?: Record<string, string | number | undefined>) => string
@@ -45,6 +46,23 @@ function myReactionsList(recent: readonly Api.TypeMessagePeerReaction[] | undefi
     ) as Api.TypeReaction[]
 }
 
+function ActionButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: ReactNode
+  label: string
+  onPress: () => void
+}) {
+  return (
+    <button type="button" className="msg-bubble-action" onClick={onPress}>
+      <span className="msg-bubble-action__ico" aria-hidden>{icon}</span>
+      <span className="msg-bubble-action__label">{label}</span>
+    </button>
+  )
+}
+
 function ReactionItem({
   item,
   client,
@@ -61,11 +79,11 @@ function ReactionItem({
   t: TChat
 }) {
   const tReact = useMemo(() => availableEntryToTypeReaction(item), [item])
-  const [ico, setIco] = useState<string | null>(null)
   const displayDoc = useMemo(
     () => (item.className === "AvailableReaction" ? pickReactionDisplayDocument(item) : undefined),
     [item]
   )
+  const [ico, setIco] = useState<string | null>(() => peekReactionIconObjectUrl(displayDoc))
   useEffect(() => {
     if (displayDoc == null) {
       return
@@ -97,7 +115,9 @@ function ReactionItem({
     >
       {ico
         ? <img className="msg-reaction-pick-ico" src={ico} alt={item.title} width={32} height={32} decoding="async" />
-        : <span className="msg-reaction-pick-ico msg-reaction-pick-ico--ph" aria-hidden />}
+        : item.reaction
+          ? <span className="msg-reaction-pick-ico msg-reaction-pick-ico--emoji" aria-hidden>{`${item.reaction.replace(/\uFE0F/g, "")}\uFE0F`}</span>
+          : <span className="msg-reaction-pick-ico msg-reaction-pick-ico--ph" aria-hidden />}
     </button>
   )
 }
@@ -289,70 +309,58 @@ export function MessageReactionPicker({
             <div className="msg-bubble-action-row" role="group" aria-label={t("chat.messageActionsAria")}>
               {onReply != null && canReply
                 ? (
-                    <button
-                      type="button"
-                      className="msg-bubble-action"
-                      onClick={() => {
+                    <ActionButton
+                      icon={<ReplyIcon />}
+                      label={t("chat.reply")}
+                      onPress={() => {
                         onReply()
                         onClose()
                       }}
-                    >
-                      {t("chat.reply")}
-                    </button>
+                    />
                   )
                 : null}
               {onForward != null
                 ? (
-                    <button
-                      type="button"
-                      className="msg-bubble-action"
-                      onClick={() => {
-                        onForward()
-                      }}
-                    >
-                      {t("chat.forwardMessage")}
-                    </button>
+                    <ActionButton
+                      icon={<ForwardIcon />}
+                      label={t("chat.forwardMessage")}
+                      onPress={onForward}
+                    />
                   )
                 : null}
               {onCoRead != null
                 ? (
-                    <button
-                      type="button"
-                      className="msg-bubble-action"
-                      onClick={() => {
+                    <ActionButton
+                      icon={<CoReadIcon />}
+                      label={t("letters.coReadingAction")}
+                      onPress={() => {
                         onCoRead()
                         onClose()
                       }}
-                    >
-                      {t("letters.coReadingAction")}
-                    </button>
+                    />
                   )
                 : null}
               {onUnpin != null
                 ? (
-                    <button
-                      type="button"
-                      className="msg-bubble-action"
-                      onClick={() => {
+                    <ActionButton
+                      icon={<UnpinIcon />}
+                      label={t("chat.unpinMessage")}
+                      onPress={() => {
                         onUnpin()
                         onClose()
                       }}
-                    >
-                      {t("chat.unpinMessage")}
-                    </button>
+                    />
                   )
                 : onPin != null
                   ? (
-                      <button
-                        type="button"
-                        className="msg-bubble-action"
-                        onClick={() => {
+                      <ActionButton
+                        icon={<PinIcon />}
+                        label={t("chat.pinMessage")}
+                        onPress={() => {
                           onPin()
                           onClose()
                         }}
-                      >
-                        {t("chat.pinMessage")}
-                      </button>
+                      />
                     )
                   : null}
             </div>

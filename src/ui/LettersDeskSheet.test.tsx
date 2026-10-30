@@ -186,7 +186,36 @@ describe("LettersDeskSheet", () => {
     expect(screen.getByText("The desk is clear — no unfinished letters")).toBeTruthy()
   })
 
-  it("shows device-only hint for co-reading in parent mode (AC-S1)", async () => {
+  it("shows the device-only hint with the co-reading bookmarks (AC-S1)", async () => {
+    const inst = await miniI18n()
+    render(
+      <I18nextProvider i18n={inst}>
+        <ThemeProvider>
+          <LettersDeskSheet
+            open
+            onClose={vi.fn()}
+            appMode="parent"
+            onAppMode={vi.fn()}
+            showParentRows
+            pendingRequestCount={0}
+            dialogs={[]}
+            canEditSettings
+            onRequestPin={vi.fn()}
+            onSignOut={vi.fn()}
+            coReadingBookmarks={[
+              { id: "b1", chatId: "1", messageId: 5, chatTitle: "Anna", preview: "see you", createdAt: 0 },
+            ]}
+          />
+        </ThemeProvider>
+      </I18nextProvider>,
+    )
+
+    expect(screen.getByText("Bookmarks stay on this device only.")).toBeTruthy()
+    expect(screen.getByRole("heading", { level: 3, name: "To discuss together" })).toBeTruthy()
+    expect(screen.getByText("Anna")).toBeTruthy()
+  })
+
+  it("omits the co-reading block entirely while there are no bookmarks", async () => {
     const inst = await miniI18n()
     render(
       <I18nextProvider i18n={inst}>
@@ -208,8 +237,8 @@ describe("LettersDeskSheet", () => {
       </I18nextProvider>,
     )
 
-    expect(screen.getByText("Bookmarks stay on this device only.")).toBeTruthy()
-    expect(screen.getByRole("heading", { level: 3, name: "To discuss together" })).toBeTruthy()
+    expect(screen.queryByText("To discuss together")).toBeNull()
+    expect(screen.queryByText("Bookmarks stay on this device only.")).toBeNull()
   })
 
   it("opens settings inside the desk with a back control", async () => {
